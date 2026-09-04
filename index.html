@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>battlettt — security engineering projects</title>
-<meta name="description" content="Three build-and-break projects: a browser security scanner, a spaced-retrieval memory-care app, and a nine-project cybersecurity portfolio.">
-<meta property="og:title" content="battlettt — security engineering projects">
+<title>Marcel Slowly — security engineering projects</title>
+<meta name="description" content="Marcel Slowly — a browser security scanner, a spaced-retrieval memory-care app, and a nine-project cybersecurity portfolio.">
+<meta property="og:title" content="Marcel Slowly — security engineering projects">
 <meta property="og:description" content="A browser security scanner, a memory-care app, and a nine-project cybersecurity portfolio.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
@@ -65,13 +65,27 @@
   }
   .eyebrow::before{content:"› "}
   h1{
-    margin:0 0 1rem;
+    margin:0;
     font-size:clamp(2.25rem,6vw,3.5rem);
     line-height:1.1;
     letter-spacing:-.02em;
     font-weight:650;
   }
-  h1 .handle{font-family:var(--mono);font-weight:600}
+  .tagline{
+    margin:.5rem 0 .375rem;
+    font-size:clamp(1.25rem,3vw,1.625rem);
+    font-weight:600;
+    letter-spacing:-.01em;
+    color:var(--accent);
+    line-height:1.25;
+  }
+  .handle-line{
+    margin:0 0 1.75rem;
+    font-family:var(--mono);
+    font-size:.9375rem;
+    color:var(--fg-dim);
+    letter-spacing:.01em;
+  }
   .lede{
     margin:0 0 2rem;
     font-size:clamp(1.0625rem,2.2vw,1.1875rem);
@@ -199,7 +213,9 @@
 
   <header>
     <p class="eyebrow">Management Engineering → Security</p>
-    <h1>Build it, then break it.<br><span class="handle">@battlettt</span></h1>
+    <h1>Marcel Slowly</h1>
+    <p class="tagline">Build it, then break it.</p>
+    <p class="handle-line">@battlettt</p>
     <p class="lede">
       Three projects where the security claims were <strong>actually executed and verified</strong>,
       not written and assumed to work — a browser security scanner, a memory-care app built for a
