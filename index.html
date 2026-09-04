@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>battlettt — security engineering projects</title>
+<meta name="description" content="Three build-and-break projects: a browser security scanner, a spaced-retrieval memory-care app, and a nine-project cybersecurity portfolio.">
+<meta property="og:title" content="battlettt — security engineering projects">
+<meta property="og:description" content="A browser security scanner, a memory-care app, and a nine-project cybersecurity portfolio.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://battlettt.github.io/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128737;</text></svg>">
+<style>
+  :root{
+    --bg:#0a0c10;
+    --bg-soft:#10141a;
+    --card:#12161d;
+    --card-hover:#161b23;
+    --line:#232a34;
+    --line-strong:#313a47;
+    --fg:#e8ebef;
+    --fg-mid:#aab3bf;
+    --fg-dim:#7d8794;
+    --accent:#5eead4;
+    --accent-dim:#2dd4bf;
+    --warn:#fbbf24;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+      radial-gradient(60rem 30rem at 15% -10%, rgba(94,234,212,.07), transparent 60%),
+      radial-gradient(50rem 28rem at 95% 5%, rgba(59,130,246,.06), transparent 60%);
+    z-index:0;
+  }
+  .wrap{position:relative;z-index:1;max-width:60rem;margin:0 auto;padding:0 1.5rem}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+  /* ---------- header ---------- */
+  header{padding:5.5rem 0 3rem}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:.8125rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 1rem;
+  }
+  .eyebrow::before{content:"› "}
+  h1{
+    margin:0 0 1rem;
+    font-size:clamp(2.25rem,6vw,3.5rem);
+    line-height:1.1;
+    letter-spacing:-.02em;
+    font-weight:650;
+  }
+  h1 .handle{font-family:var(--mono);font-weight:600}
+  .lede{
+    margin:0 0 2rem;
+    font-size:clamp(1.0625rem,2.2vw,1.1875rem);
+    color:var(--fg-mid);
+    max-width:44rem;
+  }
+  .lede strong{color:var(--fg);font-weight:600}
+  .links{display:flex;flex-wrap:wrap;gap:.625rem;list-style:none;margin:0;padding:0}
+  .links a{
+    display:inline-flex;
+    align-items:center;
+    gap:.5rem;
+    padding:.5rem .875rem;
+    border:1px solid var(--line-strong);
+    border-radius:8px;
+    background:var(--bg-soft);
+    color:var(--fg-mid);
+    font-size:.9375rem;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .links a:hover{border-color:var(--accent);color:var(--fg);background:var(--card-hover);text-decoration:none}
+
+  hr.rule{border:0;border-top:1px solid var(--line);margin:0}
+
+  /* ---------- section ---------- */
+  section{padding:3.5rem 0}
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+    margin:0 0 2rem;
+  }
+  h2{
+    margin:0;
+    font-size:1.375rem;
+    letter-spacing:-.01em;
+    font-weight:620;
+  }
+  .section-note{margin:0;font-family:var(--mono);font-size:.8125rem;color:var(--fg-dim)}
+
+  /* ---------- cards ---------- */
+  .cards{display:grid;gap:1.25rem}
+  article.card{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--card);
+    padding:1.75rem;
+    transition:border-color .18s, transform .18s;
+  }
+  article.card:hover{border-color:var(--line-strong);transform:translateY(-2px)}
+  .card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+  .card h3{margin:0;font-size:1.25rem;font-weight:640;letter-spacing:-.01em}
+  .card h3 a{color:var(--fg)}
+  .card h3 a:hover{color:var(--accent);text-decoration:none}
+  .badge{
+    font-family:var(--mono);
+    font-size:.6875rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:.25rem .5rem;
+    border-radius:5px;
+    border:1px solid var(--line-strong);
+    color:var(--fg-dim);
+    white-space:nowrap;
+  }
+  .badge.live{color:var(--accent);border-color:rgba(94,234,212,.4);background:rgba(94,234,212,.07)}
+  .badge.private{color:var(--warn);border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.06)}
+  .card p.desc{margin:.875rem 0 0;color:var(--fg-mid)}
+
+  .facts{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));
+    gap:.75rem;
+    margin:1.375rem 0 0;
+    padding:1.125rem 0 0;
+    border-top:1px solid var(--line);
+    list-style:none;
+  }
+  .facts li{margin:0}
+  .facts .n{
+    display:block;
+    font-family:var(--mono);
+    font-size:1.0625rem;
+    color:var(--accent);
+    font-weight:600;
+    line-height:1.3;
+  }
+  .facts .l{display:block;font-size:.8125rem;color:var(--fg-dim);line-height:1.4;margin-top:.125rem}
+
+  .tags{display:flex;flex-wrap:wrap;gap:.4375rem;list-style:none;margin:1.25rem 0 0;padding:0}
+  .tags li{
+    font-family:var(--mono);
+    font-size:.75rem;
+    color:var(--fg-dim);
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:.1875rem .5rem;
+  }
+  .card-links{display:flex;flex-wrap:wrap;gap:1.125rem;margin:1.375rem 0 0;padding:0;list-style:none}
+  .card-links a{font-size:.9375rem;font-weight:520}
+  .card-links a::after{content:" →";color:var(--fg-dim)}
+  .card-links a.ext::after{content:" ↗";color:var(--fg-dim)}
+  .card-links .muted{font-size:.875rem;color:var(--fg-dim)}
+
+  /* ---------- footer ---------- */
+  footer{padding:3rem 0 4.5rem;color:var(--fg-dim);font-size:.9375rem}
+  footer p{margin:0 0 .5rem}
+  footer .mono{font-family:var(--mono);font-size:.8125rem}
+
+  @media (min-width:52rem){
+    .cards{grid-template-columns:1fr}
+    article.card{padding:2rem 2.25rem}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    article.card:hover{transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Management Engineering → Security</p>
+    <h1>Build it, then break it.<br><span class="handle">@battlettt</span></h1>
+    <p class="lede">
+      Three projects where the security claims were <strong>actually executed and verified</strong>,
+      not written and assumed to work — a browser security scanner, a memory-care app built for a
+      real family need, and a nine-project portfolio spanning AppSec, detection engineering,
+      statistical anomaly detection, and GRC.
+    </p>
+    <ul class="links">
+      <li><a href="https://github.com/battlettt">GitHub profile</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Technical deep dive</a></li>
+    </ul>
+  </header>
+
+  <hr class="rule">
+
+  <section id="projects">
+    <div class="section-head">
+      <h2>Selected projects</h2>
+      <p class="section-note">3 repositories</p>
+    </div>
+
+    <div class="cards">
+
+      <!-- ============ SentinelScan ============ -->
+      <article class="card">
+        <div class="card-top">
+          <h3><a href="https://github.com/battlettt/sentinelscan">SentinelScan</a></h3>
+          <span class="badge">Chrome Extension · v1.1</span>
+        </div>
+        <p class="desc">
+          A Chrome extension that gives any website a security report card on demand. It combines
+          passive header and config analysis, a JS-source secrets scanner, Subresource Integrity
+          (supply-chain) checking, and local historical drift detection — flagging when a site's
+          security posture <em>changes</em> between visits, which most one-shot graders never catch.
+          Every finding is explained in MITRE ATT&amp;CK technique terms, and each header issue ships
+          with a paste-ready Express and Nginx fix.
+        </p>
+        <ul class="facts">
+          <li><span class="n">42</span><span class="l">unit tests passing</span></li>
+          <li><span class="n">0 bytes</span><span class="l">transmitted — fully client-side</span></li>
+          <li><span class="n">activeTab</span><span class="l">no broad host permissions</span></li>
+        </ul>
+        <ul class="tags">
+          <li>TypeScript</li><li>React</li><li>Manifest V3</li><li>Vitest</li><li>MITRE ATT&amp;CK</li>
+        </ul>
+        <ul class="card-links">
+          <li><a href="https://github.com/battlettt/sentinelscan">Source</a></li>
+          <li><a href="https://github.com/battlettt/sentinelscan/blob/main/docs/superpowers/specs/2026-09-02-sentinelscan-design.md">Design spec</a></li>
+          <li><a href="https://github.com/battlettt/sentinelscan/blob/main/PRIVACY.md">Privacy policy</a></li>
+        </ul>
+      </article>
+
+      <!-- ============ Memory Time ============ -->
+      <article class="card">
+        <div class="card-top">
+          <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
+          <span class="badge live">Live</span>
+        </div>
+        <p class="desc">
+          A shared spaced-retrieval app for families supporting a loved one with memory loss.
+          The training schedule follows real SRT clinical practice rather than generic flashcard
+          spacing: misses are re-asked soon but never drilled back-to-back, intervals grow on
+          success and reset on a miss, and a run of misses <em>eases the session off</em> instead
+          of pushing harder. Any family member can add a memory — photo, voice note, question —
+          from their own phone.
+        </p>
+        <ul class="facts">
+          <li><span class="n">3 platforms</span><span class="l">iOS, Android and web, one codebase</span></li>
+          <li><span class="n">RLS</span><span class="l">row-level security per family group</span></li>
+          <li><span class="n">AI prompts</span><span class="l">edge function suggests topics</span></li>
+        </ul>
+        <ul class="tags">
+          <li>React Native</li><li>Expo</li><li>TypeScript</li><li>Supabase</li><li>PostgreSQL</li>
+        </ul>
+        <ul class="card-links">
+          <li><a class="ext" href="https://memory-time.vercel.app">Open the live app</a></li>
+          <li><span class="muted">Source is private — available on request</span></li>
+        </ul>
+      </article>
+
+      <!-- ============ Cybersecurity Portfolio ============ -->
+      <article class="card">
+        <div class="card-top">
+          <h3><a href="https://github.com/battlettt/cybersecurity-portfolio">Cybersecurity Portfolio</a></h3>
+          <span class="badge">9 projects</span>
+        </div>
+        <p class="desc">
+          Nine hands-on projects covering offensive security (SQLi, XSS, broken auth/access
+          control), defensive security (SIEM, detection engineering, incident response),
+          data-driven security, cloud/IaC scanning, and GRC. The flagship found and fixed four
+          OWASP Top 10 vulnerabilities in a live React/Node/MySQL app — each one exploited with a
+          screenshot, remediated, then <em>re-exploited to prove the fix holds</em>. Where a result
+          is simulated rather than captured live, the README says so explicitly instead of
+          glossing over it.
+        </p>
+        <ul class="facts">
+          <li><span class="n">190K+/sec</span><span class="l">SIEM log ingestion, benchmarked</span></li>
+          <li><span class="n">&lt;20s</span><span class="l">mean time to detection</span></li>
+          <li><span class="n">100% / 80%</span><span class="l">anomaly recall / precision</span></li>
+        </ul>
+        <ul class="tags">
+          <li>Python</li><li>Flask</li><li>MySQL</li><li>Terraform</li><li>NIST CSF</li><li>MITRE ATT&amp;CK</li>
+        </ul>
+        <ul class="card-links">
+          <li><a href="https://github.com/battlettt/cybersecurity-portfolio">Source</a></li>
+          <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Technical deep dive</a></li>
+          <li><a class="ext" href="https://cybersecurity-portfolio-siem-dashboard.onrender.com">Live SIEM dashboard</a></li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <footer>
+    <p>Every number on this page is benchmarked or unit-tested in the repository it belongs to.</p>
+    <p class="mono">github.com/battlettt · built with GitHub Pages</p>
+  </footer>
+
+</div>
+
+</body>
+</html>
