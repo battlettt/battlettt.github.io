@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly — security engineering</title>
-<meta name="description" content="Marcel Slowly — six projects across security engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly — seven projects across security engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly — security engineering">
-<meta property="og:description" content="Six projects across security engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Seven projects across security engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9678;</text></svg>">
@@ -267,7 +267,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
 <div class="rail">
   <div class="rail__in">
-    <div class="rail__l"><span class="dot"></span><b>6 projects &middot; 3 live deployments</b></div>
+    <div class="rail__l"><span class="dot"></span><b>7 projects &middot; 3 live deployments</b></div>
     <div class="rail__r">github.com/battlettt</div>
   </div>
 </div>
@@ -280,7 +280,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
     <p class="tagline">Build it, then <em>break it.</em></p>
     <p class="handle">@battlettt<span class="cursor"></span></p>
     <p class="lede">
-      Six projects across security engineering, product, and market research — where the claims
+      Seven projects across security engineering, product, and market research — where the claims
       were <strong>actually executed and verified</strong>, not written and assumed to work.
       Where something is simulated rather than captured live, the repository says so instead of
       glossing over it.
@@ -294,7 +294,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
   <main class="sec" id="work">
     <div class="sec__head">
-      <h2>Selected work <span>// 06</span></h2>
+      <h2>Selected work <span>// 07</span></h2>
       <div class="filters" role="group" aria-label="Filter projects by category">
         <button type="button" data-f="all" aria-pressed="true">All</button>
         <button type="button" data-f="security" aria-pressed="false">Security</button>
@@ -447,6 +447,31 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
           <li><a href="https://github.com/battlettt/unclaimed-property-compliance">Repository</a></li>
           <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/escheatment-deep-dive.md">Deep dive</a></li>
           <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/build-log.md">Build log</a></li>
+        </ul>
+      </article>
+
+      <!-- 07 ───────────────────────────────────────────────────── -->
+      <article class="card" data-cat="security">
+        <div class="card__top"><span class="idx">07</span><span class="status">Shipped &middot; v1.0</span></div>
+        <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
+        <p class="meta">Go &middot; Network scanning</p>
+        <p class="desc">
+          A concurrent TCP port scanner with service banner grabbing, written in Go with zero
+          dependencies. Point it at your own network to find every listening service — a forgotten
+          FTP daemon, a Redis bound to 0.0.0.0 — and guess what's running from the banner each one
+          sends back. Targets can be IPs, hostnames, CIDRs, or ranges, and results export as table,
+          JSON, or CSV so you can <em>diff today's scan against last week's.</em>
+        </p>
+        <ul class="stats">
+          <li><b>9</b><span>unit tests passing</span></li>
+          <li><b>0</b><span>external dependencies</span></li>
+          <li><b>7ms</b><span>100-port localhost sweep, measured</span></li>
+        </ul>
+        <ul class="tags"><li>Go</li><li>Standard library</li><li>Concurrency</li></ul>
+        <ul class="go">
+          <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
+          <li><a href="https://github.com/battlettt/porthawk/blob/main/banner.go">Banner fingerprints</a></li>
+          <li><a href="https://github.com/battlettt/porthawk#responsible-use">Responsible use</a></li>
         </ul>
       </article>
 
