@@ -452,7 +452,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
       <!-- 07 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="security">
-        <div class="card__top"><span class="idx">07</span><span class="status">Shipped &middot; v1.1</span></div>
+        <div class="card__top"><span class="idx">07</span><span class="status">Shipped &middot; v1.2</span></div>
         <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
         <p class="meta">Go &middot; Network scanning</p>
         <p class="desc">
@@ -460,11 +460,12 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
           dependencies. Point it at your own network to find every listening service — a forgotten
           FTP daemon, a Redis bound to 0.0.0.0 — and guess what's running from the banner each one
           sends back. HTTPS ports get a real TLS handshake that records the certificate (issuer,
-          expiry, SANs), the negotiated cipher, and flags expired certs. Results export as table,
-          JSON, CSV, or a self-contained HTML report you can open in a browser.
+          expiry, SANs), the negotiated cipher, and flags expired certs; banners are parsed for
+          software versions (OpenSSH, nginx, ...), and <em>-diff</em> spots new or changed services
+          week over week. Results export as table, JSON, CSV, or a self-contained HTML report.
         </p>
         <ul class="stats">
-          <li><b>22</b><span>unit tests passing</span></li>
+          <li><b>44</b><span>unit tests passing</span></li>
           <li><b>0</b><span>external dependencies</span></li>
           <li><b>7ms</b><span>100-port localhost sweep, measured</span></li>
         </ul>
@@ -472,7 +473,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
         <ul class="go">
           <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
           <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">TLS probing</a></li>
-          <li><a href="https://github.com/battlettt/porthawk#responsible-use">Responsible use</a></li>
+          <li><a href="https://github.com/battlettt/porthawk/blob/main/docs/example-report.html">Example report</a></li>
         </ul>
       </article>
 
