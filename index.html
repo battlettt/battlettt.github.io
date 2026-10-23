@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly — security engineering</title>
-<meta name="description" content="Marcel Slowly — seven projects across security engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly — eight projects across security engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly — security engineering">
-<meta property="og:description" content="Seven projects across security engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Eight projects across security engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9678;</text></svg>">
@@ -267,7 +267,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
 <div class="rail">
   <div class="rail__in">
-    <div class="rail__l"><span class="dot"></span><b>7 projects &middot; 3 live deployments</b></div>
+    <div class="rail__l"><span class="dot"></span><b>8 projects &middot; 4 live deployments</b></div>
     <div class="rail__r">github.com/battlettt</div>
   </div>
 </div>
@@ -280,7 +280,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
     <p class="tagline">Build it, then <em>break it.</em></p>
     <p class="handle">@battlettt<span class="cursor"></span></p>
     <p class="lede">
-      Seven projects across security engineering, product, and market research — where the claims
+      Eight projects across security engineering, product, and market research — where the claims
       were <strong>actually executed and verified</strong>, not written and assumed to work.
       Where something is simulated rather than captured live, the repository says so instead of
       glossing over it.
@@ -294,7 +294,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
   <main class="sec" id="work">
     <div class="sec__head">
-      <h2>Selected work <span>// 07</span></h2>
+      <h2>Selected work <span>// 08</span></h2>
       <div class="filters" role="group" aria-label="Filter projects by category">
         <button type="button" data-f="all" aria-pressed="true">All</button>
         <button type="button" data-f="security" aria-pressed="false">Security</button>
@@ -356,7 +356,32 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
       <!-- 03 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">03</span><span class="status">Live</span></div>
+        <div class="card__top"><span class="idx">03</span><span class="status">Live &middot; beta</span></div>
+        <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
+        <p class="meta">B2B SaaS · Next.js · Postgres · Stripe</p>
+        <p class="desc">
+          Test data for teams building Stripe, QuickBooks and HubSpot integrations. One seed becomes
+          a realistic, deliberately messy company, loaded into all three test accounts with an
+          answer key to grade against. Live keys are refused <em>before a single request is
+          sent.</em> The first real runs found three bugs the emulators missed; each now has a test
+          that fails without its fix.
+        </p>
+        <ul class="stats">
+          <li><b>347</b><span>records into real Stripe, 0 failed</span></li>
+          <li><b>97</b><span>tests, incl. API emulators</span></li>
+          <li><b>Live keys</b><span>refused in code</span></li>
+        </ul>
+        <ul class="tags"><li>TypeScript</li><li>Next.js</li><li>PostgreSQL</li><li>Stripe</li><li>OAuth</li></ul>
+        <ul class="go">
+          <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
+          <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
+          <li><a href="https://fake-company-in-a-box.vercel.app/security">Security</a></li>
+        </ul>
+      </article>
+
+      <!-- 04 ───────────────────────────────────────────────────── -->
+      <article class="card" data-cat="product">
+        <div class="card__top"><span class="idx">04</span><span class="status">Live</span></div>
         <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
         <p class="meta">React Native · Expo · Supabase</p>
         <p class="desc">
@@ -378,9 +403,9 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
         </ul>
       </article>
 
-      <!-- 04 ───────────────────────────────────────────────────── -->
+      <!-- 05 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">04</span><span class="status">In delivery</span></div>
+        <div class="card__top"><span class="idx">05</span><span class="status">In delivery</span></div>
         <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
         <p class="meta">Python · Knowledge extraction</p>
         <p class="desc">
@@ -402,9 +427,9 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
         </ul>
       </article>
 
-      <!-- 05 ───────────────────────────────────────────────────── -->
+      <!-- 06 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">05</span><span class="status">Prototype</span></div>
+        <div class="card__top"><span class="idx">06</span><span class="status">Prototype</span></div>
         <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
         <p class="meta">PostGIS · Expo geofencing</p>
         <p class="desc">
@@ -426,9 +451,9 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
         </ul>
       </article>
 
-      <!-- 06 ───────────────────────────────────────────────────── -->
+      <!-- 07 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="research">
-        <div class="card__top"><span class="idx">06</span><span class="status">Validating</span></div>
+        <div class="card__top"><span class="idx">07</span><span class="status">Validating</span></div>
         <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
         <p class="meta">Market research · Escheatment</p>
         <p class="desc">
@@ -450,9 +475,9 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
         </ul>
       </article>
 
-      <!-- 07 ───────────────────────────────────────────────────── -->
+      <!-- 08 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="security">
-        <div class="card__top"><span class="idx">07</span><span class="status">Shipped &middot; v1.2</span></div>
+        <div class="card__top"><span class="idx">08</span><span class="status">Shipped &middot; v1.2</span></div>
         <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
         <p class="meta">Go &middot; Network scanning</p>
         <p class="desc">
