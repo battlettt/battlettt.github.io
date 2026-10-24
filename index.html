@@ -477,7 +477,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
 
       <!-- 08 ───────────────────────────────────────────────────── -->
       <article class="card" data-cat="security">
-        <div class="card__top"><span class="idx">08</span><span class="status">Shipped &middot; v1.2</span></div>
+        <div class="card__top"><span class="idx">08</span><span class="status">Shipped &middot; v1.3</span></div>
         <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
         <p class="meta">Go &middot; Network scanning</p>
         <p class="desc">
@@ -488,13 +488,15 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
           expiry, SANs), the negotiated cipher, and flags expired certs; banners are parsed for
           software versions (OpenSSH, nginx, ...), and <em>-diff</em> spots new or changed services
           week over week. Results export as table, JSON, CSV, or a self-contained HTML report.
+          v1.3 adds continuous integration with race-detector and fuzz testing, a Makefile, a
+          security policy, and a <em>-rate</em> cap for gentle scans of fragile devices.
         </p>
         <ul class="stats">
-          <li><b>44</b><span>unit tests passing</span></li>
+          <li><b>47</b><span>unit tests passing</span></li>
           <li><b>0</b><span>external dependencies</span></li>
           <li><b>7ms</b><span>100-port localhost sweep, measured</span></li>
         </ul>
-        <ul class="tags"><li>Go</li><li>Standard library</li><li>TLS</li></ul>
+        <ul class="tags"><li>Go</li><li>Standard library</li><li>TLS</li><li>Fuzz testing</li></ul>
         <ul class="go">
           <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
           <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">TLS probing</a></li>
