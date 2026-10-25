@@ -3,298 +3,217 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Marcel Slowly — security engineering</title>
-<meta name="description" content="Marcel Slowly — eight projects across security engineering, product, and market research. Build it, then break it.">
-<meta property="og:title" content="Marcel Slowly — security engineering">
-<meta property="og:description" content="Eight projects across security engineering, product, and market research. Every number benchmarked or unit-tested.">
+<title>Marcel Slowly | Security engineering</title>
+<meta name="description" content="Marcel Slowly: nine projects across security engineering, product, AI/ML, and market research. Build it, then break it.">
+<meta property="og:title" content="Marcel Slowly | Security engineering">
+<meta property="og:description" content="Nine projects across security engineering, product, AI/ML, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9678;</text></svg>">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23111'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23f6f5f1'>M</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Schibsted+Grotesk:wght@400;500;600&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════════════════════════════
-   tokens
-   ══════════════════════════════════════════════════════════════════ */
+/* Editorial direction: ink on paper, one accent, serif display (Gelasio)
+   over a grotesk body (Schibsted Grotesk), mono only for data. Light and dark follow
+   the system setting. */
 :root{
-  --void:#05070a;
-  --surface:#0b0f15;
-  --surface-2:#0e131a;
-  --line:#18202a;
-  --line-2:#233040;
-  --fg:#dfe7f0;
-  --fg-2:#94a3b4;
-  --fg-3:#5d6b7d;
+  --paper:#f6f5f1;
+  --paper-2:#eeede7;
+  --ink:#141413;
+  --ink-2:#4a4944;
+  --ink-3:#77756d;
+  --rule:#d9d7cf;
+  --accent:#b8381c;
 
-  --cyan:#22d3ee;
-  --lime:#a3e635;
-  --pink:#f472b6;
+  --serif:"Gelasio",Georgia,"Times New Roman",serif;
+  --sans:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"Ubuntu Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 
-  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
-
-  --gut:clamp(1.25rem,4vw,2.5rem);
-  --max:76rem;
+  --gut:clamp(1rem,4vw,2.5rem);
+  --max:78rem;
+  --ease:cubic-bezier(.16,1,.3,1);
 }
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#131312;
+    --paper-2:#1b1b19;
+    --ink:#ecebe6;
+    --ink-2:#b4b2aa;
+    --ink-3:#85837b;
+    --rule:#2c2c29;
+    --accent:#ee7a5c;
+  }
+}
+
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{
-  margin:0;background:var(--void);color:var(--fg);
-  font-family:var(--sans);font-size:16px;line-height:1.6;
-  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-size:1rem;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
 }
+/* paper grain, fixed so it never repaints on scroll */
+body::after{
+  content:"";position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.skip{position:absolute;left:var(--gut);top:-3rem;z-index:4;background:var(--ink);color:var(--paper);padding:.5rem .9rem;border-radius:4px;font-size:.875rem}
+.skip:focus{top:.75rem}
 
-/* ══════════════════════════════════════════════════════════════════
-   backdrop — grid, glow, scanlines
-   ══════════════════════════════════════════════════════════════════ */
-.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.bg__grid{
-  position:absolute;inset:-2px;
-  background-image:
-    linear-gradient(to right,rgba(120,160,200,.055) 1px,transparent 1px),
-    linear-gradient(to bottom,rgba(120,160,200,.055) 1px,transparent 1px);
-  background-size:52px 52px;
-  mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,#000 30%,transparent 75%);
-  -webkit-mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,#000 30%,transparent 75%);
-}
-.bg__glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
-.bg__glow--a{top:-22rem;left:-10rem;width:44rem;height:34rem;background:radial-gradient(circle,rgba(34,211,238,.30),transparent 68%);animation:drift 26s ease-in-out infinite}
-.bg__glow--b{top:-14rem;right:-14rem;width:40rem;height:32rem;background:radial-gradient(circle,rgba(163,230,53,.16),transparent 68%);animation:drift 34s ease-in-out infinite reverse}
-.bg__glow--c{top:52%;left:38%;width:36rem;height:30rem;background:radial-gradient(circle,rgba(244,114,182,.11),transparent 70%);animation:drift 44s ease-in-out infinite}
-@keyframes drift{
-  0%,100%{transform:translate3d(0,0,0) scale(1)}
-  50%{transform:translate3d(3rem,2rem,0) scale(1.12)}
-}
-.bg__scan{
-  position:absolute;inset:0;opacity:.5;
-  background:repeating-linear-gradient(to bottom,transparent 0 3px,rgba(0,0,0,.30) 3px 4px);
-}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
 
-/* ══════════════════════════════════════════════════════════════════
-   shell
-   ══════════════════════════════════════════════════════════════════ */
-.shell{position:relative;z-index:1;max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
-a{color:var(--cyan);text-decoration:none}
-a:focus-visible,button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:3px}
+/* ── masthead ─────────────────────────────────────────────────────── */
+.mast{border-bottom:1px solid var(--ink)}
+.mast .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;height:4rem}
+.mast__name{font-family:var(--serif);font-size:1.125rem;font-weight:600;letter-spacing:-.01em}
+.mast nav{display:flex;gap:1.5rem;font-size:.875rem;color:var(--ink-2)}
+.mast nav a{transition:color .2s}
+.mast nav a:hover{color:var(--accent)}
 
-/* ── top status rail ─────────────────────────────────────────────── */
-.rail{
-  position:relative;z-index:2;border-bottom:1px solid var(--line);
-  background:rgba(5,7,10,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+/* ── hero ─────────────────────────────────────────────────────────── */
+.hero{
+  display:grid;gap:clamp(2.5rem,6vw,5rem);align-items:end;
+  padding-block:clamp(3rem,8vw,6rem) clamp(3rem,7vw,5rem);
 }
-.rail__in{
-  max-width:var(--max);margin:0 auto;padding:.6rem var(--gut);
-  display:flex;justify-content:space-between;align-items:center;gap:1rem;
-  font-family:var(--mono);font-size:.6875rem;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--fg-3);
-}
-.rail__l{display:flex;align-items:center;gap:.5rem;min-width:0}
-.rail__l b{color:var(--fg-2);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--lime);flex:none;box-shadow:0 0 8px var(--lime);animation:pulse 2.4s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.rail__r{white-space:nowrap}
-@media (max-width:44rem){.rail__r{display:none}}
-
-/* ══════════════════════════════════════════════════════════════════
-   hero
-   ══════════════════════════════════════════════════════════════════ */
-.hero{padding:clamp(4rem,11vw,8rem) 0 clamp(2.5rem,6vw,4rem)}
-.kicker{
-  font-family:var(--mono);font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--cyan);margin:0 0 1.5rem;display:flex;align-items:center;gap:.75rem;
-}
-.kicker::before{content:"";width:2rem;height:1px;background:var(--cyan);flex:none;box-shadow:0 0 8px var(--cyan)}
-
+@media (min-width:60rem){.hero{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}}
+.kicker{margin:0 0 1.75rem;font-size:.875rem;font-weight:500;color:var(--ink-2)}
+.kicker span{color:var(--accent)}
 h1{
-  margin:0;font-family:var(--sans);font-weight:700;
-  font-size:clamp(2.75rem,10vw,6.5rem);line-height:.92;letter-spacing:-.045em;
-  background:linear-gradient(160deg,#fff 20%,#8fd9e8 62%,#4a7f92 100%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
+  margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;
+  font-size:clamp(3.5rem,11vw,8rem);line-height:.95;letter-spacing:-.035em;
 }
-.tagline{
-  margin:1.25rem 0 .5rem;font-size:clamp(1.125rem,3vw,1.75rem);
-  font-weight:500;letter-spacing:-.015em;color:var(--fg);
+.lede{margin:0 0 2.25rem;max-width:34rem;font-size:clamp(1.125rem,2.2vw,1.375rem);line-height:1.5;color:var(--ink-2);text-wrap:pretty}
+.lede em{font-family:var(--serif);font-style:italic;color:var(--ink);padding-bottom:.1em}
+.btn{
+  display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.4rem;
+  background:var(--ink);color:var(--paper);border-radius:999px;
+  font-size:.9375rem;font-weight:500;white-space:nowrap;
+  transition:transform .3s var(--ease),background .2s;
 }
-.tagline em{font-style:normal;color:var(--cyan)}
-.handle{
-  margin:0 0 2rem;font-family:var(--mono);font-size:.875rem;
-  color:var(--fg-3);letter-spacing:.04em;
-}
-.handle .cursor{
-  display:inline-block;width:.5em;height:1em;background:var(--cyan);
-  vertical-align:-.15em;margin-left:.35em;animation:blink 1.15s step-end infinite;
-}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.btn:hover{background:var(--accent);transform:translateY(-2px)}
+.btn:active{transform:translateY(1px) scale(.98)}
+.btn svg{transition:transform .3s var(--ease)}
+.btn:hover svg{transform:translateY(2px)}
 
-.lede{margin:0 0 2.25rem;max-width:46rem;color:var(--fg-2);font-size:clamp(1rem,2vw,1.125rem)}
-.lede strong{color:var(--fg);font-weight:600}
+/* proof ledger: the hero's visual is the evidence itself */
+.ledger{margin:0;border-top:1px solid var(--ink)}
+.ledger div{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:1.25rem;padding:1.1rem 0;border-bottom:1px solid var(--rule)}
+.ledger dt{font-family:var(--serif);font-size:clamp(2.5rem,5vw,3.5rem);line-height:1;letter-spacing:-.03em;font-variant-numeric:lining-nums tabular-nums;min-width:4.5ch}
+.ledger dd{margin:0;color:var(--ink-2);font-size:.9375rem;line-height:1.4}
+.ledger__note{margin:1rem 0 0;font-size:.8125rem;color:var(--ink-3);max-width:28rem}
 
-.cta{display:flex;flex-wrap:wrap;gap:.625rem;list-style:none;margin:0;padding:0}
-.cta a{
-  display:inline-flex;align-items:center;gap:.55rem;padding:.6rem 1.1rem;
-  font-family:var(--mono);font-size:.8125rem;letter-spacing:.04em;
-  border:1px solid var(--line-2);border-radius:2px;background:var(--surface);
-  color:var(--fg-2);transition:.18s;
+/* ── work index ───────────────────────────────────────────────────── */
+.work{padding-bottom:clamp(4rem,9vw,7rem)}
+.work__head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1.25rem;flex-wrap:wrap;
+  padding:1.25rem 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
 }
-.cta a:hover{
-  border-color:var(--cyan);color:var(--cyan);background:var(--surface-2);
-  box-shadow:0 0 0 1px rgba(34,211,238,.25),0 0 22px -6px rgba(34,211,238,.5);
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   section head + filters
-   ══════════════════════════════════════════════════════════════════ */
-.sec{padding:clamp(2rem,5vw,3.5rem) 0 clamp(4rem,9vw,7rem)}
-.sec__head{
-  display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;
-  flex-wrap:wrap;padding-bottom:1.25rem;border-bottom:1px solid var(--line);margin-bottom:2rem;
-}
-h2{margin:0;font-size:clamp(1.125rem,2.4vw,1.5rem);font-weight:600;letter-spacing:-.02em}
-h2 span{color:var(--fg-3);font-family:var(--mono);font-weight:400;font-size:.8em}
-
+h2{margin:0;font-family:var(--serif);font-weight:500;font-size:clamp(1.75rem,4vw,2.5rem);letter-spacing:-.02em}
+h2 small{font-family:var(--sans);font-size:.875rem;font-weight:400;color:var(--ink-3);letter-spacing:0;margin-left:.6rem}
 .filters{display:flex;flex-wrap:wrap;gap:.375rem}
 .filters button{
-  font-family:var(--mono);font-size:.6875rem;letter-spacing:.12em;text-transform:uppercase;
-  padding:.45rem .8rem;border:1px solid var(--line);border-radius:2px;
-  background:transparent;color:var(--fg-3);cursor:pointer;transition:.16s;
+  font:500 .8125rem/1 var(--sans);padding:.6rem .95rem;min-height:2.25rem;
+  border:1px solid var(--rule);border-radius:999px;background:transparent;color:var(--ink-2);
+  cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .2s var(--ease);
 }
-.filters button:hover{color:var(--fg-2);border-color:var(--line-2)}
-.filters button[aria-pressed="true"]{
-  color:var(--void);background:var(--cyan);border-color:var(--cyan);font-weight:700;
-  box-shadow:0 0 20px -4px rgba(34,211,238,.75);
-}
+.filters button:hover{border-color:var(--ink-3);color:var(--ink)}
+.filters button:active{transform:scale(.97)}
+.filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
-/* ══════════════════════════════════════════════════════════════════
-   project cards
-   ══════════════════════════════════════════════════════════════════ */
-.grid{display:grid;gap:1rem;grid-template-columns:1fr}
-@media (min-width:56rem){.grid{grid-template-columns:1fr 1fr}}
-
-.card{
-  position:relative;border:1px solid var(--line);background:var(--surface);
-  padding:1.75rem clamp(1.25rem,3vw,1.9rem);display:flex;flex-direction:column;
-  transition:border-color .2s,background .2s,transform .2s;
+.entry{
+  display:grid;gap:1.25rem 2.5rem;padding:clamp(2rem,4vw,2.75rem) 0;
+  border-bottom:1px solid var(--rule);
 }
-/* Cards are visible by default. The hidden-then-reveal state is applied by
+@media (min-width:60rem){
+  .entry{grid-template-columns:4.5rem minmax(0,1fr) 15rem}
+}
+.entry[hidden]{display:none}
+/* Entries are visible by default. The hidden-then-reveal state is applied by
    script only once we know the observer can run, so the page never renders
    blank with JS off, an unsupported browser, or a failed observer. */
-.grid.reveal .card:not(.in){opacity:0;transform:translateY(18px)}
-.grid.reveal .card.in{opacity:1;transform:none;transition:opacity .55s ease,transform .55s ease,border-color .2s,background .2s}
-.card:hover{border-color:var(--line-2);background:var(--surface-2);transform:translateY(-3px)}
-.card::before,.card::after{
-  content:"";position:absolute;width:12px;height:12px;opacity:0;transition:opacity .22s;
-  border-color:var(--accent,var(--cyan));
+.list.reveal .entry:not(.in){opacity:0;transform:translateY(16px)}
+.list.reveal .entry.in{opacity:1;transform:none;transition:opacity .7s var(--ease),transform .7s var(--ease)}
+
+.idx{font-family:var(--serif);font-size:1.5rem;line-height:1.2;color:var(--ink-3);font-variant-numeric:lining-nums tabular-nums}
+.kind{margin:0 0 .6rem;font-size:.8125rem;color:var(--ink-3)}
+.kind b{font-weight:500;color:var(--accent)}
+.entry h3{
+  margin:0 0 .35rem;font-family:var(--serif);font-weight:500;
+  font-size:clamp(1.75rem,3.6vw,2.5rem);line-height:1.1;letter-spacing:-.02em;
 }
-.card::before{top:-1px;left:-1px;border-top:2px solid;border-left:2px solid}
-.card::after{bottom:-1px;right:-1px;border-bottom:2px solid;border-right:2px solid}
-.card:hover::before,.card:hover::after{opacity:1}
-.card[hidden]{display:none}
+.entry h3 a{background:linear-gradient(currentColor,currentColor) 0 100%/0 1px no-repeat;transition:background-size .45s var(--ease),color .2s}
+.entry h3 a:hover{color:var(--accent);background-size:100% 1px}
+.meta{margin:0 0 1rem;font-family:var(--mono);font-size:.9375rem;color:var(--ink-3)}
+.desc{margin:0 0 1.25rem;max-width:62ch;color:var(--ink-2);text-wrap:pretty}
+.desc em{font-style:normal;color:var(--ink);font-weight:500}
+.tags{display:flex;flex-wrap:wrap;gap:.35rem;list-style:none;margin:0 0 1.25rem;padding:0}
+.tags li{font-family:var(--mono);font-size:.875rem;color:var(--ink-2);background:var(--paper-2);padding:.2rem .55rem;border-radius:4px}
+.go{display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;list-style:none;margin:0;padding:0;font-size:.9375rem;font-weight:500}
+.go a{display:inline-flex;align-items:center;gap:.3rem;min-height:2.75rem;border-bottom:1px solid transparent;transition:color .2s}
+.go a:hover{color:var(--accent)}
+.go a::after{content:"\2197";font-size:.8em;color:var(--ink-3);transition:transform .3s var(--ease),color .2s}
+.go a:hover::after{transform:translate(2px,-2px);color:var(--accent)}
 
-.card__top{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem}
-.idx{font-family:var(--mono);font-size:.75rem;color:var(--fg-3);letter-spacing:.1em}
-.status{
-  display:inline-flex;align-items:center;gap:.4rem;
-  font-family:var(--mono);font-size:.625rem;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--accent,var(--cyan));
-}
-.status::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;box-shadow:0 0 7px currentColor}
+.stats{list-style:none;margin:0;padding:0;display:grid;gap:1rem;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:60rem){.stats{grid-template-columns:1fr;gap:1.25rem;padding-left:1.5rem;border-left:1px solid var(--rule);align-content:start}}
+.stats b{display:block;font-family:var(--serif);font-weight:500;font-size:1.5rem;line-height:1.15;letter-spacing:-.01em;font-variant-numeric:lining-nums tabular-nums;word-break:break-word}
+.stats span{display:block;font-size:.8125rem;color:var(--ink-3);line-height:1.35;margin-top:.2rem}
+@media (max-width:30rem){.stats{grid-template-columns:1fr 1fr}}
 
-.card h3{margin:0 0 .4rem;font-size:clamp(1.25rem,2.6vw,1.5rem);font-weight:600;letter-spacing:-.02em}
-.card h3 a{color:var(--fg)}
-.card h3 a:hover{color:var(--accent,var(--cyan))}
-.meta{
-  font-family:var(--mono);font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--fg-3);margin:0 0 1rem;
-}
-.desc{margin:0 0 1.25rem;color:var(--fg-2);font-size:.9375rem;flex:1 0 auto}
-.desc em{font-style:normal;color:var(--fg);font-weight:500}
+/* ── footer ───────────────────────────────────────────────────────── */
+footer{border-top:1px solid var(--ink);padding:2.5rem 0 3.5rem;color:var(--ink-3);font-size:.875rem}
+footer .wrap{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+footer p{margin:0;max-width:36rem}
+footer a{color:var(--ink-2);transition:color .2s}
+footer a:hover{color:var(--accent)}
 
-.stats{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));gap:.75rem;
-  list-style:none;margin:0 0 1.25rem;padding:1rem 0 0;border-top:1px solid var(--line);
-}
-.stats li{margin:0;min-width:0}
-.stats b{
-  display:block;font-family:var(--mono);font-size:1rem;font-weight:700;
-  color:var(--accent,var(--cyan));line-height:1.25;word-break:break-word;
-}
-.stats span{display:block;font-size:.75rem;color:var(--fg-3);line-height:1.35;margin-top:.15rem}
-
-.tags{display:flex;flex-wrap:wrap;gap:.3rem;list-style:none;margin:0 0 1.25rem;padding:0}
-.tags li{font-family:var(--mono);font-size:.6875rem;color:var(--fg-3);border:1px solid var(--line);padding:.15rem .45rem}
-
-.go{display:flex;flex-wrap:wrap;gap:.5rem;list-style:none;margin:0;padding:0}
-.go a{
-  font-family:var(--mono);font-size:.75rem;letter-spacing:.03em;
-  padding:.4rem .7rem;border:1px solid var(--line-2);color:var(--fg-2);transition:.16s;
-}
-.go a:hover{color:var(--accent,var(--cyan));border-color:var(--accent,var(--cyan));background:rgba(255,255,255,.02)}
-.go a::after{content:" ↗";opacity:.55}
-
-.card[data-cat="security"]{--accent:var(--cyan)}
-.card[data-cat="product"] {--accent:var(--lime)}
-.card[data-cat="research"]{--accent:var(--pink)}
-
-/* ══════════════════════════════════════════════════════════════════
-   footer
-   ══════════════════════════════════════════════════════════════════ */
-footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
-.foot{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;align-items:flex-end}
-.foot p{margin:0 0 .4rem;max-width:34rem;font-size:.875rem}
-.foot .mono{font-family:var(--mono);font-size:.6875rem;letter-spacing:.1em;text-transform:uppercase}
-
-/* ══════════════════════════════════════════════════════════════════
-   motion / a11y
-   ══════════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .card{opacity:1;transform:none}
-  .bg__scan{display:none}
+  .entry{opacity:1!important;transform:none!important}
 }
 </style>
 </head>
 <body>
+<a class="skip" href="#work">Skip to projects</a>
 
-<div class="bg" aria-hidden="true">
-  <div class="bg__glow bg__glow--a"></div>
-  <div class="bg__glow bg__glow--b"></div>
-  <div class="bg__glow bg__glow--c"></div>
-  <div class="bg__grid"></div>
-  <div class="bg__scan"></div>
-</div>
-
-<div class="rail">
-  <div class="rail__in">
-    <div class="rail__l"><span class="dot"></span><b>8 projects &middot; 4 live deployments</b></div>
-    <div class="rail__r">github.com/battlettt</div>
+<header class="mast">
+  <div class="wrap">
+    <a class="mast__name" href="/">Marcel Slowly</a>
+    <nav aria-label="Primary">
+      <a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Deep dive</a>
+      <a href="https://github.com/battlettt">GitHub</a>
+    </nav>
   </div>
-</div>
+</header>
 
-<div class="shell">
+<main>
+  <section class="wrap hero" aria-labelledby="name">
+    <div>
+      <p class="kicker">Management engineering <span>&rarr;</span> security</p>
+      <h1 id="name">Marcel Slowly</h1>
+      <p class="lede"><em>Build it, then break it.</em> Nine projects where every claim was executed and verified, not written and assumed to work.</p>
+      <a class="btn" href="#work">See the work
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
+      </a>
+    </div>
+    <div>
+      <dl class="ledger">
+        <div><dt>9</dt><dd>projects across security, product, AI/ML, and research</dd></div>
+        <div><dt>4</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>310</dt><dd>passing tests across four of the repositories</dd></div>
+      </dl>
+      <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
+    </div>
+  </section>
 
-  <header class="hero">
-    <p class="kicker">Management Engineering → Security</p>
-    <h1>Marcel<br>Slowly</h1>
-    <p class="tagline">Build it, then <em>break it.</em></p>
-    <p class="handle">@battlettt<span class="cursor"></span></p>
-    <p class="lede">
-      Eight projects across security engineering, product, and market research — where the claims
-      were <strong>actually executed and verified</strong>, not written and assumed to work.
-      Where something is simulated rather than captured live, the repository says so instead of
-      glossing over it.
-    </p>
-    <ul class="cta">
-      <li><a href="#work">▸ View the work</a></li>
-      <li><a href="https://github.com/battlettt">GitHub profile</a></li>
-      <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Technical deep dive</a></li>
-    </ul>
-  </header>
-
-  <main class="sec" id="work">
-    <div class="sec__head">
-      <h2>Selected work <span>// 08</span></h2>
+  <section class="wrap work" id="work" aria-labelledby="work-h">
+    <div class="work__head">
+      <h2 id="work-h">Selected work<small>9 projects</small></h2>
       <div class="filters" role="group" aria-label="Filter projects by category">
         <button type="button" data-f="all" aria-pressed="true">All</button>
         <button type="button" data-f="security" aria-pressed="false">Security</button>
@@ -304,276 +223,280 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
       </div>
     </div>
 
-    <div class="grid" id="grid">
+    <div class="list" id="list">
 
-      <!-- 01 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="security">
-        <div class="card__top"><span class="idx">01</span><span class="status">Shipped &middot; v1.1</span></div>
-        <h3><a href="https://github.com/battlettt/sentinelscan">SentinelScan</a></h3>
-        <p class="meta">Chrome Extension · Manifest V3</p>
-        <p class="desc">
-          Gives any website a security report card on demand — header and config analysis, a
-          JS-source secrets scanner, Subresource Integrity checks, and <em>local drift
-          detection</em> that flags when a site's posture changes between visits, which one-shot
-          graders never catch. Every finding maps to a MITRE ATT&amp;CK technique and ships with a
-          paste-ready Express and Nginx fix.
-        </p>
+      <article class="entry" data-cat="security">
+        <span class="idx">01</span>
+        <div>
+          <p class="kind"><b>Security</b> &middot; Shipped v1.1</p>
+          <h3><a href="https://github.com/battlettt/sentinelscan">SentinelScan</a></h3>
+          <p class="meta">Chrome extension, Manifest V3</p>
+          <p class="desc">
+            Gives any website a security report card on demand: header and config analysis, a
+            JS-source secrets scanner, Subresource Integrity checks, and <em>local drift
+            detection</em> that flags when a site's posture changes between visits, which one-shot
+            graders never catch. Every finding maps to a MITRE ATT&amp;CK technique and ships with a
+            paste-ready Express and Nginx fix.
+          </p>
+          <ul class="tags"><li>TypeScript</li><li>React</li><li>MV3</li><li>Vitest</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/sentinelscan">Source</a></li>
+            <li><a href="https://github.com/battlettt/sentinelscan/blob/main/docs/superpowers/specs/2026-09-02-sentinelscan-design.md">Design spec</a></li>
+            <li><a href="https://github.com/battlettt/sentinelscan/blob/main/PRIVACY.md">Privacy</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>42</b><span>unit tests passing</span></li>
           <li><b>0 bytes</b><span>transmitted anywhere</span></li>
-          <li><b>activeTab</b><span>no broad host perms</span></li>
-        </ul>
-        <ul class="tags"><li>TypeScript</li><li>React</li><li>MV3</li><li>Vitest</li></ul>
-        <ul class="go">
-          <li><a href="https://github.com/battlettt/sentinelscan">Source</a></li>
-          <li><a href="https://github.com/battlettt/sentinelscan/blob/main/docs/superpowers/specs/2026-09-02-sentinelscan-design.md">Design spec</a></li>
-          <li><a href="https://github.com/battlettt/sentinelscan/blob/main/PRIVACY.md">Privacy</a></li>
+          <li><b>activeTab</b><span>no broad host permissions</span></li>
         </ul>
       </article>
 
-      <!-- 02 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="security">
-        <div class="card__top"><span class="idx">02</span><span class="status">Live demo</span></div>
-        <h3><a href="https://github.com/battlettt/cybersecurity-portfolio">Cybersecurity Portfolio</a></h3>
-        <p class="meta">9 projects · Offense · Defense · GRC</p>
-        <p class="desc">
-          Nine projects spanning AppSec, SIEM and detection engineering, statistical anomaly
-          detection, cloud/IaC scanning, and GRC. The flagship found and fixed four OWASP Top 10
-          vulnerabilities in a live React/Node/MySQL app — each exploited with a screenshot,
-          remediated, then <em>re-exploited to prove the fix holds.</em>
-        </p>
+      <article class="entry" data-cat="security">
+        <span class="idx">02</span>
+        <div>
+          <p class="kind"><b>Security</b> &middot; Live demo</p>
+          <h3><a href="https://github.com/battlettt/cybersecurity-portfolio">Cybersecurity Portfolio</a></h3>
+          <p class="meta">9 projects across offense, defense, and GRC</p>
+          <p class="desc">
+            Nine projects spanning AppSec, SIEM and detection engineering, statistical anomaly
+            detection, cloud/IaC scanning, and GRC. The flagship found and fixed four OWASP Top 10
+            vulnerabilities in a live React/Node/MySQL app. Each was exploited with a screenshot,
+            remediated, then <em>re-exploited to prove the fix holds.</em>
+          </p>
+          <ul class="tags"><li>Python</li><li>Flask</li><li>MySQL</li><li>Terraform</li><li>NIST CSF</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/cybersecurity-portfolio">Source</a></li>
+            <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Deep dive</a></li>
+            <li><a href="https://cybersecurity-portfolio-siem-dashboard.onrender.com" title="Free-tier instance, may take about 30s to wake on first visit">SIEM dashboard</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>190K+/s</b><span>log ingestion, benchmarked</span></li>
           <li><b>&lt;20s</b><span>mean time to detection</span></li>
           <li><b>100/80%</b><span>recall / precision</span></li>
         </ul>
-        <ul class="tags"><li>Python</li><li>Flask</li><li>MySQL</li><li>Terraform</li><li>NIST CSF</li></ul>
-        <ul class="go">
-          <li><a href="https://github.com/battlettt/cybersecurity-portfolio">Source</a></li>
-          <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Deep dive</a></li>
-          <li><a href="https://cybersecurity-portfolio-siem-dashboard.onrender.com" title="Free-tier instance — may take ~30s to wake on first visit">SIEM dashboard</a></li>
-        </ul>
       </article>
 
-      <!-- 03 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">03</span><span class="status">Live &middot; beta</span></div>
-        <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
-        <p class="meta">B2B SaaS · Next.js · Postgres · Stripe</p>
-        <p class="desc">
-          Test data for teams building Stripe, QuickBooks and HubSpot integrations. One seed becomes
-          a realistic, deliberately messy company, loaded into all three test accounts with an
-          answer key to grade against. Live keys are refused <em>before a single request is
-          sent.</em> The first real runs found three bugs the emulators missed; each now has a test
-          that fails without its fix.
-        </p>
+      <article class="entry" data-cat="product">
+        <span class="idx">03</span>
+        <div>
+          <p class="kind"><b>Product</b> &middot; Live beta</p>
+          <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
+          <p class="meta">B2B SaaS on Next.js, Postgres, Stripe</p>
+          <p class="desc">
+            Test data for teams building Stripe, QuickBooks and HubSpot integrations. One seed becomes
+            a realistic, deliberately messy company, loaded into all three test accounts with an
+            answer key to grade against. Live keys are refused <em>before a single request is
+            sent.</em> The first real runs found three bugs the emulators missed; each now has a test
+            that fails without its fix.
+          </p>
+          <ul class="tags"><li>TypeScript</li><li>Next.js</li><li>PostgreSQL</li><li>Stripe</li><li>OAuth</li></ul>
+          <ul class="go">
+            <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
+            <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
+            <li><a href="https://fake-company-in-a-box.vercel.app/security">Security</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>347</b><span>records into real Stripe, 0 failed</span></li>
           <li><b>97</b><span>tests, incl. API emulators</span></li>
           <li><b>Live keys</b><span>refused in code</span></li>
         </ul>
-        <ul class="tags"><li>TypeScript</li><li>Next.js</li><li>PostgreSQL</li><li>Stripe</li><li>OAuth</li></ul>
-        <ul class="go">
-          <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
-          <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
-          <li><a href="https://fake-company-in-a-box.vercel.app/security">Security</a></li>
-        </ul>
       </article>
 
-      <!-- 04 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">04</span><span class="status">Live</span></div>
-        <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
-        <p class="meta">React Native · Expo · Supabase</p>
-        <p class="desc">
-          A shared spaced-retrieval app for families supporting a loved one with memory loss. The
-          schedule follows real SRT clinical practice, not generic flashcard spacing: misses are
-          re-asked soon but never drilled back-to-back, intervals reset on a miss, and a run of
-          misses <em>eases the session off</em> rather than pushing harder.
-        </p>
+      <article class="entry" data-cat="product">
+        <span class="idx">04</span>
+        <div>
+          <p class="kind"><b>Product</b> &middot; Live</p>
+          <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
+          <p class="meta">React Native, Expo, Supabase</p>
+          <p class="desc">
+            A shared spaced-retrieval app for families supporting a loved one with memory loss. The
+            schedule follows real SRT clinical practice, not generic flashcard spacing: misses are
+            re-asked soon but never drilled back-to-back, intervals reset on a miss, and a run of
+            misses <em>eases the session off</em> rather than pushing harder.
+          </p>
+          <ul class="tags"><li>React Native</li><li>Expo</li><li>TypeScript</li><li>PostgreSQL</li></ul>
+          <ul class="go">
+            <li><a href="https://memory-time.vercel.app">Open the app</a></li>
+            <li><a href="https://github.com/battlettt/memory-time">Source</a></li>
+            <li><a href="https://github.com/battlettt/memory-time/blob/main/src/lib/srt.ts">SRT algorithm</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>3 platforms</b><span>iOS, Android, web</span></li>
           <li><b>RLS</b><span>per family group</span></li>
           <li><b>Edge AI</b><span>topic suggestions</span></li>
         </ul>
-        <ul class="tags"><li>React Native</li><li>Expo</li><li>TypeScript</li><li>PostgreSQL</li></ul>
-        <ul class="go">
-          <li><a href="https://memory-time.vercel.app">Open the app</a></li>
-          <li><a href="https://github.com/battlettt/memory-time">Source</a></li>
-          <li><a href="https://github.com/battlettt/memory-time/blob/main/src/lib/srt.ts">SRT algorithm</a></li>
-        </ul>
       </article>
 
-      <!-- 05 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">05</span><span class="status">In delivery</span></div>
-        <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
-        <p class="meta">Python · Knowledge extraction</p>
-        <p class="desc">
-          When someone senior leaves, what they knew leaves with them. This turns one YAML file
-          into a Handover Pack in three formats — Markdown for the team's wiki, JSON for IT, and
-          styled HTML for the manager. The cover sheet is <em>derived, never authored</em>, so it
-          cannot drift out of step with the data behind it.
-        </p>
+      <article class="entry" data-cat="product">
+        <span class="idx">05</span>
+        <div>
+          <p class="kind"><b>Product</b> &middot; In delivery</p>
+          <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
+          <p class="meta">Python knowledge extraction</p>
+          <p class="desc">
+            When someone senior leaves, what they knew leaves with them. This turns one YAML file
+            into a Handover Pack in three formats: Markdown for the team's wiki, JSON for IT, and
+            styled HTML for the manager. The cover sheet is <em>derived, never authored</em>, so it
+            cannot drift out of step with the data behind it.
+          </p>
+          <ul class="tags"><li>Python</li><li>pytest</li><li>YAML</li><li>Jinja</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/departure-handover">Source</a></li>
+            <li><a href="https://github.com/battlettt/departure-handover/blob/main/engagements/example/engagement.yaml">Example input</a></li>
+            <li><a href="https://github.com/battlettt/departure-handover/tree/main/handover/sweep">Sweep module</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>3 formats</b><span>from one source file</span></li>
           <li><b>8 sections</b><span>per generated pack</span></li>
           <li><b>Sweep</b><span>GitHub, Slack, calendar</span></li>
         </ul>
-        <ul class="tags"><li>Python</li><li>pytest</li><li>YAML</li><li>Jinja</li></ul>
-        <ul class="go">
-          <li><a href="https://github.com/battlettt/departure-handover">Source</a></li>
-          <li><a href="https://github.com/battlettt/departure-handover/blob/main/engagements/example/engagement.yaml">Example input</a></li>
-          <li><a href="https://github.com/battlettt/departure-handover/tree/main/handover/sweep">Sweep module</a></li>
-        </ul>
       </article>
 
-      <!-- 06 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="product">
-        <div class="card__top"><span class="idx">06</span><span class="status">Prototype</span></div>
-        <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
-        <p class="meta">PostGIS · Expo geofencing</p>
-        <p class="desc">
-          Know what a drink costs before you walk in. Not a discovery app — maps already tell you
-          where the bars are. This tells you which one is charging tourist rates, and
-          <em>buzzes when you walk past a cheap one</em> via background geofencing. Prices are
-          crowd-sourced and compared against canonical SKUs, so a pint is measured against a pint.
-        </p>
+      <article class="entry" data-cat="product">
+        <span class="idx">06</span>
+        <div>
+          <p class="kind"><b>Product</b> &middot; Prototype</p>
+          <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
+          <p class="meta">PostGIS, Expo geofencing</p>
+          <p class="desc">
+            Know what a drink costs before you walk in. Maps already tell you where the bars are;
+            this tells you which one is charging tourist rates, and <em>buzzes when you walk past a
+            cheap one</em> via background geofencing. Prices are crowd-sourced and compared against
+            canonical SKUs, so a pint is measured against a pint.
+          </p>
+          <ul class="tags"><li>PostgreSQL</li><li>PostGIS</li><li>Expo</li><li>TypeScript</li></ul>
+          <ul class="go">
+            <li><a href="https://battlettt.github.io/proximity-bar-hunter/">Try the prototype</a></li>
+            <li><a href="https://github.com/battlettt/proximity-bar-hunter">Source</a></li>
+            <li><a href="https://github.com/battlettt/proximity-bar-hunter/blob/main/schema.sql">Schema</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>PostGIS</b><span>real geography, not floats</span></li>
           <li><b>Background</b><span>geofence triggers</span></li>
           <li><b>5 iterations</b><span>prototype versions</span></li>
         </ul>
-        <ul class="tags"><li>PostgreSQL</li><li>PostGIS</li><li>Expo</li><li>TypeScript</li></ul>
-        <ul class="go">
-          <li><a href="https://battlettt.github.io/proximity-bar-hunter/">Try the prototype</a></li>
-          <li><a href="https://github.com/battlettt/proximity-bar-hunter">Source</a></li>
-          <li><a href="https://github.com/battlettt/proximity-bar-hunter/blob/main/schema.sql">Schema</a></li>
-        </ul>
       </article>
 
-      <!-- 07 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="research">
-        <div class="card__top"><span class="idx">07</span><span class="status">Validating</span></div>
-        <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
-        <p class="meta">Market research · Escheatment</p>
-        <p class="desc">
-          Research toward an AI-native service for US state unclaimed property compliance, wedged
-          on Delaware VDA response. Published with its corrections intact: two load-bearing claims
-          from the original screen were wrong, and <em>the build log records both</em> — the field
-          is contested, and state holder data is not public.
-        </p>
+      <article class="entry" data-cat="research">
+        <span class="idx">07</span>
+        <div>
+          <p class="kind"><b>Research</b> &middot; Validating</p>
+          <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
+          <p class="meta">Market research on escheatment</p>
+          <p class="desc">
+            Research toward an AI-native service for US state unclaimed property compliance, wedged
+            on Delaware VDA response. Published with its corrections intact: two load-bearing claims
+            from the original screen were wrong, and <em>the build log records both</em>. The field
+            is contested, and state holder data is not public.
+          </p>
+          <ul class="tags"><li>Market research</li><li>GTM</li><li>Compliance</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/unclaimed-property-compliance">Repository</a></li>
+            <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/escheatment-deep-dive.md">Deep dive</a></li>
+            <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/build-log.md">Build log</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>~2%</b><span>California compliance rate</span></li>
           <li><b>90 days</b><span>to respond, or audit</span></li>
           <li><b>$70B</b><span>held by states</span></li>
         </ul>
-        <ul class="tags"><li>Market research</li><li>GTM</li><li>Compliance</li></ul>
-        <ul class="go">
-          <li><a href="https://github.com/battlettt/unclaimed-property-compliance">Repository</a></li>
-          <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/escheatment-deep-dive.md">Deep dive</a></li>
-          <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/build-log.md">Build log</a></li>
-        </ul>
       </article>
 
-      <!-- 08 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="security">
-        <div class="card__top"><span class="idx">08</span><span class="status">Shipped &middot; v1.3</span></div>
-        <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
-        <p class="meta">Go &middot; Network scanning</p>
-        <p class="desc">
-          A concurrent TCP port scanner with service banner grabbing, written in Go with zero
-          dependencies. Point it at your own network to find every listening service — a forgotten
-          FTP daemon, a Redis bound to 0.0.0.0 — and guess what's running from the banner each one
-          sends back. HTTPS ports get a real TLS handshake that records the certificate (issuer,
-          expiry, SANs), the negotiated cipher, and flags expired certs; banners are parsed for
-          software versions (OpenSSH, nginx, ...), and <em>-diff</em> spots new or changed services
-          week over week. Results export as table, JSON, CSV, or a self-contained HTML report.
-          v1.3 adds continuous integration with race-detector and fuzz testing, a Makefile, a
-          security policy, and a <em>-rate</em> cap for gentle scans of fragile devices.
-        </p>
+      <article class="entry" data-cat="security">
+        <span class="idx">08</span>
+        <div>
+          <p class="kind"><b>Security</b> &middot; Shipped v1.3</p>
+          <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
+          <p class="meta">Go network scanning</p>
+          <p class="desc">
+            A concurrent TCP port scanner with banner grabbing, written in Go with zero dependencies.
+            Point it at your own network to find every listening service (a forgotten FTP daemon, a
+            Redis bound to 0.0.0.0) and identify it from the banner it sends back. HTTPS ports get a
+            real TLS handshake that records the certificate and cipher and flags expired certs, and
+            <em>-diff</em> spots new or changed services week over week. v1.3 adds CI with race and
+            fuzz testing, plus a <em>-rate</em> cap for gentle scans of fragile devices.
+          </p>
+          <ul class="tags"><li>Go</li><li>Standard library</li><li>TLS</li><li>Fuzz testing</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
+            <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">TLS probing</a></li>
+            <li><a href="https://github.com/battlettt/porthawk/blob/main/docs/example-report.html">Example report</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>47</b><span>unit tests passing</span></li>
           <li><b>0</b><span>external dependencies</span></li>
           <li><b>7ms</b><span>100-port localhost sweep, measured</span></li>
         </ul>
-        <ul class="tags"><li>Go</li><li>Standard library</li><li>TLS</li><li>Fuzz testing</li></ul>
-        <ul class="go">
-          <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
-          <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">TLS probing</a></li>
-          <li><a href="https://github.com/battlettt/porthawk/blob/main/docs/example-report.html">Example report</a></li>
-        </ul>
       </article>
 
-      <!-- 09 ───────────────────────────────────────────────────── -->
-      <article class="card" data-cat="ai">
-        <div class="card__top"><span class="idx">09</span><span class="status">Shipped &middot; v0.2</span></div>
-        <h3><a href="https://github.com/battlettt/driftwatch">Driftwatch</a></h3>
-        <p class="meta">Python &middot; MLOps &middot; Drift detection</p>
-        <p class="desc">
-          Models rarely fail loudly — they go quietly stale as production data drifts away from
-          training data. Driftwatch fits a reference distribution once, then scores every new batch
-          column by column with PSI, KS tests, Jensen-Shannon divergence and chi-square, flags
-          correlation shifts between features, and watches accuracy, log-loss or R&sup2; once labels
-          arrive. A <em>--fail-on</em> flag turns drift or decay into a CI exit code, and check
-          history builds a trend page so a team sees decay coming instead of discovering it.
-          Reports are self-contained Markdown, JSON or HTML; everything runs offline on pandas,
-          numpy, scipy and scikit-learn.
-        </p>
+      <article class="entry" data-cat="ai">
+        <span class="idx">09</span>
+        <div>
+          <p class="kind"><b>AI/ML</b> &middot; Shipped v0.2</p>
+          <h3><a href="https://github.com/battlettt/driftwatch">Driftwatch</a></h3>
+          <p class="meta">Python MLOps, drift detection</p>
+          <p class="desc">
+            Models rarely fail loudly. They go quietly stale as production data drifts away from
+            training data. Driftwatch fits a reference distribution once, then scores every new batch
+            column by column with PSI, KS tests, Jensen-Shannon divergence and chi-square, flags
+            correlation shifts, and tracks accuracy, log-loss or R&sup2; once labels arrive. A
+            <em>--fail-on</em> flag turns drift or decay into a CI exit code, and everything runs offline.
+          </p>
+          <ul class="tags"><li>Python</li><li>scikit-learn</li><li>MLOps</li><li>Drift detection</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/driftwatch">Source</a></li>
+            <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/sample-report.md">Sample report</a></li>
+            <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/loan_drift_demo.py">Demo script</a></li>
+          </ul>
+        </div>
         <ul class="stats">
           <li><b>124</b><span>tests passing</span></li>
           <li><b>5</b><span>drift metrics</span></li>
           <li><b>0</b><span>external services</span></li>
         </ul>
-        <ul class="tags"><li>Python</li><li>scikit-learn</li><li>MLOps</li><li>Drift detection</li></ul>
-        <ul class="go">
-          <li><a href="https://github.com/battlettt/driftwatch">Source</a></li>
-          <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/sample-report.md">Sample report</a></li>
-          <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/loan_drift_demo.py">Demo script</a></li>
-        </ul>
       </article>
 
     </div>
-  </main>
-</div>
+  </section>
+</main>
 
 <footer>
-  <div class="shell foot">
-    <div>
-      <p>Every number on this page is benchmarked or unit-tested in the repository it belongs to.
-         Where a result is simulated, the repository says so.</p>
-      <p class="mono">Marcel Slowly · @battlettt</p>
-    </div>
-    <p class="mono">Static HTML · GitHub Pages · no build step</p>
+  <div class="wrap">
+    <p>Every number on this page is benchmarked or unit-tested in the repository it belongs to.
+       Where a result is simulated, the repository says so.</p>
+    <p><a href="https://github.com/battlettt">@battlettt on GitHub</a></p>
   </div>
 </footer>
 
 <script>
 (function () {
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  var entries = Array.prototype.slice.call(document.querySelectorAll('.entry'));
 
   /* ---- scroll reveal ----
      Only opt into the hidden-then-reveal state once we know the observer
      exists and motion is wanted. A watchdog force-reveals everything after
-     2s so a card can never stay invisible. */
-  function revealAll() { cards.forEach(function (c) { c.classList.add('in'); }); }
+     2s so an entry can never stay invisible. */
+  function revealAll() { entries.forEach(function (c) { c.classList.add('in'); }); }
 
   if (!reduce && 'IntersectionObserver' in window) {
-    var grid = document.getElementById('grid');
-    grid.classList.add('reveal');
-
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
+    document.getElementById('list').classList.add('reveal');
+    var io = new IntersectionObserver(function (list) {
+      list.forEach(function (e) {
         if (!e.isIntersecting) return;
-        var i = cards.indexOf(e.target);
-        e.target.style.transitionDelay = (Math.min(i, 3) * 70) + 'ms';
         e.target.classList.add('in');
         io.unobserve(e.target);
       });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
-    cards.forEach(function (c) { io.observe(c); });
-
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+    entries.forEach(function (c) { io.observe(c); });
     setTimeout(revealAll, 2000);
   }
 
@@ -583,7 +506,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
     btn.addEventListener('click', function () {
       var f = btn.dataset.f;
       buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
-      cards.forEach(function (c) {
+      entries.forEach(function (c) {
         var show = (f === 'all' || c.dataset.cat === f);
         c.hidden = !show;
         if (show) c.classList.add('in');
