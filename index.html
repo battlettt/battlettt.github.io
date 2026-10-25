@@ -298,6 +298,7 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
       <div class="filters" role="group" aria-label="Filter projects by category">
         <button type="button" data-f="all" aria-pressed="true">All</button>
         <button type="button" data-f="security" aria-pressed="false">Security</button>
+        <button type="button" data-f="ai" aria-pressed="false">AI/ML</button>
         <button type="button" data-f="product" aria-pressed="false">Product</button>
         <button type="button" data-f="research" aria-pressed="false">Research</button>
       </div>
@@ -501,6 +502,34 @@ footer{border-top:1px solid var(--line);padding:2.5rem 0 4rem;color:var(--fg-3)}
           <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
           <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">TLS probing</a></li>
           <li><a href="https://github.com/battlettt/porthawk/blob/main/docs/example-report.html">Example report</a></li>
+        </ul>
+      </article>
+
+      <!-- 09 ───────────────────────────────────────────────────── -->
+      <article class="card" data-cat="ai">
+        <div class="card__top"><span class="idx">09</span><span class="status">Shipped &middot; v0.2</span></div>
+        <h3><a href="https://github.com/battlettt/driftwatch">Driftwatch</a></h3>
+        <p class="meta">Python &middot; MLOps &middot; Drift detection</p>
+        <p class="desc">
+          Models rarely fail loudly — they go quietly stale as production data drifts away from
+          training data. Driftwatch fits a reference distribution once, then scores every new batch
+          column by column with PSI, KS tests, Jensen-Shannon divergence and chi-square, flags
+          correlation shifts between features, and watches accuracy, log-loss or R&sup2; once labels
+          arrive. A <em>--fail-on</em> flag turns drift or decay into a CI exit code, and check
+          history builds a trend page so a team sees decay coming instead of discovering it.
+          Reports are self-contained Markdown, JSON or HTML; everything runs offline on pandas,
+          numpy, scipy and scikit-learn.
+        </p>
+        <ul class="stats">
+          <li><b>124</b><span>tests passing</span></li>
+          <li><b>5</b><span>drift metrics</span></li>
+          <li><b>0</b><span>external services</span></li>
+        </ul>
+        <ul class="tags"><li>Python</li><li>scikit-learn</li><li>MLOps</li><li>Drift detection</li></ul>
+        <ul class="go">
+          <li><a href="https://github.com/battlettt/driftwatch">Source</a></li>
+          <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/sample-report.md">Sample report</a></li>
+          <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/loan_drift_demo.py">Demo script</a></li>
         </ul>
       </article>
 
