@@ -4,177 +4,295 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: nine projects across security engineering, product, AI/ML, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: nine projects across security engineering, AI/ML, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Nine projects across security engineering, product, AI/ML, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Nine projects across security engineering, AI/ML, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23111'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23f6f5f1'>M</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Schibsted+Grotesk:wght@400;500;600&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,500;0,600;1,400;1,500&family=Schibsted+Grotesk:wght@400;500;600&family=Ubuntu+Mono:wght@400;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Caveat:wght@600&display=swap" rel="stylesheet">
 <style>
-/* Editorial direction: ink on paper, one accent, serif display (Gelasio)
-   over a grotesk body (Schibsted Grotesk), mono only for data. Light and dark follow
-   the system setting. */
+/* ════════════════════════════════════════════════════════════════════
+   Frame: editorial (ink on paper) for masthead, hero, footer.
+   Each chapter of work then gets its own world:
+     security  -> terminal / scan report   (Space Mono, phosphor green)
+     ai        -> lab plot, dithered chart (IBM Plex Mono, graph paper)
+     product   -> bento app grid           (Bricolage Grotesque, tints)
+     research  -> broadsheet + red pen     (Playfair Display, Caveat)
+   z-index scale: 1 sticky chapter bar, 2 grain, 3 skip link.
+   ════════════════════════════════════════════════════════════════════ */
 :root{
-  --paper:#f6f5f1;
-  --paper-2:#eeede7;
-  --ink:#141413;
-  --ink-2:#4a4944;
-  --ink-3:#77756d;
-  --rule:#d9d7cf;
-  --accent:#b8381c;
+  --paper:#f6f5f1; --paper-2:#eeede7; --ink:#141413; --ink-2:#4a4944; --ink-3:#6f6d66;
+  --rule:#d9d7cf; --accent:#b8381c;
+  --serif:"Gelasio",Georgia,serif;
+  --sans:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"Ubuntu Mono",ui-monospace,Menlo,monospace;
+  --gut:clamp(1rem,4vw,2.5rem); --max:78rem;
+  --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
 
-  --serif:"Gelasio",Georgia,"Times New Roman",serif;
-  --sans:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  --mono:"Ubuntu Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-
-  --gut:clamp(1rem,4vw,2.5rem);
-  --max:78rem;
-  --ease:cubic-bezier(.16,1,.3,1);
+  /* chapter swatches, used in the chapter bar */
+  --c-sec:#3fbf77; --c-ai:#d9831f; --c-prod:#e98a64; --c-res:#c8102e;
 }
 @media (prefers-color-scheme:dark){
-  :root{
-    --paper:#131312;
-    --paper-2:#1b1b19;
-    --ink:#ecebe6;
-    --ink-2:#b4b2aa;
-    --ink-3:#85837b;
-    --rule:#2c2c29;
-    --accent:#ee7a5c;
-  }
+  :root{--paper:#131312; --paper-2:#1b1b19; --ink:#ecebe6; --ink-2:#b4b2aa; --ink-3:#8a887f; --rule:#2c2c29; --accent:#ee7a5c}
 }
-
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{
-  margin:0;background:var(--paper);color:var(--ink);
-  font-family:var(--sans);font-size:1rem;line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-}
-/* paper grain, fixed so it never repaints on scroll */
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:4rem}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:1rem;line-height:1.6;-webkit-font-smoothing:antialiased}
 body::after{
-  content:"";position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.05;
+  content:"";position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.045;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 a{color:inherit;text-decoration:none}
-a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
-.skip{position:absolute;left:var(--gut);top:-3rem;z-index:4;background:var(--ink);color:var(--paper);padding:.5rem .9rem;border-radius:4px;font-size:.875rem}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:2px}
+.skip{position:absolute;left:var(--gut);top:-3rem;z-index:3;background:var(--ink);color:var(--paper);padding:.5rem .9rem;border-radius:4px;font-size:.875rem}
 .skip:focus{top:.75rem}
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--gut)}
+ul{list-style:none;margin:0;padding:0}
 
-.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
+/* reveal: elements are visible by default; script opts in only when it can run */
+.js-rv .rv:not(.in){opacity:0;transform:translateY(18px)}
+.js-rv .rv.in{opacity:1;transform:none;transition:opacity .8s var(--ease),transform .8s var(--ease)}
 
-/* ── masthead ─────────────────────────────────────────────────────── */
+/* ── masthead + hero (editorial) ─────────────────────────────────── */
 .mast{border-bottom:1px solid var(--ink)}
 .mast .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem;height:4rem}
-.mast__name{font-family:var(--serif);font-size:1.125rem;font-weight:600;letter-spacing:-.01em}
+.mast__name{font-family:var(--serif);font-size:1.125rem;font-weight:600}
 .mast nav{display:flex;gap:1.5rem;font-size:.875rem;color:var(--ink-2)}
-.mast nav a{transition:color .2s}
 .mast nav a:hover{color:var(--accent)}
-
-/* ── hero ─────────────────────────────────────────────────────────── */
-.hero{
-  display:grid;gap:clamp(2.5rem,6vw,5rem);align-items:end;
-  padding-block:clamp(3rem,8vw,6rem) clamp(3rem,7vw,5rem);
-}
+.hero{display:grid;gap:clamp(2.5rem,6vw,5rem);align-items:end;padding-block:clamp(3rem,8vw,6rem) clamp(3rem,7vw,5rem)}
 @media (min-width:60rem){.hero{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}}
 .kicker{margin:0 0 1.75rem;font-size:.875rem;font-weight:500;color:var(--ink-2)}
 .kicker span{color:var(--accent)}
-h1{
-  margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;
-  font-size:clamp(3.5rem,11vw,8rem);line-height:.95;letter-spacing:-.035em;
-}
+h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3.5rem,11vw,8rem);line-height:.95;letter-spacing:-.035em}
 .lede{margin:0 0 2.25rem;max-width:34rem;font-size:clamp(1.125rem,2.2vw,1.375rem);line-height:1.5;color:var(--ink-2);text-wrap:pretty}
-.lede em{font-family:var(--serif);font-style:italic;color:var(--ink);padding-bottom:.1em}
-.btn{
-  display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.4rem;
-  background:var(--ink);color:var(--paper);border-radius:999px;
-  font-size:.9375rem;font-weight:500;white-space:nowrap;
-  transition:transform .3s var(--ease),background .2s;
-}
+.lede em{font-family:var(--serif);font-style:italic;color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:.6rem;padding:.85rem 1.4rem;background:var(--ink);color:var(--paper);border-radius:999px;font-size:.9375rem;font-weight:500;white-space:nowrap;transition:transform .3s var(--ease),background .2s}
 .btn:hover{background:var(--accent);transform:translateY(-2px)}
 .btn:active{transform:translateY(1px) scale(.98)}
-.btn svg{transition:transform .3s var(--ease)}
-.btn:hover svg{transform:translateY(2px)}
-
-/* proof ledger: the hero's visual is the evidence itself */
 .ledger{margin:0;border-top:1px solid var(--ink)}
 .ledger div{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:1.25rem;padding:1.1rem 0;border-bottom:1px solid var(--rule)}
 .ledger dt{font-family:var(--serif);font-size:clamp(2.5rem,5vw,3.5rem);line-height:1;letter-spacing:-.03em;font-variant-numeric:lining-nums tabular-nums;min-width:4.5ch}
 .ledger dd{margin:0;color:var(--ink-2);font-size:.9375rem;line-height:1.4}
 .ledger__note{margin:1rem 0 0;font-size:.8125rem;color:var(--ink-3);max-width:28rem}
 
-/* ── work index ───────────────────────────────────────────────────── */
-.work{padding-bottom:clamp(4rem,9vw,7rem)}
-.work__head{
-  display:flex;align-items:baseline;justify-content:space-between;gap:1.25rem;flex-wrap:wrap;
-  padding:1.25rem 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
-}
-h2{margin:0;font-family:var(--serif);font-weight:500;font-size:clamp(1.75rem,4vw,2.5rem);letter-spacing:-.02em}
-h2 small{font-family:var(--sans);font-size:.875rem;font-weight:400;color:var(--ink-3);letter-spacing:0;margin-left:.6rem}
-.filters{display:flex;flex-wrap:wrap;gap:.375rem}
-.filters button{
-  font:500 .8125rem/1 var(--sans);padding:.6rem .95rem;min-height:2.25rem;
-  border:1px solid var(--rule);border-radius:999px;background:transparent;color:var(--ink-2);
-  cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .2s var(--ease);
-}
-.filters button:hover{border-color:var(--ink-3);color:var(--ink)}
-.filters button:active{transform:scale(.97)}
-.filters button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+/* ── chapter bar ─────────────────────────────────────────────────── */
+.chapters{position:sticky;top:0;z-index:1;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-block:1px solid var(--ink)}
+.chapters .wrap{display:flex;align-items:center;gap:.25rem 1.75rem;min-height:3.5rem;overflow-x:auto;scrollbar-width:none}
+.chapters h2{margin:0 1rem 0 0;font-family:var(--serif);font-weight:500;font-size:1.125rem;white-space:nowrap}
+.chapters a{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 0;font-size:.875rem;color:var(--ink-2);white-space:nowrap;border-bottom:2px solid transparent;transition:color .2s,border-color .2s}
+.chapters a i{width:.6rem;height:.6rem;border-radius:2px;background:var(--sw)}
+.chapters a small{color:var(--ink-3);font-size:.75rem}
+.chapters a:hover,.chapters a[aria-current="true"]{color:var(--ink);border-color:var(--sw)}
 
-.entry{
-  display:grid;gap:1.25rem 2.5rem;padding:clamp(2rem,4vw,2.75rem) 0;
-  border-bottom:1px solid var(--rule);
-}
-@media (min-width:60rem){
-  .entry{grid-template-columns:4.5rem minmax(0,1fr) 15rem}
-}
-.entry[hidden]{display:none}
-/* Entries are visible by default. The hidden-then-reveal state is applied by
-   script only once we know the observer can run, so the page never renders
-   blank with JS off, an unsupported browser, or a failed observer. */
-.list.reveal .entry:not(.in){opacity:0;transform:translateY(16px)}
-.list.reveal .entry.in{opacity:1;transform:none;transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.ch{position:relative;padding-block:clamp(4rem,9vw,7rem) clamp(4.5rem,10vw,8rem);overflow:clip}
+.go a::after{content:"\2197";display:inline-block;margin-left:.3em;font-size:.85em;transition:transform .3s var(--ease)}
+.go a:hover::after{transform:translate(2px,-2px)}
 
-.idx{font-family:var(--serif);font-size:1.5rem;line-height:1.2;color:var(--ink-3);font-variant-numeric:lining-nums tabular-nums}
-.kind{margin:0 0 .6rem;font-size:.8125rem;color:var(--ink-3)}
-.kind b{font-weight:500;color:var(--accent)}
-.entry h3{
-  margin:0 0 .35rem;font-family:var(--serif);font-weight:500;
-  font-size:clamp(1.75rem,3.6vw,2.5rem);line-height:1.1;letter-spacing:-.02em;
+/* ════════════════════════════════════════════════════════════════════
+   01  SECURITY  ·  terminal / scan report
+   ════════════════════════════════════════════════════════════════════ */
+#security{
+  --bg:#0a0e0c; --fg:#cfdbd3; --dim:#80918a; --line:#1d2723; --g:#5fd894;
+  background:
+    repeating-linear-gradient(to bottom,transparent 0 3px,rgba(0,0,0,.22) 3px 4px),
+    radial-gradient(ellipse 70% 50% at 15% 0%,rgba(95,216,148,.08),transparent 70%),
+    var(--bg);
+  color:var(--fg);font-family:"Space Mono",var(--mono);font-size:.9375rem;
 }
-.entry h3 a{background:linear-gradient(currentColor,currentColor) 0 100%/0 1px no-repeat;transition:background-size .45s var(--ease),color .2s}
-.entry h3 a:hover{color:var(--accent);background-size:100% 1px}
-.meta{margin:0 0 1rem;font-family:var(--mono);font-size:.9375rem;color:var(--ink-3)}
-.desc{margin:0 0 1.25rem;max-width:62ch;color:var(--ink-2);text-wrap:pretty}
-.desc em{font-style:normal;color:var(--ink);font-weight:500}
-.tags{display:flex;flex-wrap:wrap;gap:.35rem;list-style:none;margin:0 0 1.25rem;padding:0}
-.tags li{font-family:var(--mono);font-size:.875rem;color:var(--ink-2);background:var(--paper-2);padding:.2rem .55rem;border-radius:4px}
-.go{display:flex;flex-wrap:wrap;gap:.4rem 1.5rem;list-style:none;margin:0;padding:0;font-size:.9375rem;font-weight:500}
-.go a{display:inline-flex;align-items:center;gap:.3rem;min-height:2.75rem;border-bottom:1px solid transparent;transition:color .2s}
-.go a:hover{color:var(--accent)}
-.go a::after{content:"\2197";font-size:.8em;color:var(--ink-3);transition:transform .3s var(--ease),color .2s}
-.go a:hover::after{transform:translate(2px,-2px);color:var(--accent)}
+#security ::selection{background:var(--g);color:var(--bg)}
+.sec-open{margin-bottom:clamp(3rem,6vw,4.5rem)}
+.prompt{margin:0 0 1.25rem;color:var(--dim);font-size:.875rem}
+.prompt b{color:var(--g);font-weight:400}
+.sec-open h2{margin:0;font-family:"Space Mono",monospace;font-weight:700;font-size:clamp(3rem,10vw,7.5rem);line-height:1;letter-spacing:-.04em;color:#e8f3ec}
+.sec-open h2::after{content:"";display:inline-block;width:.5em;height:.82em;margin-left:.12em;background:var(--g);vertical-align:-.04em;animation:blink 1.1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.sec-open p.thesis{margin:1.25rem 0 0;max-width:44rem;color:var(--dim);font-size:1rem}
+.sec-open p.thesis b{color:var(--fg);font-weight:400}
 
-.stats{list-style:none;margin:0;padding:0;display:grid;gap:1rem;grid-template-columns:repeat(3,minmax(0,1fr))}
-@media (min-width:60rem){.stats{grid-template-columns:1fr;gap:1.25rem;padding-left:1.5rem;border-left:1px solid var(--rule);align-content:start}}
-.stats b{display:block;font-family:var(--serif);font-weight:500;font-size:1.5rem;line-height:1.15;letter-spacing:-.01em;font-variant-numeric:lining-nums tabular-nums;word-break:break-word}
-.stats span{display:block;font-size:.8125rem;color:var(--ink-3);line-height:1.35;margin-top:.2rem}
-@media (max-width:30rem){.stats{grid-template-columns:1fr 1fr}}
+.sx{display:grid;gap:1.5rem 3rem;padding:2.25rem 0;border-top:1px dashed var(--line)}
+.sx:last-child{border-bottom:1px dashed var(--line)}
+@media (min-width:62rem){.sx{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.sx__idx{color:var(--dim);font-size:.8125rem}
+.sx__idx b{color:var(--g);font-weight:400}
+.sx h3{margin:.35rem 0 .3rem;font-family:"Space Mono",monospace;font-size:clamp(1.5rem,3.2vw,2.25rem);font-weight:700;line-height:1.15;letter-spacing:-.03em;color:#eef7f1}
+.sx h3 a{transition:color .2s}
+.sx h3 a:hover{color:var(--g)}
+.sx__meta{margin:0 0 1.1rem;color:var(--dim);font-size:.8125rem}
+.sx .desc{margin:0 0 1.25rem;color:var(--fg);font-family:var(--sans);font-size:1rem;line-height:1.65;max-width:62ch}
+.sx .desc em{font-style:normal;color:var(--g)}
+.sx .tags{display:flex;flex-wrap:wrap;gap:.25rem .9rem;color:var(--dim);font-size:.8125rem}
+.sx .tags li::before{content:"#";color:var(--g);opacity:.7}
+.report{align-self:start;border:1px solid var(--line);background:rgba(10,14,12,.6);padding:1.1rem 1.25rem}
+.report__h{margin:0 0 .75rem;color:var(--dim);font-size:.75rem;letter-spacing:.06em}
+.report li{display:flex;align-items:baseline;gap:.6rem;padding:.3rem 0;font-size:.875rem}
+.report li::before{content:"[ok]";color:var(--g);flex:none}
+.report .k{color:var(--fg)}
+.report .lead{flex:1;min-width:1rem;border-bottom:1px dotted #3a4a43;transform:translateY(-.25em)}
+.report .v{color:#eef7f1;font-weight:700;white-space:nowrap}
+.sx .go{display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;margin-top:1.1rem;font-size:.875rem}
+.sx .go a{display:inline-flex;align-items:center;min-height:2.75rem;color:var(--g)}
+.sx .go a::before{content:"./";color:var(--dim)}
+.sx .go a:hover{text-decoration:underline;text-underline-offset:4px}
+#security :focus-visible{outline-color:var(--g)}
 
-/* ── footer ───────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════
+   02  AI/ML  ·  lab plot on graph paper, dithered chart
+   ════════════════════════════════════════════════════════════════════ */
+#ai{
+  --bg:#eef1f5; --fg:#16213a; --dim:#445069; --grid:#dce3ec; --amb:#8f4c05; --amb-2:#e08a1e;
+  background:
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/24px 24px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/24px 24px,
+    var(--bg);
+  color:var(--fg);
+}
+#ai ::selection{background:var(--amb-2);color:#fff}
+.ai-grid{display:grid;gap:clamp(2.5rem,5vw,4rem);align-items:center}
+@media (min-width:62rem){.ai-grid{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)}}
+.ai-open .fig{margin:0 0 1rem;font-family:"IBM Plex Mono",monospace;font-size:.8125rem;color:var(--dim)}
+.ai-open .fig b{color:var(--amb);font-weight:500}
+.ai-open h2{margin:0 0 1.25rem;font-family:var(--sans);font-weight:600;font-size:clamp(2.75rem,7vw,5rem);line-height:1;letter-spacing:-.04em}
+.ai-open h2 span{color:var(--amb)}
+.ai-open .thesis{margin:0 0 2.25rem;font-size:clamp(1.125rem,2vw,1.3rem);color:var(--dim);max-width:30rem}
+.ai-card{background:rgba(255,255,255,.82);border:1px solid #c4cedb;padding:clamp(1.25rem,3vw,1.75rem);box-shadow:6px 6px 0 #c4cedb}
+.ai-card .idx{font-family:"IBM Plex Mono",monospace;font-size:.75rem;color:var(--dim)}
+.ai-card h3{margin:.2rem 0 .2rem;font-size:clamp(1.75rem,3.5vw,2.25rem);font-weight:600;letter-spacing:-.03em;line-height:1.1}
+.ai-card h3 a:hover{color:var(--amb)}
+.ai-card .meta{margin:0 0 1rem;font-family:"IBM Plex Mono",monospace;font-size:.8125rem;color:var(--dim)}
+.ai-card .desc{margin:0 0 1.25rem;color:#2c3852;max-width:62ch}
+.ai-card .desc em{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:.92em;background:#fbe7cf;padding:.05em .3em;color:#7a4205}
+.ai-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#c4cedb;border:1px solid #c4cedb;margin:0 0 1.25rem}
+.ai-stats li{background:#f8fafc;padding:.8rem .9rem}
+.ai-stats b{display:block;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:1.5rem;line-height:1.1;color:var(--fg)}
+.ai-stats span{display:block;font-size:.8125rem;color:var(--dim);line-height:1.3;margin-top:.2rem}
+.ai-card .tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:1rem}
+.ai-card .tags li{font-family:"IBM Plex Mono",monospace;font-size:.75rem;border:1px solid #c4cedb;padding:.15rem .5rem;color:var(--dim)}
+.ai-card .go{display:flex;flex-wrap:wrap;gap:.25rem 1.5rem;font-weight:500;font-size:.9375rem}
+.ai-card .go a{display:inline-flex;align-items:center;min-height:2.75rem;color:var(--amb)}
+.ai-card .go a:hover{color:var(--fg)}
+
+.plot{margin:0}
+.plot__frame{position:relative;background:#fbfcfd;border:1px solid #b9c4d3;box-shadow:8px 8px 0 #c4cedb}
+.plot canvas{display:block;width:100%;height:auto;aspect-ratio:16/11}
+.plot__read{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.5rem 1.5rem;padding:.85rem 1rem;border-top:1px solid #d3dbe6;font-family:"IBM Plex Mono",monospace;font-size:.8125rem;color:var(--dim)}
+.plot__read output{font-size:1.25rem;color:var(--fg);font-variant-numeric:tabular-nums}
+.plot__state{padding:.2rem .55rem;border:1px solid currentColor;font-size:.75rem}
+.plot__state[data-s="stable"]{color:#2f6b4f}
+.plot__state[data-s="moderate"]{color:#9a5a09}
+.plot__state[data-s="significant"]{color:#b42318}
+.plot__key{display:flex;gap:1.25rem;padding:0 1rem .9rem;font-family:"IBM Plex Mono",monospace;font-size:.75rem;color:var(--dim)}
+.plot__key i{display:inline-block;width:.75rem;height:.75rem;margin-right:.4rem;vertical-align:-.1em}
+.plot__key .r{background:repeating-linear-gradient(45deg,#16213a 0 1px,transparent 1px 3px)}
+.plot__key .c{background:var(--amb-2)}
+.plot figcaption{margin-top:.75rem;font-size:.8125rem;color:var(--dim)}
+
+/* ════════════════════════════════════════════════════════════════════
+   03  PRODUCT  ·  bento app grid
+   ════════════════════════════════════════════════════════════════════ */
+#product{
+  --bg:#fff5e6; --fg:#1f1d1a; --dim:#5b554c;
+  background:radial-gradient(circle at 85% 10%,#ffe3cc 0,transparent 40%),radial-gradient(circle at 5% 95%,#e3ecf6 0,transparent 40%),var(--bg);
+  color:var(--fg);font-family:"Bricolage Grotesque",var(--sans);
+}
+.prod-open{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:1rem 2rem;margin-bottom:clamp(2.25rem,5vw,3.5rem)}
+.prod-open h2{margin:0;font-weight:800;font-size:clamp(3rem,9vw,6.5rem);line-height:.95;letter-spacing:-.045em}
+.prod-open h2 span{display:inline-block;color:#c4532c;transform:rotate(-4deg);transition:transform .5s var(--spring)}
+.prod-open:hover h2 span{transform:rotate(3deg) scale(1.04)}
+.prod-open p{margin:0;max-width:24rem;font-size:1.125rem;color:var(--dim)}
+.bento{display:grid;gap:1rem;grid-template-columns:1fr}
+@media (min-width:52rem){
+  .bento{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .b-1{grid-column:span 2}
+  .b-2{grid-row:span 2}
+}
+.bx{
+  --tint:#fff;--deep:#333;
+  position:relative;display:flex;flex-direction:column;border-radius:28px;padding:clamp(1.5rem,3vw,2rem);
+  background:var(--tint);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 2px 0 color-mix(in srgb,var(--deep) 18%,transparent);
+  transition:transform .45s var(--spring),box-shadow .45s var(--ease);
+}
+.bx:hover{transform:translateY(-6px) rotate(-.4deg);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 26px 40px -22px color-mix(in srgb,var(--deep) 55%,transparent)}
+.b-1{--tint:#fad4c0;--deep:#8f3818}
+.b-2{--tint:#cfe0f0;--deep:#24527d}
+.b-3{--tint:#d9e8cf;--deep:#355f25}
+.b-4{--tint:#f7e3a6;--deep:#735300}
+.bx__top{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.bx__idx{font-weight:600;font-size:.875rem;color:var(--deep)}
+.badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:999px;background:rgba(255,255,255,.6);font-size:.8125rem;font-weight:600;color:var(--deep)}
+.badge.live::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:#1a8a4a}
+.bx h3{margin:0 0 .3rem;font-weight:800;font-size:clamp(1.75rem,3.4vw,2.6rem);line-height:1;letter-spacing:-.035em}
+.bx h3 a:hover{color:var(--deep)}
+.bx .meta{margin:0 0 1rem;font-size:.9375rem;font-weight:600;color:var(--deep)}
+.bx .desc{margin:0 0 1.5rem;font-family:var(--sans);color:#2f2b26;max-width:60ch;flex:1 0 auto}
+.bx .desc em{font-style:normal;font-weight:600;background:linear-gradient(transparent 60%,rgba(255,255,255,.7) 60%)}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem}
+.chips li{background:rgba(255,255,255,.62);border-radius:16px;padding:.6rem .85rem;min-width:7.5rem;flex:1 1 7.5rem}
+.chips b{display:block;font-weight:800;font-size:1.35rem;line-height:1.1;letter-spacing:-.02em}
+.chips span{display:block;font-family:var(--sans);font-size:.8125rem;color:var(--dim);line-height:1.3}
+.bx .tags{display:flex;flex-wrap:wrap;gap:.3rem .8rem;margin-bottom:1rem;font-size:.8125rem;color:var(--dim)}
+.bx .go{display:flex;flex-wrap:wrap;gap:.5rem}
+.bx .go a{display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1rem;border-radius:999px;background:var(--fg);color:#fff;font-weight:600;font-size:.875rem;transition:transform .3s var(--spring),background .2s}
+.bx .go li+li a{background:rgba(255,255,255,.65);color:var(--fg)}
+.bx .go a:hover{transform:translateY(-2px)}
+.bx .go a:active{transform:scale(.97)}
+#product :focus-visible{outline-color:var(--fg)}
+
+/* ════════════════════════════════════════════════════════════════════
+   04  RESEARCH  ·  broadsheet with a red-pen correction
+   ════════════════════════════════════════════════════════════════════ */
+#research{
+  --bg:#f1efe8; --fg:#1b1b19; --dim:#5a5853; --red:#c8102e;
+  background:var(--bg);color:var(--fg);font-family:var(--serif);
+}
+.np-plate{text-align:center;border-top:4px double var(--fg);border-bottom:1px solid var(--fg);padding:1.1rem 0 .9rem;margin-bottom:.4rem}
+.np-plate h2{margin:0;font-family:"Playfair Display",Georgia,serif;font-weight:900;font-size:clamp(2.5rem,8vw,5.5rem);line-height:1;letter-spacing:-.02em}
+.np-line{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.25rem 1rem;padding:.4rem 0;border-bottom:4px double var(--fg);font-family:var(--sans);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:clamp(2rem,4vw,3rem)}
+.np{display:grid;gap:2rem 3rem}
+@media (min-width:62rem){.np{grid-template-columns:minmax(0,2.2fr) minmax(0,1fr)}}
+.np .kind{margin:0 0 .5rem;font-family:var(--sans);font-size:.8125rem;font-weight:600;color:var(--red)}
+.np h3{margin:0 0 .75rem;font-family:"Playfair Display",Georgia,serif;font-weight:700;font-size:clamp(2.25rem,5.5vw,4rem);line-height:1.02;letter-spacing:-.02em;text-wrap:balance}
+.np h3 a:hover{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.np .deck{margin:0 0 1.5rem;font-family:"Playfair Display",Georgia,serif;font-style:italic;font-size:clamp(1.125rem,2.2vw,1.375rem);color:var(--dim);line-height:1.4}
+.np .body{columns:2 16rem;column-gap:2rem;column-rule:1px solid #cfccc2;font-size:1.0625rem;line-height:1.65;hyphens:auto}
+.np .body p{margin:0 0 1rem}
+.np .body p:first-child::first-letter{float:left;font-family:"Playfair Display",serif;font-weight:900;font-size:4.2em;line-height:.8;margin:.06em .1em 0 0}
+.pen{position:relative;white-space:nowrap}
+.pen svg{position:absolute;left:-8%;top:-30%;width:116%;height:160%;overflow:visible;pointer-events:none}
+.pen path{fill:none;stroke:var(--red);stroke-width:2.2;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:0}
+.js-rv .np:not(.in) .pen path{stroke-dashoffset:420}
+.js-rv .np.in .pen path{transition:stroke-dashoffset 1.4s var(--ease) .6s}
+.note{display:block;margin-top:.1rem;font-family:"Caveat",cursive;font-size:1.5rem;line-height:1.1;color:var(--red);transform:rotate(-2deg);text-align:left}
+.np .tags{display:flex;flex-wrap:wrap;gap:.3rem 1rem;margin:1.25rem 0 0;font-family:var(--sans);font-size:.8125rem;color:var(--dim)}
+.np-side{border-top:2px solid var(--fg);padding-top:1rem}
+.np-side h4{margin:0 0 1rem;font-family:var(--sans);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em}
+.fig-list li{padding:0 0 1rem;margin-bottom:1rem;border-bottom:1px solid #cfccc2}
+.fig-list b{display:block;font-family:"Playfair Display",serif;font-weight:900;font-size:clamp(2.5rem,5vw,3.25rem);line-height:1;letter-spacing:-.02em}
+.fig-list span{display:block;font-family:var(--sans);font-size:.875rem;color:var(--dim);margin-top:.3rem}
+.corr{margin:1.5rem 0;padding:1rem 1.1rem;border:1px solid var(--red);background:rgba(200,16,46,.04)}
+.corr h4{color:var(--red);margin-bottom:.5rem}
+.corr p{margin:0;font-size:.9375rem;line-height:1.5}
+.np .go{font-family:var(--sans);font-size:.9375rem}
+.np .go li{border-bottom:1px solid #cfccc2}
+.np .go a{display:flex;justify-content:space-between;align-items:center;min-height:2.75rem;font-weight:500}
+.np .go a:hover{color:var(--red)}
+#research :focus-visible{outline-color:var(--red)}
+
+/* ── footer (editorial) ──────────────────────────────────────────── */
 footer{border-top:1px solid var(--ink);padding:2.5rem 0 3.5rem;color:var(--ink-3);font-size:.875rem}
 footer .wrap{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
 footer p{margin:0;max-width:36rem}
-footer a{color:var(--ink-2);transition:color .2s}
+footer a{color:var(--ink-2)}
 footer a:hover{color:var(--accent)}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .entry{opacity:1!important;transform:none!important}
+  .rv{opacity:1!important;transform:none!important}
+  .pen path{stroke-dashoffset:0!important}
 }
 </style>
 </head>
@@ -203,7 +321,7 @@ footer a:hover{color:var(--accent)}
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>9</dt><dd>projects across security, product, AI/ML, and research</dd></div>
+        <div><dt>9</dt><dd>projects across security, AI/ML, product, and research</dd></div>
         <div><dt>4</dt><dd>live deployments you can open today</dd></div>
         <div><dt>310</dt><dd>passing tests across four of the repositories</dd></div>
       </dl>
@@ -211,26 +329,31 @@ footer a:hover{color:var(--accent)}
     </div>
   </section>
 
-  <section class="wrap work" id="work" aria-labelledby="work-h">
-    <div class="work__head">
-      <h2 id="work-h">Selected work<small>9 projects</small></h2>
-      <div class="filters" role="group" aria-label="Filter projects by category">
-        <button type="button" data-f="all" aria-pressed="true">All</button>
-        <button type="button" data-f="security" aria-pressed="false">Security</button>
-        <button type="button" data-f="ai" aria-pressed="false">AI/ML</button>
-        <button type="button" data-f="product" aria-pressed="false">Product</button>
-        <button type="button" data-f="research" aria-pressed="false">Research</button>
-      </div>
+  <div id="work">
+  <nav class="chapters" aria-label="Project chapters">
+    <div class="wrap">
+      <h2>Selected work</h2>
+      <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>3</small></a>
+      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>1</small></a>
+      <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
+      <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
     </div>
+  </nav>
 
-    <div class="list" id="list">
+  <!-- ═════════ SECURITY ═════════ -->
+  <section class="ch" id="security" aria-labelledby="sec-h">
+    <div class="wrap">
+      <header class="sec-open rv">
+        <p class="prompt" aria-hidden="true"><b>battlettt@portfolio</b>:~$ ls ./security --verbose</p>
+        <h2 id="sec-h" data-scramble>Security</h2>
+        <p class="thesis">Three tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
+      </header>
 
-      <article class="entry" data-cat="security">
-        <span class="idx">01</span>
+      <article class="sx rv" data-cat="security">
         <div>
-          <p class="kind"><b>Security</b> &middot; Shipped v1.1</p>
-          <h3><a href="https://github.com/battlettt/sentinelscan">SentinelScan</a></h3>
-          <p class="meta">Chrome extension, Manifest V3</p>
+          <span class="sx__idx"><b>01</b> / chrome extension</span>
+          <h3><a href="https://github.com/battlettt/sentinelscan" data-scramble>SentinelScan</a></h3>
+          <p class="sx__meta">Manifest V3 &middot; shipped v1.1</p>
           <p class="desc">
             Gives any website a security report card on demand: header and config analysis, a
             JS-source secrets scanner, Subresource Integrity checks, and <em>local drift
@@ -239,25 +362,29 @@ footer a:hover{color:var(--accent)}
             paste-ready Express and Nginx fix.
           </p>
           <ul class="tags"><li>TypeScript</li><li>React</li><li>MV3</li><li>Vitest</li></ul>
+        </div>
+        <div>
+          <div class="report">
+            <p class="report__h">scan report: sentinelscan</p>
+            <ul>
+              <li><span class="k">unit tests passing</span><span class="lead"></span><span class="v">42</span></li>
+              <li><span class="k">transmitted anywhere</span><span class="lead"></span><span class="v">0 bytes</span></li>
+              <li><span class="k">host permissions</span><span class="lead"></span><span class="v">activeTab</span></li>
+            </ul>
+          </div>
           <ul class="go">
-            <li><a href="https://github.com/battlettt/sentinelscan">Source</a></li>
-            <li><a href="https://github.com/battlettt/sentinelscan/blob/main/docs/superpowers/specs/2026-09-02-sentinelscan-design.md">Design spec</a></li>
-            <li><a href="https://github.com/battlettt/sentinelscan/blob/main/PRIVACY.md">Privacy</a></li>
+            <li><a href="https://github.com/battlettt/sentinelscan">source</a></li>
+            <li><a href="https://github.com/battlettt/sentinelscan/blob/main/docs/superpowers/specs/2026-09-02-sentinelscan-design.md">design-spec</a></li>
+            <li><a href="https://github.com/battlettt/sentinelscan/blob/main/PRIVACY.md">privacy</a></li>
           </ul>
         </div>
-        <ul class="stats">
-          <li><b>42</b><span>unit tests passing</span></li>
-          <li><b>0 bytes</b><span>transmitted anywhere</span></li>
-          <li><b>activeTab</b><span>no broad host permissions</span></li>
-        </ul>
       </article>
 
-      <article class="entry" data-cat="security">
-        <span class="idx">02</span>
+      <article class="sx rv" data-cat="security">
         <div>
-          <p class="kind"><b>Security</b> &middot; Live demo</p>
-          <h3><a href="https://github.com/battlettt/cybersecurity-portfolio">Cybersecurity Portfolio</a></h3>
-          <p class="meta">9 projects across offense, defense, and GRC</p>
+          <span class="sx__idx"><b>02</b> / offense, defense, grc</span>
+          <h3><a href="https://github.com/battlettt/cybersecurity-portfolio" data-scramble>Cybersecurity Portfolio</a></h3>
+          <p class="sx__meta">9 projects &middot; live demo</p>
           <p class="desc">
             Nine projects spanning AppSec, SIEM and detection engineering, statistical anomaly
             detection, cloud/IaC scanning, and GRC. The flagship found and fixed four OWASP Top 10
@@ -265,156 +392,29 @@ footer a:hover{color:var(--accent)}
             remediated, then <em>re-exploited to prove the fix holds.</em>
           </p>
           <ul class="tags"><li>Python</li><li>Flask</li><li>MySQL</li><li>Terraform</li><li>NIST CSF</li></ul>
+        </div>
+        <div>
+          <div class="report">
+            <p class="report__h">scan report: cybersecurity-portfolio</p>
+            <ul>
+              <li><span class="k">log ingestion, benchmarked</span><span class="lead"></span><span class="v">190K+/s</span></li>
+              <li><span class="k">mean time to detection</span><span class="lead"></span><span class="v">&lt;20s</span></li>
+              <li><span class="k">recall / precision</span><span class="lead"></span><span class="v">100/80%</span></li>
+            </ul>
+          </div>
           <ul class="go">
-            <li><a href="https://github.com/battlettt/cybersecurity-portfolio">Source</a></li>
-            <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">Deep dive</a></li>
-            <li><a href="https://cybersecurity-portfolio-siem-dashboard.onrender.com" title="Free-tier instance, may take about 30s to wake on first visit">SIEM dashboard</a></li>
+            <li><a href="https://github.com/battlettt/cybersecurity-portfolio">source</a></li>
+            <li><a href="https://battlettt.github.io/cybersecurity-portfolio/deep-dive.html">deep-dive</a></li>
+            <li><a href="https://cybersecurity-portfolio-siem-dashboard.onrender.com" title="Free-tier instance, may take about 30s to wake on first visit">siem-dashboard</a></li>
           </ul>
         </div>
-        <ul class="stats">
-          <li><b>190K+/s</b><span>log ingestion, benchmarked</span></li>
-          <li><b>&lt;20s</b><span>mean time to detection</span></li>
-          <li><b>100/80%</b><span>recall / precision</span></li>
-        </ul>
       </article>
 
-      <article class="entry" data-cat="product">
-        <span class="idx">03</span>
+      <article class="sx rv" data-cat="security">
         <div>
-          <p class="kind"><b>Product</b> &middot; Live beta</p>
-          <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
-          <p class="meta">B2B SaaS on Next.js, Postgres, Stripe</p>
-          <p class="desc">
-            Test data for teams building Stripe, QuickBooks and HubSpot integrations. One seed becomes
-            a realistic, deliberately messy company, loaded into all three test accounts with an
-            answer key to grade against. Live keys are refused <em>before a single request is
-            sent.</em> The first real runs found three bugs the emulators missed; each now has a test
-            that fails without its fix.
-          </p>
-          <ul class="tags"><li>TypeScript</li><li>Next.js</li><li>PostgreSQL</li><li>Stripe</li><li>OAuth</li></ul>
-          <ul class="go">
-            <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
-            <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
-            <li><a href="https://fake-company-in-a-box.vercel.app/security">Security</a></li>
-          </ul>
-        </div>
-        <ul class="stats">
-          <li><b>347</b><span>records into real Stripe, 0 failed</span></li>
-          <li><b>97</b><span>tests, incl. API emulators</span></li>
-          <li><b>Live keys</b><span>refused in code</span></li>
-        </ul>
-      </article>
-
-      <article class="entry" data-cat="product">
-        <span class="idx">04</span>
-        <div>
-          <p class="kind"><b>Product</b> &middot; Live</p>
-          <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
-          <p class="meta">React Native, Expo, Supabase</p>
-          <p class="desc">
-            A shared spaced-retrieval app for families supporting a loved one with memory loss. The
-            schedule follows real SRT clinical practice, not generic flashcard spacing: misses are
-            re-asked soon but never drilled back-to-back, intervals reset on a miss, and a run of
-            misses <em>eases the session off</em> rather than pushing harder.
-          </p>
-          <ul class="tags"><li>React Native</li><li>Expo</li><li>TypeScript</li><li>PostgreSQL</li></ul>
-          <ul class="go">
-            <li><a href="https://memory-time.vercel.app">Open the app</a></li>
-            <li><a href="https://github.com/battlettt/memory-time">Source</a></li>
-            <li><a href="https://github.com/battlettt/memory-time/blob/main/src/lib/srt.ts">SRT algorithm</a></li>
-          </ul>
-        </div>
-        <ul class="stats">
-          <li><b>3 platforms</b><span>iOS, Android, web</span></li>
-          <li><b>RLS</b><span>per family group</span></li>
-          <li><b>Edge AI</b><span>topic suggestions</span></li>
-        </ul>
-      </article>
-
-      <article class="entry" data-cat="product">
-        <span class="idx">05</span>
-        <div>
-          <p class="kind"><b>Product</b> &middot; In delivery</p>
-          <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
-          <p class="meta">Python knowledge extraction</p>
-          <p class="desc">
-            When someone senior leaves, what they knew leaves with them. This turns one YAML file
-            into a Handover Pack in three formats: Markdown for the team's wiki, JSON for IT, and
-            styled HTML for the manager. The cover sheet is <em>derived, never authored</em>, so it
-            cannot drift out of step with the data behind it.
-          </p>
-          <ul class="tags"><li>Python</li><li>pytest</li><li>YAML</li><li>Jinja</li></ul>
-          <ul class="go">
-            <li><a href="https://github.com/battlettt/departure-handover">Source</a></li>
-            <li><a href="https://github.com/battlettt/departure-handover/blob/main/engagements/example/engagement.yaml">Example input</a></li>
-            <li><a href="https://github.com/battlettt/departure-handover/tree/main/handover/sweep">Sweep module</a></li>
-          </ul>
-        </div>
-        <ul class="stats">
-          <li><b>3 formats</b><span>from one source file</span></li>
-          <li><b>8 sections</b><span>per generated pack</span></li>
-          <li><b>Sweep</b><span>GitHub, Slack, calendar</span></li>
-        </ul>
-      </article>
-
-      <article class="entry" data-cat="product">
-        <span class="idx">06</span>
-        <div>
-          <p class="kind"><b>Product</b> &middot; Prototype</p>
-          <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
-          <p class="meta">PostGIS, Expo geofencing</p>
-          <p class="desc">
-            Know what a drink costs before you walk in. Maps already tell you where the bars are;
-            this tells you which one is charging tourist rates, and <em>buzzes when you walk past a
-            cheap one</em> via background geofencing. Prices are crowd-sourced and compared against
-            canonical SKUs, so a pint is measured against a pint.
-          </p>
-          <ul class="tags"><li>PostgreSQL</li><li>PostGIS</li><li>Expo</li><li>TypeScript</li></ul>
-          <ul class="go">
-            <li><a href="https://battlettt.github.io/proximity-bar-hunter/">Try the prototype</a></li>
-            <li><a href="https://github.com/battlettt/proximity-bar-hunter">Source</a></li>
-            <li><a href="https://github.com/battlettt/proximity-bar-hunter/blob/main/schema.sql">Schema</a></li>
-          </ul>
-        </div>
-        <ul class="stats">
-          <li><b>PostGIS</b><span>real geography, not floats</span></li>
-          <li><b>Background</b><span>geofence triggers</span></li>
-          <li><b>5 iterations</b><span>prototype versions</span></li>
-        </ul>
-      </article>
-
-      <article class="entry" data-cat="research">
-        <span class="idx">07</span>
-        <div>
-          <p class="kind"><b>Research</b> &middot; Validating</p>
-          <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
-          <p class="meta">Market research on escheatment</p>
-          <p class="desc">
-            Research toward an AI-native service for US state unclaimed property compliance, wedged
-            on Delaware VDA response. Published with its corrections intact: two load-bearing claims
-            from the original screen were wrong, and <em>the build log records both</em>. The field
-            is contested, and state holder data is not public.
-          </p>
-          <ul class="tags"><li>Market research</li><li>GTM</li><li>Compliance</li></ul>
-          <ul class="go">
-            <li><a href="https://github.com/battlettt/unclaimed-property-compliance">Repository</a></li>
-            <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/escheatment-deep-dive.md">Deep dive</a></li>
-            <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/build-log.md">Build log</a></li>
-          </ul>
-        </div>
-        <ul class="stats">
-          <li><b>~2%</b><span>California compliance rate</span></li>
-          <li><b>90 days</b><span>to respond, or audit</span></li>
-          <li><b>$70B</b><span>held by states</span></li>
-        </ul>
-      </article>
-
-      <article class="entry" data-cat="security">
-        <span class="idx">08</span>
-        <div>
-          <p class="kind"><b>Security</b> &middot; Shipped v1.3</p>
-          <h3><a href="https://github.com/battlettt/porthawk">Porthawk</a></h3>
-          <p class="meta">Go network scanning</p>
+          <span class="sx__idx"><b>03</b> / network scanning</span>
+          <h3><a href="https://github.com/battlettt/porthawk" data-scramble>Porthawk</a></h3>
+          <p class="sx__meta">Go &middot; shipped v1.3</p>
           <p class="desc">
             A concurrent TCP port scanner with banner grabbing, written in Go with zero dependencies.
             Point it at your own network to find every listening service (a forgotten FTP daemon, a
@@ -424,48 +424,224 @@ footer a:hover{color:var(--accent)}
             fuzz testing, plus a <em>-rate</em> cap for gentle scans of fragile devices.
           </p>
           <ul class="tags"><li>Go</li><li>Standard library</li><li>TLS</li><li>Fuzz testing</li></ul>
+        </div>
+        <div>
+          <div class="report">
+            <p class="report__h">scan report: porthawk</p>
+            <ul>
+              <li><span class="k">unit tests passing</span><span class="lead"></span><span class="v">47</span></li>
+              <li><span class="k">external dependencies</span><span class="lead"></span><span class="v">0</span></li>
+              <li><span class="k">100-port localhost sweep</span><span class="lead"></span><span class="v">7ms</span></li>
+            </ul>
+          </div>
           <ul class="go">
-            <li><a href="https://github.com/battlettt/porthawk">Source</a></li>
-            <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">TLS probing</a></li>
-            <li><a href="https://github.com/battlettt/porthawk/blob/main/docs/example-report.html">Example report</a></li>
+            <li><a href="https://github.com/battlettt/porthawk">source</a></li>
+            <li><a href="https://github.com/battlettt/porthawk/blob/main/tls.go">tls-probing</a></li>
+            <li><a href="https://github.com/battlettt/porthawk/blob/main/docs/example-report.html">example-report</a></li>
           </ul>
         </div>
-        <ul class="stats">
-          <li><b>47</b><span>unit tests passing</span></li>
-          <li><b>0</b><span>external dependencies</span></li>
-          <li><b>7ms</b><span>100-port localhost sweep, measured</span></li>
-        </ul>
       </article>
+    </div>
+  </section>
 
-      <article class="entry" data-cat="ai">
-        <span class="idx">09</span>
-        <div>
-          <p class="kind"><b>AI/ML</b> &middot; Shipped v0.2</p>
+  <!-- ═════════ AI/ML ═════════ -->
+  <section class="ch" id="ai" aria-labelledby="ai-h">
+    <div class="wrap ai-grid">
+      <div class="ai-open rv">
+        <p class="fig">Fig. 1 <b>&bull;</b> distribution drift</p>
+        <h2 id="ai-h">Models fail <span>quietly.</span></h2>
+        <p class="thesis">So the tooling has to be loud. One project, built to catch a model going stale before anyone notices.</p>
+
+        <article class="ai-card" data-cat="ai">
+          <span class="idx">04 / python mlops</span>
           <h3><a href="https://github.com/battlettt/driftwatch">Driftwatch</a></h3>
-          <p class="meta">Python MLOps, drift detection</p>
+          <p class="meta">Drift detection &middot; shipped v0.2</p>
           <p class="desc">
-            Models rarely fail loudly. They go quietly stale as production data drifts away from
-            training data. Driftwatch fits a reference distribution once, then scores every new batch
-            column by column with PSI, KS tests, Jensen-Shannon divergence and chi-square, flags
-            correlation shifts, and tracks accuracy, log-loss or R&sup2; once labels arrive. A
-            <em>--fail-on</em> flag turns drift or decay into a CI exit code, and everything runs offline.
+            Driftwatch fits a reference distribution once, then scores every new batch column by
+            column with PSI, KS tests, Jensen-Shannon divergence and chi-square, flags correlation
+            shifts, and tracks accuracy, log-loss or R&sup2; once labels arrive. A <em>--fail-on</em>
+            flag turns drift or decay into a CI exit code, and everything runs offline.
           </p>
-          <ul class="tags"><li>Python</li><li>scikit-learn</li><li>MLOps</li><li>Drift detection</li></ul>
+          <ul class="ai-stats">
+            <li><b>124</b><span>tests passing</span></li>
+            <li><b>5</b><span>drift metrics</span></li>
+            <li><b>0</b><span>external services</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>scikit-learn</li><li>MLOps</li><li>pandas</li></ul>
           <ul class="go">
             <li><a href="https://github.com/battlettt/driftwatch">Source</a></li>
             <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/sample-report.md">Sample report</a></li>
             <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/loan_drift_demo.py">Demo script</a></li>
           </ul>
-        </div>
-        <ul class="stats">
-          <li><b>124</b><span>tests passing</span></li>
-          <li><b>5</b><span>drift metrics</span></li>
-          <li><b>0</b><span>external services</span></li>
-        </ul>
-      </article>
+        </article>
+      </div>
 
+      <figure class="plot rv">
+        <div class="plot__frame">
+          <canvas id="drift" width="800" height="550" role="img" aria-label="Chart: a reference distribution and a live batch distribution that drifts away from it, with the population stability index computed for each frame."></canvas>
+          <div class="plot__read">
+            <span>PSI <output id="psi">0.000</output></span>
+            <span class="plot__state" id="psi-state" data-s="stable">stable</span>
+          </div>
+          <div class="plot__key"><span><i class="r"></i>reference</span><span><i class="c"></i>current batch</span></div>
+        </div>
+        <figcaption>Live illustration with simulated data. PSI is computed in your browser across 32 bins, using the usual 0.1 and 0.25 thresholds.</figcaption>
+      </figure>
     </div>
   </section>
+
+  <!-- ═════════ PRODUCT ═════════ -->
+  <section class="ch" id="product" aria-labelledby="prod-h">
+    <div class="wrap">
+      <header class="prod-open rv">
+        <h2 id="prod-h">Things you can <span>open.</span></h2>
+        <p>Four products for real people, from finance teams to families. Two are live right now.</p>
+      </header>
+
+      <div class="bento">
+        <article class="bx b-1 rv" data-cat="product">
+          <div class="bx__top"><span class="bx__idx">05</span><span class="badge live">Live beta</span></div>
+          <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
+          <p class="meta">B2B SaaS on Next.js, Postgres, Stripe</p>
+          <p class="desc">
+            Test data for teams building Stripe, QuickBooks and HubSpot integrations. One seed becomes
+            a realistic, deliberately messy company, loaded into all three test accounts with an
+            answer key to grade against. Live keys are refused <em>before a single request is
+            sent.</em> The first real runs found three bugs the emulators missed; each now has a test
+            that fails without its fix.
+          </p>
+          <ul class="chips">
+            <li><b>347</b><span>records into real Stripe, 0 failed</span></li>
+            <li><b>97</b><span>tests, incl. API emulators</span></li>
+            <li><b>Live keys</b><span>refused in code</span></li>
+          </ul>
+          <ul class="tags"><li>TypeScript</li><li>Next.js</li><li>PostgreSQL</li><li>Stripe</li><li>OAuth</li></ul>
+          <ul class="go">
+            <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
+            <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
+            <li><a href="https://fake-company-in-a-box.vercel.app/security">Security</a></li>
+          </ul>
+        </article>
+
+        <article class="bx b-2 rv" data-cat="product">
+          <div class="bx__top"><span class="bx__idx">06</span><span class="badge live">Live</span></div>
+          <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
+          <p class="meta">React Native, Expo, Supabase</p>
+          <p class="desc">
+            A shared spaced-retrieval app for families supporting a loved one with memory loss. The
+            schedule follows real SRT clinical practice, not generic flashcard spacing: misses are
+            re-asked soon but never drilled back-to-back, intervals reset on a miss, and a run of
+            misses <em>eases the session off</em> rather than pushing harder.
+          </p>
+          <ul class="chips">
+            <li><b>3 platforms</b><span>iOS, Android, web</span></li>
+            <li><b>RLS</b><span>per family group</span></li>
+            <li><b>Edge AI</b><span>topic suggestions</span></li>
+          </ul>
+          <ul class="tags"><li>React Native</li><li>Expo</li><li>TypeScript</li><li>PostgreSQL</li></ul>
+          <ul class="go">
+            <li><a href="https://memory-time.vercel.app">Open the app</a></li>
+            <li><a href="https://github.com/battlettt/memory-time">Source</a></li>
+            <li><a href="https://github.com/battlettt/memory-time/blob/main/src/lib/srt.ts">SRT algorithm</a></li>
+          </ul>
+        </article>
+
+        <article class="bx b-3 rv" data-cat="product">
+          <div class="bx__top"><span class="bx__idx">07</span><span class="badge">In delivery</span></div>
+          <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
+          <p class="meta">Python knowledge extraction</p>
+          <p class="desc">
+            When someone senior leaves, what they knew leaves with them. This turns one YAML file
+            into a Handover Pack in three formats: Markdown for the wiki, JSON for IT, and styled
+            HTML for the manager. The cover sheet is <em>derived, never authored</em>, so it cannot
+            drift from the data behind it.
+          </p>
+          <ul class="chips">
+            <li><b>3 formats</b><span>from one source file</span></li>
+            <li><b>8 sections</b><span>per generated pack</span></li>
+          </ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/departure-handover">Source</a></li>
+            <li><a href="https://github.com/battlettt/departure-handover/blob/main/engagements/example/engagement.yaml">Example input</a></li>
+            <li><a href="https://github.com/battlettt/departure-handover/tree/main/handover/sweep">Sweep module</a></li>
+          </ul>
+        </article>
+
+        <article class="bx b-4 rv" data-cat="product">
+          <div class="bx__top"><span class="bx__idx">08</span><span class="badge">Prototype</span></div>
+          <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
+          <p class="meta">PostGIS, Expo geofencing</p>
+          <p class="desc">
+            Know what a drink costs before you walk in. It flags which bar is charging tourist rates
+            and <em>buzzes when you walk past a cheap one</em>. Prices are crowd-sourced and matched
+            to canonical SKUs, so a pint is measured against a pint.
+          </p>
+          <ul class="chips">
+            <li><b>PostGIS</b><span>real geography, not floats</span></li>
+            <li><b>5 iterations</b><span>prototype versions</span></li>
+          </ul>
+          <ul class="go">
+            <li><a href="https://battlettt.github.io/proximity-bar-hunter/">Try it</a></li>
+            <li><a href="https://github.com/battlettt/proximity-bar-hunter">Source</a></li>
+            <li><a href="https://github.com/battlettt/proximity-bar-hunter/blob/main/schema.sql">Schema</a></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════ RESEARCH ═════════ -->
+  <section class="ch" id="research" aria-labelledby="res-h">
+    <div class="wrap">
+      <div class="np-plate"><h2 id="res-h">The Research Desk</h2></div>
+      <div class="np-line"><span>Market research</span><span>Corrections printed in full</span></div>
+
+      <article class="np rv" data-cat="research">
+        <div>
+          <p class="kind">09 &middot; Escheatment &middot; Validating</p>
+          <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
+          <p class="deck">Research toward an AI-native service for US state unclaimed property compliance, wedged on Delaware VDA response.</p>
+          <div class="body">
+            <p>
+              Companies that hold money owed to someone else, such as uncashed payroll checks, stale
+              vendor credits or forgotten customer balances, must eventually hand it to the state.
+              Most do not, and states have started auditing. This project screens the market for a
+              service that helps holders respond when a Delaware voluntary disclosure letter lands.
+            </p>
+            <p>
+              It is published with its corrections intact. Two load-bearing claims from the original
+              screen were wrong, and
+              <span class="pen">the build log records both.<svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true"><path d="M12 34 C 10 8, 150 2, 190 22 C 205 34, 170 56, 90 56 C 30 56, 2 46, 14 24 C 22 12, 60 8, 80 8"/></svg></span>
+              <span class="note" aria-hidden="true">kept on the record</span>
+              The field is contested, and state holder data is not public, so every figure here is
+              sourced rather than assumed.
+            </p>
+          </div>
+          <ul class="tags"><li>Market research</li><li>GTM</li><li>Compliance</li></ul>
+        </div>
+
+        <aside class="np-side" aria-label="Key figures and links">
+          <h4>By the figures</h4>
+          <ul class="fig-list">
+            <li><b>~2%</b><span>California compliance rate</span></li>
+            <li><b>90 days</b><span>to respond, or face an audit</span></li>
+            <li><b>$70B</b><span>held by states</span></li>
+          </ul>
+          <div class="corr">
+            <h4>Correction</h4>
+            <p>Two claims in the first market screen did not survive checking. The build log shows what changed and why.</p>
+          </div>
+          <h4>Continued in</h4>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/unclaimed-property-compliance">Repository</a></li>
+            <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/escheatment-deep-dive.md">Deep dive</a></li>
+            <li><a href="https://github.com/battlettt/unclaimed-property-compliance/blob/main/build-log.md">Build log</a></li>
+          </ul>
+        </aside>
+      </article>
+    </div>
+  </section>
+  </div>
 </main>
 
 <footer>
@@ -479,42 +655,154 @@ footer a:hover{color:var(--accent)}
 <script>
 (function () {
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var entries = Array.prototype.slice.call(document.querySelectorAll('.entry'));
+  var hasIO = 'IntersectionObserver' in window;
+  var rv = Array.prototype.slice.call(document.querySelectorAll('.rv'));
 
-  /* ---- scroll reveal ----
-     Only opt into the hidden-then-reveal state once we know the observer
-     exists and motion is wanted. A watchdog force-reveals everything after
-     2s so an entry can never stay invisible. */
-  function revealAll() { entries.forEach(function (c) { c.classList.add('in'); }); }
-
-  if (!reduce && 'IntersectionObserver' in window) {
-    document.getElementById('list').classList.add('reveal');
-    var io = new IntersectionObserver(function (list) {
-      list.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        e.target.classList.add('in');
-        io.unobserve(e.target);
-      });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
-    entries.forEach(function (c) { io.observe(c); });
-    setTimeout(revealAll, 2000);
+  /* ---- text scramble (security only): headings decode like a cracked hash ---- */
+  var glyphs = '!<>-_\\/[]{}=+*^?#01ABCDEF';
+  function scramble(el) {
+    if (reduce || el.dataset.done) return;
+    el.dataset.done = '1';
+    var final = el.textContent, frame = 0, total = 22 + final.length;
+    el.setAttribute('aria-label', final);
+    (function tick() {
+      var out = '';
+      for (var i = 0; i < final.length; i++) {
+        var lock = (i / final.length) * (total - 10) + 6;
+        out += (frame >= lock || final[i] === ' ') ? final[i] : glyphs[(Math.random() * glyphs.length) | 0];
+      }
+      el.textContent = out;
+      if (++frame <= total) requestAnimationFrame(tick); else el.textContent = final;
+    })();
+  }
+  function onIn(el) {
+    el.classList.add('in');
+    Array.prototype.forEach.call(el.querySelectorAll('[data-scramble]'), function (s, i) {
+      setTimeout(function () { scramble(s); }, i * 120);
+    });
   }
 
-  /* ---- category filter ---- */
-  var buttons = Array.prototype.slice.call(document.querySelectorAll('.filters button'));
-  buttons.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var f = btn.dataset.f;
-      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
-      entries.forEach(function (c) {
-        var show = (f === 'all' || c.dataset.cat === f);
-        c.hidden = !show;
-        if (show) c.classList.add('in');
+  /* ---- reveal: opt in only when the observer can run; if it never fires
+     within 2s, show everything so the page can never stay blank ---- */
+  if (!reduce && hasIO) {
+    document.documentElement.classList.add('js-rv');
+    var fired = false;
+    var io = new IntersectionObserver(function (es) {
+      fired = true;
+      es.forEach(function (e) { if (e.isIntersecting) { onIn(e.target); io.unobserve(e.target); } });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+    rv.forEach(function (el) { io.observe(el); });
+    setTimeout(function () { if (!fired) rv.forEach(function (el) { el.classList.add('in'); }); }, 2000);
+  }
+
+  /* ---- chapter bar: mark the chapter in view ---- */
+  var links = Array.prototype.slice.call(document.querySelectorAll('.chapters a'));
+  if (hasIO) {
+    var spy = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + e.target.id)); });
       });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    ['security', 'ai', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
+  }
+
+  /* ---- drift plot: dithered histograms, PSI computed per frame ---- */
+  var cv = document.getElementById('drift');
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d'), psiOut = document.getElementById('psi'), stateEl = document.getElementById('psi-state');
+  var BINS = 32, LO = -4, HI = 4, W = 0, H = 0, CELL = 3, history = [], t = 0, running = false;
+  var bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  function pdf(x, m, s) { return Math.exp(-0.5 * Math.pow((x - m) / s, 2)) / (s * 2.5066); }
+  function hist(m, s, skew) {
+    var h = [], w = (HI - LO) / BINS, sum = 0;
+    for (var i = 0; i < BINS; i++) {
+      var x = LO + (i + .5) * w;
+      var v = pdf(x, m, s) * (1 - skew) + pdf(x, m + 1.6, s * .55) * skew;
+      h.push(v); sum += v;
+    }
+    return h.map(function (v) { return v / sum; });
+  }
+  var ref = hist(0, 1, 0);
+  function psi(a, e) {
+    var p = 0;
+    for (var i = 0; i < BINS; i++) { var x = Math.max(a[i], 1e-4), y = Math.max(e[i], 1e-4); p += (x - y) * Math.log(x / y); }
+    return p;
+  }
+  function size() {
+    var r = cv.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(300, r.width); H = W * 11 / 16;
+    cv.width = Math.round(W * d); cv.height = Math.round(H * d);
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  function dither(x0, y0, w, h, level, phase, color) {
+    ctx.fillStyle = color;
+    for (var y = y0; y < y0 + h; y += CELL) for (var x = x0; x < x0 + w; x += CELL) {
+      var gx = ((x / CELL) | 0) + phase, gy = ((y / CELL) | 0);
+      if (bayer[(gy & 3) * 4 + (gx & 3)] / 16 < level) ctx.fillRect(x, y, CELL - 1, CELL - 1);
+    }
+  }
+  function draw() {
+    var m = Math.sin(t * .5) * .45 + .3, s = 1 + .12 * Math.sin(t * .37), skew = .08 + .08 * Math.sin(t * .23);
+    var cur = hist(m, s, skew), p = psi(cur, ref);
+    history.push(p); if (history.length > 120) history.shift();
+
+    var pad = 24, plotH = H * .68, base = pad + plotH, bw = (W - pad * 2) / BINS;
+    var max = .13, i;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = '#e3e8ef'; ctx.lineWidth = 1;
+    for (var g = 0; g <= 4; g++) { var gy = pad + plotH * g / 4; ctx.beginPath(); ctx.moveTo(pad, gy + .5); ctx.lineTo(W - pad, gy + .5); ctx.stroke(); }
+    for (i = 0; i < BINS; i++) {
+      var x = pad + i * bw, rh = Math.min(ref[i] / max, 1) * plotH, ch = Math.min(cur[i] / max, 1) * plotH;
+      dither(Math.round(x), Math.round(base - rh), Math.ceil(bw), Math.round(rh), .38, 0, '#16213a');
+      dither(Math.round(x), Math.round(base - ch), Math.ceil(bw), Math.round(ch), .55, 2, '#e08a1e');
+    }
+    ctx.strokeStyle = '#c7700f'; ctx.lineWidth = 2; ctx.beginPath();
+    for (i = 0; i < BINS; i++) {
+      var y = base - Math.min(cur[i] / max, 1) * plotH, xx = pad + i * bw;
+      if (i === 0) ctx.moveTo(xx, y); else ctx.lineTo(xx, y);
+      ctx.lineTo(xx + bw, y);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = '#16213a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(pad, base + .5); ctx.lineTo(W - pad, base + .5); ctx.stroke();
+
+    /* PSI trace with the 0.1 and 0.25 thresholds */
+    var ty = base + 18, th = H - ty - 12, pmax = .6;
+    ctx.fillStyle = '#56627a'; ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.fillText('PSI over time', pad, ty - 4);
+    [.1, .25].forEach(function (th0) {
+      var yy = ty + th - Math.min(th0 / pmax, 1) * th;
+      ctx.strokeStyle = th0 === .1 ? '#c9d3de' : '#e8b9b3'; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(pad, yy); ctx.lineTo(W - pad, yy); ctx.stroke(); ctx.setLineDash([]);
     });
-  });
+    ctx.strokeStyle = '#16213a'; ctx.lineWidth = 1.5; ctx.beginPath();
+    history.forEach(function (v, k) {
+      var hx = pad + (W - pad * 2) * k / 119, hy = ty + th - Math.min(v / pmax, 1) * th;
+      if (k === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+    });
+    ctx.stroke();
+
+    psiOut.textContent = p.toFixed(3);
+    var st = p < .1 ? 'stable' : p < .25 ? 'moderate' : 'significant';
+    if (stateEl.dataset.s !== st) { stateEl.dataset.s = st; stateEl.textContent = st === 'stable' ? 'stable' : st + ' drift'; }
+  }
+  var last = 0;
+  function loop(ts) {
+    if (!running) return;
+    if (ts - last > 33) { t += .035; draw(); last = ts; }
+    requestAnimationFrame(loop);
+  }
+  size();
+  if (reduce) { t = 2.2; for (var k = 0; k < 60; k++) { t += .035; draw(); } }
+  else {
+    t = 0; draw();
+    if (hasIO) new IntersectionObserver(function (es) {
+      var was = running; running = es[0].isIntersecting;
+      if (running && !was) requestAnimationFrame(loop);
+    }).observe(cv);
+  }
+  var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { size(); draw(); }, 150); });
 })();
 </script>
-
 </body>
 </html>
