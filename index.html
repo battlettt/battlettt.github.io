@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: ten projects across security engineering, AI/ML, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: eleven projects across security engineering, AI/ML, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Ten projects across security engineering, AI/ML, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Eleven projects across security engineering, AI/ML, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
@@ -319,16 +319,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Ten projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Eleven projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>10</dt><dd>projects across security, AI/ML, engineering, product, and research</dd></div>
+        <div><dt>11</dt><dd>projects across security, AI/ML, engineering, product, and research</dd></div>
         <div><dt>4</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>517</dt><dd>passing tests across five of the repositories</dd></div>
+        <div><dt>553</dt><dd>passing tests across six of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -340,7 +340,7 @@ footer a:hover{color:var(--accent)}
       <h2>Selected work</h2>
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>3</small></a>
       <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>1</small></a>
-      <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>1</small></a>
+      <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
     </div>
@@ -526,6 +526,35 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/semver-guard">Source</a></li>
             <li><a href="https://github.com/battlettt/semver-guard/blob/main/README.md">README</a></li>
             <li><a href="https://github.com/battlettt/semver-guard/tree/main/fixtures">Example fixtures</a></li>
+          </ul>
+        </article>
+      </div>
+      <div class="ai-open rv">
+        <p class="fig">Fig. 2 <b>&bull;</b> scheduled vs observed</p>
+        <h2>Was the bus <span>actually on time?</span></h2>
+        <p class="thesis">A small pipeline that turns public schedule and realtime feeds into an auditable reliability report.</p>
+
+        <article class="ai-card" data-cat="engineering">
+          <span class="idx">11 / python data pipeline</span>
+          <h3><a href="https://github.com/battlettt/transit-pulse">Transit Pulse</a></h3>
+          <p class="meta">GTFS reliability analytics &middot; shipped v1</p>
+          <p class="desc">
+            Transit Pulse joins a GTFS static schedule with GTFS-Realtime observations in DuckDB
+            and reports what riders actually experienced: on-time performance per route, headway
+            adherence on frequent service, and bunching events where two vehicles arrive together
+            instead of evenly spaced. Cancelled trips and unobserved stops are reported separately,
+            never silently counted as on time. Output is a metrics file plus a self-contained HTML
+            dashboard that renders with no network.
+          </p>
+          <ul class="ai-stats">
+            <li><b>36</b><span>tests passing</span></li>
+            <li><b>3</b><span>reliability metric families</span></li>
+            <li><b>2</b><span>GTFS inputs, static + realtime</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>DuckDB</li><li>GTFS</li><li>CLI</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/transit-pulse">Source</a></li>
+            <li><a href="https://github.com/battlettt/transit-pulse/blob/main/README.md">README</a></li>
           </ul>
         </article>
       </div>
