@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: fourteen projects across security engineering, AI/ML, applied AI, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: fifteen projects across security engineering, AI/ML, applied AI, music, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Fourteen projects across security engineering, AI/ML, applied AI, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Fifteen projects across security engineering, AI/ML, applied AI, music, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="627">
-<meta property="og:image:alt" content="Marcel Slowly. Build it, then break it. Portfolio with Security, AI/ML, Engineering, Product and Research projects.">
+<meta property="og:image:alt" content="Marcel Slowly. Build it, then break it. Portfolio with Security, AI/ML, Applied AI, Music, Engineering, Product and Research projects.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23111'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23f6f5f1'>M</text></svg>">
@@ -39,7 +39,7 @@
   --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
 
   /* chapter swatches, used in the chapter bar */
-  --c-sec:#3fbf77; --c-ai:#d9831f; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
+  --c-sec:#3fbf77; --c-ai:#d9831f; --c-mus:#7c5cbf; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
 }
 @media (prefers-color-scheme:dark){
   :root{--paper:#131312; --paper-2:#1b1b19; --ink:#ecebe6; --ink-2:#b4b2aa; --ink-3:#8a887f; --rule:#2c2c29; --accent:#ee7a5c}
@@ -163,6 +163,16 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .ai-open h2{margin:0 0 1.25rem;font-family:var(--sans);font-weight:600;font-size:clamp(2.75rem,7vw,5rem);line-height:1;letter-spacing:-.04em}
 .ai-open h2 span{color:var(--amb)}
 .ai-open .thesis{margin:0 0 2.25rem;font-size:clamp(1.125rem,2vw,1.3rem);color:var(--dim);max-width:30rem}
+#music{--dim:#5a5470}
+.mus-open .fig{margin:0 0 1rem;font-family:"IBM Plex Mono",monospace;font-size:.8125rem;color:var(--dim)}
+.mus-open .fig b{color:var(--c-mus);font-weight:500}
+.mus-open h2{margin:0 0 1.25rem;font-family:var(--sans);font-weight:600;font-size:clamp(2.75rem,7vw,5rem);line-height:1;letter-spacing:-.04em}
+.mus-open h2 span{color:var(--c-mus)}
+.mus-open .thesis{margin:0 0 2.25rem;font-size:clamp(1.125rem,2vw,1.3rem);color:var(--dim);max-width:30rem}
+.mus-head{display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap}
+.mus-head>div:first-child{flex:1 1 20rem}
+.mus-wheel{width:min(20rem,100%);height:auto;flex:0 0 auto;color:var(--ink)}
+.mus-wheel text{font-family:"IBM Plex Mono",monospace;fill:currentColor}
 .ai-card{background:rgba(255,255,255,.82);border:1px solid #c4cedb;padding:clamp(1.25rem,3vw,1.75rem);box-shadow:6px 6px 0 #c4cedb}
 .ai-card .idx{font-family:"IBM Plex Mono",monospace;font-size:.75rem;color:var(--dim)}
 .ai-card h3{margin:.2rem 0 .2rem;font-size:clamp(1.75rem,3.5vw,2.25rem);font-weight:600;letter-spacing:-.03em;line-height:1.1}
@@ -319,16 +329,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Fourteen projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Fifteen projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>14</dt><dd>projects across security, AI/ML, applied AI, engineering, product, and research</dd></div>
-        <div><dt>6</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>788</dt><dd>passing tests across nine of the repositories</dd></div>
+        <div><dt>15</dt><dd>projects across security, AI/ML, applied AI, music, engineering, product, and research</dd></div>
+        <div><dt>7</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>910</dt><dd>passing tests across ten of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -341,6 +351,7 @@ footer a:hover{color:var(--accent)}
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
       <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>2</small></a>
       <a href="#applied-ai" style="--sw:var(--c-ai)"><i></i>Applied AI <small>1</small></a>
+      <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
       <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
@@ -585,6 +596,83 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/course-compass">Source</a></li>
             <li><a href="https://battlettt.github.io/course-compass/demo/">Live demo</a></li>
             <li><a href="https://github.com/battlettt/course-compass/blob/main/docs/LEARNING.md">What it taught me</a></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════ MUSIC ═════════ -->
+  <section class="ch" id="music" aria-labelledby="mus-h">
+    <div class="wrap">
+      <div class="mus-open rv">
+        <div class="mus-head">
+          <div>
+            <p class="fig">Fig. 3 <b>&bull;</b> a walk around the wheel</p>
+            <h2 id="mus-h">Every playlist is a <span>walk.</span></h2>
+            <p class="thesis">Every great playlist is secretly a walk around a circle of twelve keys, so I built a tool that draws the map and shows you where the path stumbles.</p>
+          </div>
+          <svg class="mus-wheel" viewBox="0 0 300 300" role="img" aria-label="Camelot wheel: twelve major keys on the outer ring, twelve minor keys on the inner ring, with an orange path tracing a smooth playlist walk from 8A to 11A">
+            <circle cx="150" cy="150" r="140" fill="none" stroke="currentColor" stroke-opacity=".25"/>
+            <circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" stroke-opacity=".25"/>
+            <circle cx="150" cy="150" r="62" fill="none" stroke="currentColor" stroke-opacity=".25"/>
+            <text x="150.0" y="34.0" text-anchor="middle" font-size="13" font-weight="700">1B</text>
+            <text x="150.0" y="73.0" text-anchor="middle" font-size="13" font-weight="700">1A</text>
+            <text x="210.0" y="50.1" text-anchor="middle" font-size="13" font-weight="700">2B</text>
+            <text x="190.5" y="83.9" text-anchor="middle" font-size="13" font-weight="700">2A</text>
+            <text x="253.9" y="94.0" text-anchor="middle" font-size="13" font-weight="700">3B</text>
+            <text x="220.1" y="113.5" text-anchor="middle" font-size="13" font-weight="700">3A</text>
+            <text x="270.0" y="154.0" text-anchor="middle" font-size="13" font-weight="700">4B</text>
+            <text x="231.0" y="154.0" text-anchor="middle" font-size="13" font-weight="700">4A</text>
+            <text x="253.9" y="214.0" text-anchor="middle" font-size="13" font-weight="700">5B</text>
+            <text x="220.1" y="194.5" text-anchor="middle" font-size="13" font-weight="700">5A</text>
+            <text x="210.0" y="257.9" text-anchor="middle" font-size="13" font-weight="700">6B</text>
+            <text x="190.5" y="224.1" text-anchor="middle" font-size="13" font-weight="700">6A</text>
+            <text x="150.0" y="274.0" text-anchor="middle" font-size="13" font-weight="700">7B</text>
+            <text x="150.0" y="235.0" text-anchor="middle" font-size="13" font-weight="700">7A</text>
+            <text x="90.0" y="257.9" text-anchor="middle" font-size="13" font-weight="700">8B</text>
+            <text x="109.5" y="224.1" text-anchor="middle" font-size="13" font-weight="700">8A</text>
+            <text x="46.1" y="214.0" text-anchor="middle" font-size="13" font-weight="700">9B</text>
+            <text x="79.9" y="194.5" text-anchor="middle" font-size="13" font-weight="700">9A</text>
+            <text x="30.0" y="154.0" text-anchor="middle" font-size="13" font-weight="700">10B</text>
+            <text x="69.0" y="154.0" text-anchor="middle" font-size="13" font-weight="700">10A</text>
+            <text x="46.1" y="94.0" text-anchor="middle" font-size="13" font-weight="700">11B</text>
+            <text x="79.9" y="113.5" text-anchor="middle" font-size="13" font-weight="700">11A</text>
+            <text x="90.0" y="50.1" text-anchor="middle" font-size="13" font-weight="700">12B</text>
+            <text x="109.5" y="83.9" text-anchor="middle" font-size="13" font-weight="700">12A</text>
+            <polyline points="109.5,220.1 79.9,190.5 46.1,210.0 30.0,150.0 69.0,150.0 79.9,109.5" fill="none" stroke="#d9831f" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="109.5" cy="220.1" r="4" fill="#d9831f"/>
+            <circle cx="79.9" cy="190.5" r="4" fill="#d9831f"/>
+            <circle cx="46.1" cy="210.0" r="4" fill="#d9831f"/>
+            <circle cx="30.0" cy="150.0" r="4" fill="#d9831f"/>
+            <circle cx="69.0" cy="150.0" r="4" fill="#d9831f"/>
+            <circle cx="79.9" cy="109.5" r="4" fill="#d9831f"/>
+            <text x="150" y="154" text-anchor="middle" font-size="11">12 keys</text>
+          </svg>
+        </div>
+
+        <article class="ai-card" data-cat="music">
+          <span class="idx">15 / python music</span>
+          <h3><a href="https://github.com/battlettt/playlist-analyzer">Playlist Analyzer</a></h3>
+          <p class="meta">Playlist analysis &amp; harmonic mixing &middot; shipped v1</p>
+          <p class="desc">
+            Playlist Analyzer reads an exported playlist and shows which keys and tempos it lives
+            in, how its energy rises and falls across the track order, and which back-to-back
+            tracks blend or clash on the Camelot wheel. It scores the playlist's flow from 0 to
+            100 and suggests a better order that never drops a track. Along the way it teaches
+            the theory in plain English: the circle of fifths, harmonic mixing, beatmatching,
+            and energy arcs, and it says plainly what it cannot do without a streaming API key.
+          </p>
+          <ul class="ai-stats">
+            <li><b>122</b><span>tests passing</span></li>
+            <li><b>25&rarr;70</b><span>flow score, clashing sample reordered</span></li>
+            <li><b>0</b><span>keys needed, fully offline demo</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Camelot wheel</li><li>CLI</li><li>Static demo</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/playlist-analyzer">Source</a></li>
+            <li><a href="https://battlettt.github.io/playlist-analyzer/">Live demo</a></li>
+            <li><a href="https://github.com/battlettt/playlist-analyzer/blob/main/docs/theory.md">What it taught me</a></li>
           </ul>
         </article>
       </div>
@@ -871,7 +959,7 @@ footer a:hover{color:var(--accent)}
         links.forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + e.target.id)); });
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
-    ['security', 'ai', 'applied-ai', 'engineering', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
+    ['security', 'ai', 'applied-ai', 'music', 'engineering', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
   }
 
   /* ---- drift plot: dithered histograms, PSI computed per frame ---- */
