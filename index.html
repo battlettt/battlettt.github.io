@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: thirteen projects across security engineering, AI/ML, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: fourteen projects across security engineering, AI/ML, applied AI, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Thirteen projects across security engineering, AI/ML, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Fourteen projects across security engineering, AI/ML, applied AI, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
@@ -319,16 +319,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Thirteen projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Fourteen projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>13</dt><dd>projects across security, AI/ML, engineering, product, and research</dd></div>
-        <div><dt>5</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>672</dt><dd>passing tests across eight of the repositories</dd></div>
+        <div><dt>14</dt><dd>projects across security, AI/ML, applied AI, engineering, product, and research</dd></div>
+        <div><dt>6</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>788</dt><dd>passing tests across nine of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -340,6 +340,7 @@ footer a:hover{color:var(--accent)}
       <h2>Selected work</h2>
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
       <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>2</small></a>
+      <a href="#applied-ai" style="--sw:var(--c-ai)"><i></i>Applied AI <small>1</small></a>
       <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
@@ -550,6 +551,43 @@ footer a:hover{color:var(--accent)}
         </div>
         <figcaption>Live illustration with simulated data. PSI is computed in your browser across 32 bins, using the usual 0.1 and 0.25 thresholds.</figcaption>
       </figure>
+    </div>
+  </section>
+
+  <!-- ═════════ APPLIED AI ═════════ -->
+  <section class="ch" id="applied-ai" aria-labelledby="aai-h">
+    <div class="wrap">
+      <div class="ai-open rv">
+        <p class="fig">Fig. 2 <b>&bull;</b> retrieval, not recall</p>
+        <h2 id="aai-h">An answer you can <span>check.</span></h2>
+        <p class="thesis">A chatbot will answer from memory and sound sure either way. This one answers only from your notes, cites the exact chunks it used, and says plainly when your notes do not cover the question.</p>
+
+        <article class="ai-card" data-cat="ai">
+          <span class="idx">14 / python applied ai</span>
+          <h3><a href="https://github.com/battlettt/course-compass">Course Compass</a></h3>
+          <p class="meta">Grounded study companion &middot; shipped v1</p>
+          <p class="desc">
+            Course Compass turns your own course notes into cited answers, quizzes, and a
+            spaced-review plan. Ask a question and it retrieves the relevant chunks first, then
+            an LLM answers <em>only from those chunks</em>, with every claim cited and an honest
+            refusal when nothing matches well enough. Quizzes are generated from the notes too,
+            with wrong options taken from your other notes, never invented, and misses feed a
+            study plan that spends the most time on your weakest topics. With no API key it runs
+            a clearly labelled offline fallback instead of pretending to be the model.
+          </p>
+          <ul class="ai-stats">
+            <li><b>116</b><span>tests passing</span></li>
+            <li><b>89%</b><span>top-1 retrieval on sample notes</span></li>
+            <li><b>0</b><span>keys needed for the offline fallback</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>LLM RAG</li><li>CLI</li><li>Spaced review</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/course-compass">Source</a></li>
+            <li><a href="https://battlettt.github.io/course-compass/demo/">Live demo</a></li>
+            <li><a href="https://github.com/battlettt/course-compass/blob/main/docs/LEARNING.md">What it taught me</a></li>
+          </ul>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -833,7 +871,7 @@ footer a:hover{color:var(--accent)}
         links.forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + e.target.id)); });
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
-    ['security', 'ai', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
+    ['security', 'ai', 'applied-ai', 'engineering', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
   }
 
   /* ---- drift plot: dithered histograms, PSI computed per frame ---- */
