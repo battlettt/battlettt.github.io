@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: sixteen projects across security engineering, AI/ML, applied AI, music, entrepreneurship, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: seventeen projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Sixteen projects across security engineering, AI/ML, applied AI, music, entrepreneurship, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Seventeen projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="627">
-<meta property="og:image:alt" content="Marcel Slowly. Build it, then break it. Portfolio with Security, AI/ML, Applied AI, Music, Entrepreneurship, Engineering, Product and Research projects.">
+<meta property="og:image:alt" content="Marcel Slowly. Build it, then break it. Portfolio with Security, AI/ML, Applied AI, Music, Entrepreneurship, Money Tools, Engineering, Product and Research projects.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23111'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23f6f5f1'>M</text></svg>">
@@ -39,7 +39,7 @@
   --ease:cubic-bezier(.16,1,.3,1); --spring:cubic-bezier(.34,1.56,.64,1);
 
   /* chapter swatches, used in the chapter bar */
-  --c-sec:#3fbf77; --c-ai:#d9831f; --c-mus:#7c5cbf; --c-ent:#0f766e; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
+  --c-sec:#3fbf77; --c-ai:#d9831f; --c-mus:#7c5cbf; --c-ent:#0f766e; --c-mon:#4d7c0f; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
 }
 @media (prefers-color-scheme:dark){
   :root{--paper:#131312; --paper-2:#1b1b19; --ink:#ecebe6; --ink-2:#b4b2aa; --ink-3:#8a887f; --rule:#2c2c29; --accent:#ee7a5c}
@@ -173,6 +173,15 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .ent-head{display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap}
 .ent-head>div:first-child{flex:1 1 20rem}
 .ent-fig{width:min(26rem,100%);height:auto;flex:0 0 auto}
+#money{--dim:#4a4944}
+.mon-open .fig{margin:0 0 1rem;font-family:"IBM Plex Mono",monospace;font-size:.8125rem;color:var(--dim)}
+.mon-open .fig b{color:var(--c-mon);font-weight:500}
+.mon-open h2{margin:0 0 1.25rem;font-family:var(--sans);font-weight:600;font-size:clamp(2.75rem,7vw,5rem);line-height:1;letter-spacing:-.04em}
+.mon-open h2 span{color:var(--c-mon)}
+.mon-open .thesis{margin:0 0 2.25rem;font-size:clamp(1.125rem,2vw,1.3rem);color:var(--dim);max-width:30rem}
+.mon-head{display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap}
+.mon-head>div:first-child{flex:1 1 20rem}
+.mon-fig{width:min(26rem,100%);height:auto;flex:0 0 auto}
 .mus-open .fig{margin:0 0 1rem;font-family:"IBM Plex Mono",monospace;font-size:.8125rem;color:var(--dim)}
 .mus-open .fig b{color:var(--c-mus);font-weight:500}
 .mus-open h2{margin:0 0 1.25rem;font-family:var(--sans);font-weight:600;font-size:clamp(2.75rem,7vw,5rem);line-height:1;letter-spacing:-.04em}
@@ -338,16 +347,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Sixteen projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Seventeen projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>16</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, engineering, product, and research</dd></div>
-        <div><dt>8</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>1049</dt><dd>passing tests across eleven of the repositories</dd></div>
+        <div><dt>17</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, and research</dd></div>
+        <div><dt>9</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>1201</dt><dd>passing tests across twelve of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -362,6 +371,7 @@ footer a:hover{color:var(--accent)}
       <a href="#applied-ai" style="--sw:var(--c-ai)"><i></i>Applied AI <small>1</small></a>
       <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
       <a href="#entrepreneurship" style="--sw:var(--c-ent)"><i></i>Entrepreneurship <small>1</small></a>
+      <a href="#money" style="--sw:var(--c-mon)"><i></i>Money Tools <small>1</small></a>
       <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
@@ -759,6 +769,78 @@ footer a:hover{color:var(--accent)}
     </div>
   </section>
 
+  <!-- ═════════ MONEY TOOLS ═════════ -->
+  <section class="ch" id="money" aria-labelledby="mon-h">
+    <div class="wrap">
+      <div class="mon-open rv">
+        <div class="mon-head">
+          <div>
+            <p class="fig">Fig. 5 <b>&bull;</b> what you keep</p>
+            <h2 id="mon-h">Pay is not what you <span>keep.</span></h2>
+            <p class="thesis">A paycheque is a promise and take-home is the truth: put two co-op offers side by side after the city takes its cut, and the &ldquo;better&rdquo; job is sometimes the one that pays less.</p>
+          </div>
+          <svg class="mon-fig" viewBox="0 0 640 240" width="100%" role="img" aria-labelledby="keep-t keep-d" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+            <title id="keep-t">Gross pay vs take-home per month for two synthetic co-op offers (estimates)</title>
+            <desc id="keep-d">Synthetic example, all figures are estimates. Grouped bars compare monthly gross pay with monthly take-home after estimated tax, CPP, EI, rent, commuting and moving. Toronto offer at 28 dollars an hour: 4,549.65 dollars gross and 677.93 dollars take-home per month. Waterloo offer at 24 dollars an hour: 4,159.68 dollars gross and 1,640.89 dollars take-home per month. The higher hourly rate keeps less.</desc>
+            <style>
+              .mt-ink { fill: #0b0b0b } .mt-muted { stroke: #52514e } .mt-gross { fill: #2a78d6 } .mt-take { fill: #eb6834 }
+              @media (prefers-color-scheme: dark) {
+                .mt-ink { fill: #f0efec } .mt-muted { stroke: #c3c2b7 } .mt-gross { fill: #3987e5 } .mt-take { fill: #d95926 }
+              }
+            </style>
+            <line x1="24" y1="14" x2="24" y2="226" class="mt-muted" stroke-width="1"/>
+            <g font-size="13" class="mt-ink">
+              <text x="24" y="10" font-weight="600">Toronto, $28/h (synthetic)</text>
+              <text x="24" y="124" font-weight="600">Waterloo, $24/h (synthetic)</text>
+            </g>
+            <path d="M24 22 H420.4 Q424.4 22 424.4 26 V40 Q424.4 44 420.4 44 H24 Z" class="mt-gross"/>
+            <path d="M24 46 H79.7 Q83.7 46 83.7 50 V64 Q83.7 68 79.7 68 H24 Z" class="mt-take"/>
+            <path d="M24 136 H386.1 Q390.1 136 390.1 140 V154 Q390.1 158 386.1 158 H24 Z" class="mt-gross"/>
+            <path d="M24 160 H164.4 Q168.4 160 168.4 164 V178 Q168.4 182 164.4 182 H24 Z" class="mt-take"/>
+            <g font-size="13" class="mt-ink">
+              <text x="432.4" y="38">$4,550 gross / mo</text>
+              <text x="91.7" y="62">$678 take-home</text>
+              <text x="398.1" y="152">$4,160 gross / mo</text>
+              <text x="176.4" y="176">$1,641 take-home</text>
+            </g>
+            <rect x="24" y="206" width="14" height="14" rx="2" class="mt-gross"/>
+            <rect x="200" y="206" width="14" height="14" rx="2" class="mt-take"/>
+            <g font-size="12" class="mt-ink">
+              <text x="44" y="218">gross pay</text>
+              <text x="220" y="218">take-home (estimate)</text>
+            </g>
+          </svg>
+        </div>
+
+        <article class="ai-card" data-cat="money">
+          <span class="idx">17 / python money tools</span>
+          <h3><a href="https://github.com/battlettt/coop-offer-comparator">Co-op Offer Comparator</a></h3>
+          <p class="meta">Co-op offer comparison by take-home pay &middot; shipped v1</p>
+          <p class="desc">
+            Co-op Offer Comparator ranks job offers by what you keep, not the headline rate:
+            estimated income tax, CPP and EI on their own lines, then rent, commuting, moving
+            costs and signing bonuses, compared per month so a 16-week and a 24-week term are
+            fair to each other. It calls offers within $25 a month &ldquo;about tied&rdquo;, works out
+            the pay one city would need to match another, and shows whether a $200 rent guess
+            would flip the ranking. A standard-library Python CLI and a static browser demo share
+            bit-identical math, and every figure is labelled an estimate.
+          </p>
+          <ul class="ai-stats">
+            <li><b>152</b><span>tests passing</span></li>
+            <li><b>$963</b><span>a month the higher rate hid, synthetic sample</span></li>
+            <li><b>0</b><span>paid services or API keys needed</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>CLI</li><li>Static demo</li><li>Take-home pay</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/coop-offer-comparator">Source</a></li>
+            <li><a href="https://battlettt.github.io/coop-offer-comparator/">Live demo</a></li>
+            <li><a href="https://github.com/battlettt/coop-offer-comparator/blob/main/docs/money-concepts.md">What it taught me</a></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <!-- ═════════ ENGINEERING ═════════ -->
   <section class="ch" id="engineering" aria-labelledby="eng-h">
     <div class="wrap">
@@ -1039,7 +1121,7 @@ footer a:hover{color:var(--accent)}
         links.forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + e.target.id)); });
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
-    ['security', 'ai', 'applied-ai', 'music', 'entrepreneurship', 'engineering', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
+    ['security', 'ai', 'applied-ai', 'music', 'entrepreneurship', 'money', 'engineering', 'product', 'research'].forEach(function (id) { spy.observe(document.getElementById(id)); });
   }
 
   /* ---- drift plot: dithered histograms, PSI computed per frame ---- */
