@@ -40,6 +40,7 @@
 
   /* chapter swatches, used in the chapter bar */
   --c-sec:#3fbf77; --c-ai:#d9831f; --c-mus:#7c5cbf; --c-ent:#0f766e; --c-mon:#4d7c0f; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
+  --c-aai:#c2187a;
 }
 @media (prefers-color-scheme:dark){
   :root{--paper:#131312; --paper-2:#1b1b19; --ink:#ecebe6; --ink-2:#b4b2aa; --ink-3:#8a887f; --rule:#2c2c29; --accent:#ee7a5c}
@@ -314,6 +315,218 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .np .go a:hover{color:var(--red)}
 #research :focus-visible{outline-color:var(--red)}
 
+/* ════════════════════════════════════════════════════════════════════
+   05  APPLIED AI  ·  annotated manuscript, every claim cited
+   every rule below is scoped to its chapter id; shared classes untouched
+   ════════════════════════════════════════════════════════════════════ */
+#applied-ai{
+  --bg:#fbf8f0; --fg:#1d1b26; --dim:#55526a; --pen:#a3157f; --rl:#d3dfee; --hl:#fde98b;
+  background:
+    repeating-linear-gradient(to bottom,transparent 0 calc(2rem - 1px),var(--rl) calc(2rem - 1px) 2rem),
+    radial-gradient(ellipse 60% 50% at 90% 10%,rgba(253,233,139,.22),transparent 70%),
+    var(--bg);
+  color:var(--fg);
+}
+#applied-ai::before{content:"";position:absolute;top:0;bottom:0;left:max(.45rem,calc((100% - var(--max)) / 2 + var(--gut) - 1.15rem));width:4px;border-inline:1px solid rgba(194,24,122,.45);pointer-events:none}
+#applied-ai ::selection{background:var(--hl);color:var(--fg)}
+#applied-ai :focus-visible{outline-color:var(--pen)}
+#applied-ai .ai-open{display:grid;grid-template-columns:minmax(0,1fr);column-gap:clamp(2rem,5vw,4rem)}
+#applied-ai .ai-open .fig{margin:0 0 .75rem;font-family:"Caveat",cursive;font-size:1.5rem;line-height:1.1;color:var(--pen);transform:rotate(-1.5deg);transform-origin:left center}
+#applied-ai .ai-open .fig b{color:var(--pen);font-weight:600}
+#applied-ai .ai-open h2{font-family:var(--serif);font-weight:500;letter-spacing:-.03em;line-height:1.02}
+#applied-ai .ai-open h2 span{font-style:italic;color:var(--pen);background:linear-gradient(transparent 58%,var(--hl) 58% 90%,transparent 90%);padding:0 .05em}
+#applied-ai .ai-open h2 span::after{content:"\2713";content:"\2713" / "";margin-left:.12em;font-family:"Caveat",cursive;font-style:normal;font-size:.85em;color:var(--pen)}
+#applied-ai .ai-open .thesis{color:var(--dim);border-left:3px solid var(--hl);padding-left:1rem}
+#applied-ai .aai-fig{display:block;width:min(24rem,100%);height:auto;margin:0 0 2.5rem;filter:drop-shadow(0 14px 18px rgba(60,40,10,.14))}
+#applied-ai .aai-fig text{font-family:"Ubuntu Mono",var(--mono)}
+@media (min-width:62rem){
+  #applied-ai .ai-open{grid-template-columns:minmax(0,1fr) minmax(0,24rem)}
+  #applied-ai .ai-open>.fig,#applied-ai .ai-open>h2,#applied-ai .ai-open>.thesis{grid-column:1}
+  #applied-ai .aai-fig{grid-column:2;grid-row:1 / span 3;align-self:center;margin:0}
+  #applied-ai .ai-card{grid-column:1 / -1}
+}
+#applied-ai .ai-card{position:relative;background:#fffefa;border:1px solid #e1d9c6;box-shadow:3px 3px 0 #efe7d3,0 22px 34px -26px rgba(60,40,10,.4);padding-left:clamp(2.6rem,6vw,4rem)}
+#applied-ai .ai-card::before{content:"";position:absolute;top:0;bottom:0;left:clamp(1.6rem,4vw,2.6rem);border-left:1px solid rgba(194,24,122,.5)}
+#applied-ai .ai-card::after{content:"";position:absolute;top:-.7rem;left:50%;width:6.5rem;height:1.4rem;margin-left:-3.25rem;background:rgba(253,233,139,.75);transform:rotate(-2.5deg);box-shadow:0 1px 2px rgba(60,40,10,.12)}
+#applied-ai .ai-card .idx{font-family:"Caveat",cursive;font-size:1.25rem;color:var(--pen)}
+#applied-ai .ai-card h3{font-family:var(--serif);font-weight:600;letter-spacing:-.02em}
+#applied-ai .ai-card h3 a:hover{color:var(--pen)}
+#applied-ai .ai-card .meta{font-family:var(--serif);font-style:italic;font-size:.9375rem;color:var(--dim)}
+#applied-ai .ai-card .desc{color:#2c2a36}
+#applied-ai .ai-card .desc em{font-family:inherit;font-size:inherit;color:inherit;background:linear-gradient(transparent 52%,var(--hl) 52%);padding:0 .1em}
+#applied-ai .ai-stats{counter-reset:cite;gap:.5rem 1.5rem;background:none;border:0;border-block:1px solid var(--fg);padding:.85rem 0}
+#applied-ai .ai-stats li{counter-increment:cite;position:relative;background:none;padding:.15rem 0 .15rem 2.1rem}
+#applied-ai .ai-stats li::before{content:"[" counter(cite) "]";content:"[" counter(cite) "]" / "";position:absolute;left:0;top:.35rem;font-family:"Ubuntu Mono",var(--mono);font-weight:700;color:var(--pen)}
+#applied-ai .ai-stats b{font-family:var(--serif);font-weight:600;color:var(--fg)}
+#applied-ai .ai-stats b::after{content:" \2713";content:" \2713" / "";font-family:var(--sans);font-size:.7em;color:var(--pen)}
+#applied-ai .ai-card .tags li{border:0;padding:0;font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;color:var(--dim)}
+#applied-ai .ai-card .tags li::before{content:"[";content:"[" / "";color:var(--pen)}
+#applied-ai .ai-card .tags li::after{content:"]";content:"]" / "";color:var(--pen)}
+#applied-ai .ai-card .go a{color:var(--pen);text-decoration:underline;text-decoration-color:var(--hl);text-decoration-thickness:.35em;text-underline-offset:-.12em;text-decoration-skip-ink:none}
+#applied-ai .ai-card .go a:hover{color:var(--fg)}
+@media (max-width:40rem){#applied-ai .ai-stats{grid-template-columns:minmax(0,1fr)}}
+
+/* ════════════════════════════════════════════════════════════════════
+   06  MUSIC  ·  vinyl on a lit stage, tracklist rhythm
+   ════════════════════════════════════════════════════════════════════ */
+#music{
+  --bg:#130c09; --fg:#f6e9dc; --dim:#cdb7a4; --amp:#ff9d45; --amp-2:#ffc77a; --hot:#ff5e3a; --groove:#3a281e;
+  background:
+    radial-gradient(ellipse 50% 45% at 80% 0%,rgba(255,157,69,.30),transparent 70%),
+    radial-gradient(ellipse 38% 34% at 8% 6%,rgba(255,94,58,.16),transparent 70%),
+    radial-gradient(ellipse 80% 28% at 50% 100%,rgba(255,157,69,.10),transparent 70%),
+    var(--bg);
+  color:var(--fg);
+}
+#music::before{content:"";position:absolute;top:-14rem;right:-22rem;width:52rem;height:52rem;border-radius:50%;pointer-events:none;opacity:.8;
+  background:radial-gradient(circle,#1c120e 0 3%,transparent 3.2%),repeating-radial-gradient(circle,rgba(255,255,255,.04) 0 1px,transparent 1px 5px),radial-gradient(circle,#24170f 0 17%,#0b0705 17.4% 70%,transparent 70.3%)}
+#music>.wrap{position:relative}
+#music ::selection{background:var(--amp);color:var(--bg)}
+#music :focus-visible{outline-color:var(--amp)}
+#music .mus-open .fig{display:inline-flex;align-items:center;font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;text-transform:uppercase;letter-spacing:.18em;color:var(--amp-2)}
+#music .mus-open .fig::before{content:"";width:.55rem;height:.55rem;margin-right:.65rem;border-radius:50%;background:var(--hot);box-shadow:0 0 10px var(--hot);animation:mus-live 1.6s ease-in-out 3}
+#music .mus-open .fig b{color:var(--amp)}
+@keyframes mus-live{50%{opacity:.35}}
+#music .mus-open h2{font-family:"Bricolage Grotesque",var(--sans);font-weight:800;text-transform:uppercase;font-size:clamp(2.6rem,7.5vw,5.5rem);line-height:.9;letter-spacing:-.035em;color:#fff4e8;text-shadow:0 0 34px rgba(255,157,69,.28)}
+#music .mus-open h2 span{color:var(--amp);text-shadow:0 0 22px rgba(255,157,69,.6)}
+#music .mus-open .thesis{color:var(--dim)}
+#music .mus-wheel{width:min(22rem,100%);color:#fff4e8;border-radius:50%;box-shadow:0 0 0 10px #0d0806,0 0 0 11px var(--groove),0 0 60px 14px rgba(255,157,69,.16);background:#0f0907}
+#music .mus-wheel text{font-family:"Bricolage Grotesque",var(--sans)}
+#music .mus-wheel polyline{stroke:#ffa24f}
+#music .mus-wheel .mus-glow{stroke:#ff8a1f}
+#music .mus-wheel circle[r="4"]{fill:#ffa24f;stroke:#130c09;stroke-width:1.5}
+#music .ai-card{position:relative;overflow:hidden;border-radius:12px;background:linear-gradient(160deg,#261811,#160e0a 65%);border:1px solid var(--groove);box-shadow:0 34px 60px -34px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,199,122,.08);color:var(--fg)}
+#music .ai-card::before{content:"";position:absolute;top:-5.5rem;right:-5.5rem;width:11rem;height:11rem;border-radius:50%;pointer-events:none;opacity:.7;
+  background:radial-gradient(circle,#130c09 0 3%,var(--amp) 3.5% 15%,transparent 15.5%),repeating-radial-gradient(circle,#0b0705 0 2px,#1d130e 2px 4px)}
+#music .ai-card>*{position:relative}
+#music .ai-card .idx{font-family:"Ubuntu Mono",var(--mono);font-size:.8125rem;text-transform:uppercase;letter-spacing:.16em;color:var(--amp-2)}
+#music .ai-card h3{font-family:"Bricolage Grotesque",var(--sans);font-weight:800;color:#fff4e8}
+#music .ai-card h3 a:hover{color:var(--amp)}
+#music .ai-card .meta{font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;color:var(--dim)}
+#music .ai-card .desc{color:#ecdccc}
+#music .ai-card .desc em{background:none;color:var(--amp-2)}
+#music .ai-stats{display:block;counter-reset:trk;background:none;border:0;border-top:1px solid var(--groove)}
+#music .ai-stats li{counter-increment:trk;display:grid;grid-template-columns:2.25rem minmax(0,1fr) auto;align-items:baseline;gap:.9rem;background:none;padding:.7rem 0;border-bottom:1px solid var(--groove)}
+#music .ai-stats li::before{content:"A" counter(trk);content:"A" counter(trk) / "";font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;color:var(--amp)}
+#music .ai-stats b{grid-column:3;grid-row:1;font-family:"Bricolage Grotesque",var(--sans);font-weight:800;font-size:1.375rem;color:#fff4e8;font-variant-numeric:tabular-nums}
+#music .ai-stats span{grid-column:2;grid-row:1;margin:0;font-size:.9375rem;color:var(--dim)}
+#music .ai-card .tags li{border:1px solid #5d4131;border-radius:999px;padding:.15rem .65rem;font-family:"Ubuntu Mono",var(--mono);font-size:.8125rem;color:var(--amp-2)}
+#music .ai-card .go a{color:var(--amp)}
+#music .ai-card .go a::before{content:"\25B6";content:"\25B6" / "";margin-right:.45em;font-size:.65em}
+#music .ai-card .go a:hover{color:#fff4e8}
+
+/* ════════════════════════════════════════════════════════════════════
+   07  ENTREPRENEURSHIP  ·  blueprint on the founder's drafting table
+   ════════════════════════════════════════════════════════════════════ */
+#entrepreneurship{
+  --bg:#0f3d74; --fg:#f2f7ff; --dim:#c3d7f2; --cy:#8fd3ff; --or:#ffb070; --bl:rgba(255,255,255,.13); --bl-2:rgba(255,255,255,.055);
+  background:
+    linear-gradient(var(--bl) 1px,transparent 1px) -1px -1px/100px 100px,
+    linear-gradient(90deg,var(--bl) 1px,transparent 1px) -1px -1px/100px 100px,
+    linear-gradient(var(--bl-2) 1px,transparent 1px) -1px -1px/20px 20px,
+    linear-gradient(90deg,var(--bl-2) 1px,transparent 1px) -1px -1px/20px 20px,
+    radial-gradient(ellipse 85% 70% at 50% 35%,#185392,transparent 75%),
+    var(--bg);
+  color:var(--fg);
+}
+#entrepreneurship::before{content:"";position:absolute;inset:clamp(.5rem,1.6vw,1.1rem);border:1px solid rgba(255,255,255,.4);outline:1px solid rgba(255,255,255,.16);outline-offset:4px;pointer-events:none}
+#entrepreneurship ::selection{background:var(--cy);color:var(--bg)}
+#entrepreneurship :focus-visible{outline-color:#fff}
+#entrepreneurship .ent-open .fig{font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;text-transform:uppercase;letter-spacing:.16em;color:var(--dim);border-left:2px solid var(--cy);padding-left:.65rem}
+#entrepreneurship .ent-open .fig b{color:var(--cy)}
+#entrepreneurship .ent-open h2{font-family:var(--sans);font-weight:600;text-transform:uppercase;font-size:clamp(2.3rem,6.2vw,4.4rem);line-height:1.04;letter-spacing:.01em;color:#fff;margin-bottom:1.75rem}
+#entrepreneurship .ent-open h2 span{position:relative;display:inline-block;color:var(--cy)}
+#entrepreneurship .ent-open h2 span::after{content:"";position:absolute;left:0;right:0;bottom:-.32em;height:.36em;border-inline:2px solid var(--cy);background:linear-gradient(var(--cy),var(--cy)) center/100% 2px no-repeat}
+#entrepreneurship .ent-open .thesis{color:var(--dim)}
+#entrepreneurship .ent-fig{border:1px solid rgba(255,255,255,.6);padding:.4rem;background:
+    linear-gradient(var(--bl-2) 1px,transparent 1px) 0 0/16px 16px,
+    linear-gradient(90deg,var(--bl-2) 1px,transparent 1px) 0 0/16px 16px,
+    rgba(7,38,78,.6);
+  box-shadow:0 0 0 4px var(--bg),0 0 0 5px rgba(255,255,255,.22)}
+#entrepreneurship .ent-fig text{font-family:"Ubuntu Mono",var(--mono);letter-spacing:.03em}
+#entrepreneurship .ent-fig .ink{fill:#f2f7ff}
+#entrepreneurship .ent-fig .muted{stroke:#d6e5f7}
+#entrepreneurship .ent-fig path.muted{stroke-dasharray:6 4;stroke-opacity:.55}
+#entrepreneurship .ent-fig line.muted[x1="390"]{stroke-dasharray:3 3}
+#entrepreneurship .ent-fig .rev{stroke:var(--cy)}
+#entrepreneurship .ent-fig .cost{stroke:var(--or);stroke-dasharray:10 4}
+#entrepreneurship .ent-fig .dot{fill:var(--cy);stroke:#0f3d74}
+#entrepreneurship .ent-fig .bp-mark{stroke:#d6e5f7;stroke-opacity:.6}
+#entrepreneurship .ai-card{position:relative;background:rgba(9,44,88,.78);border:1.5px solid rgba(255,255,255,.8);outline:1px solid rgba(255,255,255,.28);outline-offset:5px;box-shadow:none;color:var(--fg)}
+#entrepreneurship .ai-card::before{content:"";position:absolute;top:.7rem;right:.7rem;width:1.1rem;height:1.1rem;border:1px solid rgba(255,255,255,.6);border-radius:50%;
+  background:linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.6)) center/1px 140% no-repeat,linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.6)) center/140% 1px no-repeat}
+#entrepreneurship .ai-card .idx{font-family:"Ubuntu Mono",var(--mono);font-size:.8125rem;text-transform:uppercase;letter-spacing:.16em;color:var(--cy)}
+#entrepreneurship .ai-card h3{font-family:var(--sans);font-weight:600;color:#fff}
+#entrepreneurship .ai-card h3 a:hover{color:var(--cy)}
+#entrepreneurship .ai-card .meta{font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;color:var(--dim)}
+#entrepreneurship .ai-card .desc{color:#e4eefb}
+#entrepreneurship .ai-card .desc em{background:none;color:var(--cy)}
+#entrepreneurship .ai-stats{background:rgba(255,255,255,.75);border:1.5px solid rgba(255,255,255,.8)}
+#entrepreneurship .ai-stats li{background:#0c3566}
+#entrepreneurship .ai-stats b{font-family:"Ubuntu Mono",var(--mono);font-weight:700;font-size:1.625rem;color:#fff;font-variant-numeric:tabular-nums}
+#entrepreneurship .ai-stats span{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+#entrepreneurship .ai-card .tags li{border:1px dashed rgba(255,255,255,.55);font-family:"Ubuntu Mono",var(--mono);font-size:.8125rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+#entrepreneurship .ai-card .go a{color:var(--cy)}
+#entrepreneurship .ai-card .go a:hover{color:#fff}
+@media (max-width:40rem){#entrepreneurship .ai-stats{grid-template-columns:minmax(0,1fr)}}
+
+/* ════════════════════════════════════════════════════════════════════
+   08  MONEY TOOLS  ·  paystub from the vault ledger
+   ════════════════════════════════════════════════════════════════════ */
+#money{
+  --bg:#e8efe5; --fg:#10261a; --dim:#3d5446; --led:#1a6b3c; --led-2:#2f8a55; --slip:#fdfdf8; --perf:#b5c7b9;
+  background:
+    repeating-linear-gradient(45deg,rgba(26,107,60,.05) 0 1px,transparent 1px 7px),
+    repeating-linear-gradient(-45deg,rgba(26,107,60,.05) 0 1px,transparent 1px 7px),
+    radial-gradient(ellipse 70% 60% at 50% 30%,#f2f6ef,transparent 75%),
+    var(--bg);
+  color:var(--fg);
+}
+#money::before{content:"";position:absolute;left:0;right:0;top:0;height:20px;pointer-events:none;
+  background:radial-gradient(circle at 9px 8px,var(--paper) 4px,transparent 4.5px) 0 0/18px 20px repeat-x;border-bottom:1px dashed var(--perf)}
+#money ::selection{background:#bfe3c9;color:var(--fg)}
+#money :focus-visible{outline-color:var(--led)}
+#money .mon-open .fig{display:inline-block;font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;text-transform:uppercase;letter-spacing:.14em;color:var(--dim);border-block:1px solid currentColor;padding:.1rem .35rem}
+#money .mon-open .fig b{color:var(--led)}
+#money .mon-open h2{font-family:"Ubuntu Mono",var(--mono);font-weight:700;font-size:clamp(2.5rem,7vw,5rem);line-height:1;letter-spacing:-.03em;color:var(--fg)}
+#money .mon-open h2 span{color:var(--led);border-bottom:.09em double currentColor}
+#money .mon-open .thesis{color:var(--dim)}
+#money .mon-fig{padding:1.1rem .9rem .8rem;border:1px solid #c6d4c8;box-shadow:0 16px 28px -22px rgba(16,38,26,.55);
+  background:
+    radial-gradient(circle at 8px 0,var(--bg) 4px,transparent 4.5px) 0 0/16px 10px repeat-x,
+    repeating-linear-gradient(to bottom,transparent 0 23px,rgba(26,107,60,.08) 23px 24px),
+    var(--slip)}
+#money .mon-fig text{font-family:"Ubuntu Mono",var(--mono);font-variant-numeric:tabular-nums}
+#money .mon-fig .mt-ink{fill:#10261a}
+#money .mon-fig .mt-muted{stroke:#10261a}
+#money .mon-fig .mt-gross{fill:#7d968a}
+#money .mon-fig .mt-take{fill:var(--led)}
+#money .ai-card{position:relative;background:
+    radial-gradient(circle at 8px 0,var(--bg) 4px,transparent 4.5px) 0 0/16px 10px repeat-x,
+    linear-gradient(90deg,var(--led) 0 5px,transparent 5px),
+    var(--slip);
+  border:1px solid #c6d4c8;box-shadow:0 22px 34px -26px rgba(16,38,26,.55);padding-top:clamp(2rem,4vw,2.5rem)}
+#money .ai-card::before{content:"";position:absolute;left:0;right:0;top:14px;border-top:1px dashed var(--perf)}
+#money .ai-card::after{content:"TAKE-HOME";content:"TAKE-HOME" / "";position:absolute;top:-.85rem;right:1.25rem;padding:.2rem .6rem;font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;font-weight:700;letter-spacing:.16em;color:var(--led);background:var(--slip);border:2px solid currentColor;border-radius:4px;box-shadow:inset 0 0 0 2px var(--slip),inset 0 0 0 3px currentColor;transform:rotate(-6deg);pointer-events:none}
+#money .ai-card .idx{font-family:"Ubuntu Mono",var(--mono);font-size:.8125rem;text-transform:uppercase;letter-spacing:.14em;color:var(--dim)}
+#money .ai-card h3{font-family:var(--sans);font-weight:600;color:var(--fg)}
+#money .ai-card h3 a:hover{color:var(--led)}
+#money .ai-card .meta{font-family:"Ubuntu Mono",var(--mono);font-size:.875rem;color:var(--dim)}
+#money .ai-card .desc{color:#22382b}
+#money .ai-card .desc em{background:none;color:var(--led)}
+#money .ai-stats{display:block;background:none;border:0;border-top:2px solid var(--fg);border-bottom:4px double var(--fg)}
+#money .ai-stats li{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;background:none;padding:.55rem 0;border-bottom:1px dashed var(--perf)}
+#money .ai-stats li:last-child{border-bottom:0}
+#money .ai-stats b{order:2;flex:none;font-family:"Ubuntu Mono",var(--mono);font-weight:700;font-size:1.5rem;color:var(--led);font-variant-numeric:tabular-nums}
+#money .ai-stats span{order:1;margin:0;font-size:.9375rem;color:var(--dim)}
+#money .ai-card .tags li{border:1px solid var(--perf);background:#eef4ec;font-family:"Ubuntu Mono",var(--mono);font-size:.8125rem;color:var(--dim)}
+#money .ai-card .go a{font-family:"Ubuntu Mono",var(--mono);font-size:1rem;color:var(--led);text-decoration:underline;text-underline-offset:4px}
+#money .ai-card .go a:hover{color:var(--fg)}
+
+@media (prefers-reduced-motion:reduce){
+  #music .mus-open .fig::before{animation:none}
+}
+
 /* ── footer (editorial) ──────────────────────────────────────────── */
 footer{border-top:1px solid var(--ink);padding:2.5rem 0 3.5rem;color:var(--ink-3);font-size:.875rem}
 footer .wrap{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
@@ -368,7 +581,7 @@ footer a:hover{color:var(--accent)}
       <h2>Selected work</h2>
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
       <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>2</small></a>
-      <a href="#applied-ai" style="--sw:var(--c-ai)"><i></i>Applied AI <small>1</small></a>
+      <a href="#applied-ai" style="--sw:var(--c-aai)"><i></i>Applied AI <small>1</small></a>
       <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
       <a href="#entrepreneurship" style="--sw:var(--c-ent)"><i></i>Entrepreneurship <small>1</small></a>
       <a href="#money" style="--sw:var(--c-mon)"><i></i>Money Tools <small>1</small></a>
@@ -592,6 +805,40 @@ footer a:hover{color:var(--accent)}
         <p class="fig">Fig. 2 <b>&bull;</b> retrieval, not recall</p>
         <h2 id="aai-h">An answer you can <span>check.</span></h2>
         <p class="thesis">A chatbot will answer from memory and sound sure either way. This one answers only from your notes, cites the exact chunks it used, and says plainly when your notes do not cover the question.</p>
+        <svg class="aai-fig" viewBox="0 0 320 280" role="img" aria-labelledby="aai-fig-t aai-fig-d" xmlns="http://www.w3.org/2000/svg">
+          <title id="aai-fig-t">An answer page with its claims checked against source notes</title>
+          <desc id="aai-fig-d">Illustration only, not data. A ruled notebook page holds an answer drawn as grey lines of text. Three highlighted claims end in citation brackets numbered 1 to 3. Each cited line has a check mark in the margin and a dashed thread to a matching numbered source-note card on the right.</desc>
+          <rect x="8" y="10" width="206" height="260" rx="3" fill="#fffefa" stroke="#ddd3bd"/>
+          <g stroke="#d3dfee" stroke-width="1">
+            <line x1="8" y1="47" x2="214" y2="47"/><line x1="8" y1="75" x2="214" y2="75"/><line x1="8" y1="103" x2="214" y2="103"/><line x1="8" y1="131" x2="214" y2="131"/><line x1="8" y1="159" x2="214" y2="159"/><line x1="8" y1="187" x2="214" y2="187"/><line x1="8" y1="215" x2="214" y2="215"/><line x1="8" y1="243" x2="214" y2="243"/>
+          </g>
+          <g stroke="#c2187a" stroke-opacity=".55" stroke-width="1"><line x1="40" y1="10" x2="40" y2="270"/><line x1="43" y1="10" x2="43" y2="270"/></g>
+          <g fill="#fde98b"><rect x="49" y="62" width="104" height="12" rx="2"/><rect x="49" y="118" width="84" height="12" rx="2"/><rect x="49" y="174" width="116" height="12" rx="2"/></g>
+          <g fill="#4a4658" fill-opacity=".55">
+            <rect x="52" y="37" width="138" height="6" rx="3"/><rect x="52" y="65" width="98" height="6" rx="3"/><rect x="52" y="93" width="144" height="6" rx="3"/><rect x="52" y="121" width="78" height="6" rx="3"/><rect x="52" y="149" width="132" height="6" rx="3"/><rect x="52" y="177" width="110" height="6" rx="3"/><rect x="52" y="205" width="124" height="6" rx="3"/><rect x="52" y="233" width="86" height="6" rx="3"/>
+          </g>
+          <g fill="none" stroke="#a3157f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 67 l4 5 l9 -11"/><path d="M18 123 l4 5 l9 -11"/><path d="M18 179 l4 5 l9 -11"/>
+          </g>
+          <g fill="#a3157f" font-size="13" font-weight="700">
+            <text x="158" y="73">[1]</text><text x="138" y="129">[2]</text><text x="170" y="185">[3]</text>
+          </g>
+          <g fill="none" stroke="#a3157f" stroke-opacity=".7" stroke-width="1.2" stroke-dasharray="3 3">
+            <path d="M180 68 C210 68 206 50 236 50"/><path d="M160 124 C200 124 200 136 236 136"/><path d="M192 180 C214 180 210 222 236 222"/>
+          </g>
+          <g fill="#ffffff" stroke="#cfc6b0">
+            <rect x="236" y="22" width="76" height="56" rx="3"/><rect x="236" y="108" width="76" height="56" rx="3"/><rect x="236" y="194" width="76" height="56" rx="3"/>
+          </g>
+          <g fill="#a3157f"><circle cx="250" cy="36" r="8"/><circle cx="250" cy="122" r="8"/><circle cx="250" cy="208" r="8"/></g>
+          <g fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">
+            <text x="250" y="40">1</text><text x="250" y="126">2</text><text x="250" y="212">3</text>
+          </g>
+          <g fill="#4a4658" fill-opacity=".4">
+            <rect x="264" y="33" width="40" height="5" rx="2.5"/><rect x="246" y="50" width="58" height="5" rx="2.5"/><rect x="246" y="62" width="44" height="5" rx="2.5"/>
+            <rect x="264" y="119" width="36" height="5" rx="2.5"/><rect x="246" y="136" width="58" height="5" rx="2.5"/><rect x="246" y="148" width="50" height="5" rx="2.5"/>
+            <rect x="264" y="205" width="40" height="5" rx="2.5"/><rect x="246" y="222" width="54" height="5" rx="2.5"/><rect x="246" y="234" width="40" height="5" rx="2.5"/>
+          </g>
+        </svg>
 
         <article class="ai-card" data-cat="ai">
           <span class="idx">14 / python applied ai</span>
@@ -633,6 +880,40 @@ footer a:hover{color:var(--accent)}
             <p class="thesis">Every great playlist is secretly a walk around a circle of twelve keys, so I built a tool that draws the map and shows you where the path stumbles.</p>
           </div>
           <svg class="mus-wheel" viewBox="0 0 300 300" role="img" aria-label="Camelot wheel: twelve major keys on the outer ring, twelve minor keys on the inner ring, with an orange path tracing a smooth playlist walk from 8A to 11A">
+            <defs>
+              <filter id="mus-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+              <radialGradient id="mus-label"><stop offset="0" stop-color="#3a2416"/><stop offset="1" stop-color="#1b110c"/></radialGradient>
+            </defs>
+            <g class="mus-seg mus-seg--out" fill-opacity=".34">
+              <path d="M116.4 15.1A139 139 0 0 1 183.6 15.1L174.4 52.0A101 101 0 0 0 125.6 52.0Z" fill="#39efd1"/>
+              <path d="M188.3 16.4A139 139 0 0 1 246.6 50.0L220.2 77.3A101 101 0 0 0 177.8 52.9Z" fill="#39b2ef"/>
+              <path d="M250.0 53.4A139 139 0 0 1 283.6 111.7L247.1 122.2A101 101 0 0 0 222.7 79.8Z" fill="#3957ef"/>
+              <path d="M284.9 116.4A139 139 0 0 1 284.9 183.6L248.0 174.4A101 101 0 0 0 248.0 125.6Z" fill="#7639ef"/>
+              <path d="M283.6 188.3A139 139 0 0 1 250.0 246.6L222.7 220.2A101 101 0 0 0 247.1 177.8Z" fill="#d139ef"/>
+              <path d="M246.6 250.0A139 139 0 0 1 188.3 283.6L177.8 247.1A101 101 0 0 0 220.2 222.7Z" fill="#ef39b2"/>
+              <path d="M183.6 284.9A139 139 0 0 1 116.4 284.9L125.6 248.0A101 101 0 0 0 174.4 248.0Z" fill="#ef3957"/>
+              <path d="M111.7 283.6A139 139 0 0 1 53.4 250.0L79.8 222.7A101 101 0 0 0 122.2 247.1Z" fill="#ef7639"/>
+              <path d="M50.0 246.6A139 139 0 0 1 16.4 188.3L52.9 177.8A101 101 0 0 0 77.3 220.2Z" fill="#efd139"/>
+              <path d="M15.1 183.6A139 139 0 0 1 15.1 116.4L52.0 125.6A101 101 0 0 0 52.0 174.4Z" fill="#b2ef39"/>
+              <path d="M16.4 111.7A139 139 0 0 1 50.0 53.4L77.3 79.8A101 101 0 0 0 52.9 122.2Z" fill="#57ef39"/>
+              <path d="M53.4 50.0A139 139 0 0 1 111.7 16.4L122.2 52.9A101 101 0 0 0 79.8 77.3Z" fill="#39ef76"/>
+            </g>
+            <g class="mus-seg mus-seg--in" fill-opacity=".2">
+              <path d="M126.0 53.9A99 99 0 0 1 174.0 53.9L165.2 88.9A63 63 0 0 0 134.8 88.9Z" fill="#39efd1"/>
+              <path d="M177.3 54.8A99 99 0 0 1 218.8 78.8L193.8 104.7A63 63 0 0 0 167.4 89.4Z" fill="#39b2ef"/>
+              <path d="M221.2 81.2A99 99 0 0 1 245.2 122.7L210.6 132.6A63 63 0 0 0 195.3 106.2Z" fill="#3957ef"/>
+              <path d="M246.1 126.0A99 99 0 0 1 246.1 174.0L211.1 165.2A63 63 0 0 0 211.1 134.8Z" fill="#7639ef"/>
+              <path d="M245.2 177.3A99 99 0 0 1 221.2 218.8L195.3 193.8A63 63 0 0 0 210.6 167.4Z" fill="#d139ef"/>
+              <path d="M218.8 221.2A99 99 0 0 1 177.3 245.2L167.4 210.6A63 63 0 0 0 193.8 195.3Z" fill="#ef39b2"/>
+              <path d="M174.0 246.1A99 99 0 0 1 126.0 246.1L134.8 211.1A63 63 0 0 0 165.2 211.1Z" fill="#ef3957"/>
+              <path d="M122.7 245.2A99 99 0 0 1 81.2 221.2L106.2 195.3A63 63 0 0 0 132.6 210.6Z" fill="#ef7639"/>
+              <path d="M78.8 218.8A99 99 0 0 1 54.8 177.3L89.4 167.4A63 63 0 0 0 104.7 193.8Z" fill="#efd139"/>
+              <path d="M53.9 174.0A99 99 0 0 1 53.9 126.0L88.9 134.8A63 63 0 0 0 88.9 165.2Z" fill="#b2ef39"/>
+              <path d="M54.8 122.7A99 99 0 0 1 78.8 81.2L104.7 106.2A63 63 0 0 0 89.4 132.6Z" fill="#57ef39"/>
+              <path d="M81.2 78.8A99 99 0 0 1 122.7 54.8L132.6 89.4A63 63 0 0 0 106.2 104.7Z" fill="#39ef76"/>
+            </g>
+            <circle cx="150" cy="150" r="61" fill="url(#mus-label)"/>
+            <g fill="none" stroke="#ffffff" stroke-opacity=".07"><circle cx="150" cy="150" r="54"/><circle cx="150" cy="150" r="47"/><circle cx="150" cy="150" r="40"/><circle cx="150" cy="150" r="33"/></g>
             <circle cx="150" cy="150" r="140" fill="none" stroke="currentColor" stroke-opacity=".25"/>
             <circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" stroke-opacity=".25"/>
             <circle cx="150" cy="150" r="62" fill="none" stroke="currentColor" stroke-opacity=".25"/>
@@ -660,6 +941,7 @@ footer a:hover{color:var(--accent)}
             <text x="79.9" y="113.5" text-anchor="middle" font-size="13" font-weight="700">11A</text>
             <text x="90.0" y="50.1" text-anchor="middle" font-size="13" font-weight="700">12B</text>
             <text x="109.5" y="83.9" text-anchor="middle" font-size="13" font-weight="700">12A</text>
+            <polyline class="mus-glow" points="109.5,220.1 79.9,190.5 46.1,210.0 30.0,150.0 69.0,150.0 79.9,109.5" fill="none" stroke="#ff8a1f" stroke-width="9" stroke-opacity=".6" stroke-linejoin="round" stroke-linecap="round" filter="url(#mus-glow)"/>
             <polyline points="109.5,220.1 79.9,190.5 46.1,210.0 30.0,150.0 69.0,150.0 79.9,109.5" fill="none" stroke="#d9831f" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
             <circle cx="109.5" cy="220.1" r="4" fill="#d9831f"/>
             <circle cx="79.9" cy="190.5" r="4" fill="#d9831f"/>
@@ -727,6 +1009,12 @@ footer a:hover{color:var(--accent)}
             <line x1="40" y1="200" x2="600" y2="24" class="rev" stroke-width="2" stroke-linecap="round"/>
             <line x1="390" y1="90" x2="390" y2="200" class="muted" stroke-width="1"/>
             <circle cx="390" cy="90" r="4" class="dot" stroke-width="2"/>
+            <g class="bp-mark" fill="none" stroke-width="1">
+              <circle cx="390" cy="90" r="15" stroke-dasharray="4 3"/>
+              <line x1="370" y1="90" x2="410" y2="90"/>
+              <path d="M40 196 V204 M120 196 V204 M200 196 V204 M280 196 V204 M360 196 V204 M440 196 V204 M520 196 V204 M600 196 V204"/>
+              <path d="M6 18 V6 H18 M622 6 H634 V18 M634 222 V234 H622 M18 234 H6 V222"/>
+            </g>
             <g font-size="13" font-weight="600" class="ink">
               <text x="300" y="80">break-even</text>
               <text x="596" y="20" text-anchor="end">revenue</text>
