@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: eleven projects across security engineering, AI/ML, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: thirteen projects across security engineering, AI/ML, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Eleven projects across security engineering, AI/ML, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Thirteen projects across security engineering, AI/ML, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
@@ -319,16 +319,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Eleven projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Thirteen projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>11</dt><dd>projects across security, AI/ML, engineering, product, and research</dd></div>
-        <div><dt>4</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>581</dt><dd>passing tests across six of the repositories</dd></div>
+        <div><dt>13</dt><dd>projects across security, AI/ML, engineering, product, and research</dd></div>
+        <div><dt>5</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>672</dt><dd>passing tests across eight of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -338,8 +338,8 @@ footer a:hover{color:var(--accent)}
   <nav class="chapters" aria-label="Project chapters">
     <div class="wrap">
       <h2>Selected work</h2>
-      <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>3</small></a>
-      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>1</small></a>
+      <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
+      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>2</small></a>
       <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
@@ -352,7 +352,7 @@ footer a:hover{color:var(--accent)}
       <header class="sec-open rv">
         <p class="prompt" aria-hidden="true"><b>battlettt@portfolio</b>:~$ ls ./security --verbose</p>
         <h2 id="sec-h" data-scramble>Security</h2>
-        <p class="thesis">Three tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
+        <p class="thesis">Four tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
       </header>
 
       <article class="sx rv" data-cat="security">
@@ -447,6 +447,38 @@ footer a:hover{color:var(--accent)}
           </ul>
         </div>
       </article>
+      <article class="sx rv" data-cat="security">
+        <div>
+          <span class="sx__idx"><b>12</b> / auth log analysis</span>
+          <h3><a href="https://github.com/battlettt/authlog-sentinel" data-scramble>AuthLog Sentinel</a></h3>
+          <p class="sx__meta">Go &middot; shipped v1</p>
+          <p class="desc">
+            Point it at an SSH auth log and it ranks the IPs trying to break in: failed logins
+            grouped by source inside a sliding window, with a score that weights distinct usernames
+            so credential stuffing stands out from one password guessed many times. The sample log
+            flags three attackers, including a stuffing run across 12 usernames and a brute force
+            that later logged in successfully, which the report calls out as a possible compromise.
+            <em>--blocklist</em> prints suggested firewall rules, all commented out: nothing here
+            ever blocks anything on its own.
+          </p>
+          <ul class="tags"><li>Go</li><li>Standard library</li><li>SSH</li><li>Detection</li></ul>
+        </div>
+        <div>
+          <div class="report">
+            <p class="report__h">scan report: authlog-sentinel</p>
+            <ul>
+              <li><span class="k">unit tests passing</span><span class="lead"></span><span class="v">46</span></li>
+              <li><span class="k">external dependencies</span><span class="lead"></span><span class="v">0</span></li>
+              <li><span class="k">usernames tried by top offender</span><span class="lead"></span><span class="v">12</span></li>
+            </ul>
+          </div>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/authlog-sentinel">source</a></li>
+            <li><a href="https://github.com/battlettt/authlog-sentinel/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/battlettt/authlog-sentinel/blob/main/examples/sample-auth.log">sample-log</a></li>
+          </ul>
+        </div>
+      </article>
     </div>
   </section>
 
@@ -456,7 +488,7 @@ footer a:hover{color:var(--accent)}
       <div class="ai-open rv">
         <p class="fig">Fig. 1 <b>&bull;</b> distribution drift</p>
         <h2 id="ai-h">Models fail <span>quietly.</span></h2>
-        <p class="thesis">So the tooling has to be loud. One project, built to catch a model going stale before anyone notices.</p>
+        <p class="thesis">So the tooling has to be loud. Two projects: one that catches a model going stale before anyone notices, and one that puts a trained detector in your browser.</p>
 
         <article class="ai-card" data-cat="ai">
           <span class="idx">04 / python mlops</span>
@@ -478,6 +510,31 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/driftwatch">Source</a></li>
             <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/sample-report.md">Sample report</a></li>
             <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/loan_drift_demo.py">Demo script</a></li>
+          </ul>
+        </article>
+        <article class="ai-card" data-cat="ai">
+          <span class="idx">13 / typescript ml</span>
+          <h3><a href="https://github.com/battlettt/smishield">Smishield</a></h3>
+          <p class="meta">SMS smishing detection &middot; shipped v1</p>
+          <p class="desc">
+            Smishield trains a TF-IDF and logistic regression classifier on 5,574 real labeled SMS
+            messages, then runs the whole detector in your browser: paste a message and it returns
+            a verdict, a confidence percentage, and the plain-English signals behind it, like a
+            shortened URL or urgency wording. The TypeScript scorer matches scikit-learn to within
+            1e-9 on a held-out set, and nothing you paste ever leaves the device. The data is
+            2012-era, so modern parcel-fee and bank-alert smishing can still slip past it, and
+            the page says so.
+          </p>
+          <ul class="ai-stats">
+            <li><b>45</b><span>tests passing</span></li>
+            <li><b>0.96</b><span>test-set F1</span></li>
+            <li><b>5,574</b><span>labeled messages</span></li>
+          </ul>
+          <ul class="tags"><li>TypeScript</li><li>TF-IDF</li><li>scikit-learn</li><li>In-browser</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/smishield">Source</a></li>
+            <li><a href="https://battlettt.github.io/smishield/">Live demo</a></li>
+            <li><a href="https://github.com/battlettt/smishield/blob/main/README.md">README</a></li>
           </ul>
         </article>
       </div>
