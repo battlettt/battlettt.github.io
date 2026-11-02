@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model Scout: pick the right LLM for your task</title>
+  <meta name="description" content="Describe your task and constraints. Model Scout ranks LLMs on cost, quality, speed, context, and privacy, and explains every pick.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#results">Skip to results</a>
+  <header class="site">
+    <div class="wrap">
+      <h1>Model Scout</h1>
+      <p class="tagline">Describe your task. Get a ranked shortlist of LLMs, the reason for each pick, what you give up, and what it costs per month.</p>
+      <nav aria-label="Sections">
+        <a href="#profile-section">Task profile</a>
+        <a href="#results">Results</a>
+        <a href="#playbook">What to use when</a>
+        <a href="#switch">Switch triggers</a>
+        <a href="#about">About the data</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="data-status" class="status" aria-live="polite">
+      <p>Loading the model catalog...</p>
+    </section>
+    <noscript><p class="verdict warn">The ranking needs JavaScript. The playbook and switch triggers below still work as plain guidance.</p></noscript>
+
+    <section id="profile-section" aria-labelledby="profile-h">
+      <h2 id="profile-h">1. Describe your task</h2>
+      <form id="profile" novalidate>
+        <div class="field wide">
+          <label for="task-desc">In plain words, what will the model do?</label>
+          <textarea id="task-desc" rows="3" placeholder="Example: answer customer questions from our 300 page product manual, cheaply, at high volume"></textarea>
+          <div class="row">
+            <button type="button" id="suggest">Suggest settings from my description</button>
+            <span id="suggest-result" class="muted" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label for="task-type">Task type</label>
+            <select id="task-type">
+              <option value="chat">Chat and writing</option>
+              <option value="code">Code</option>
+              <option value="rag">RAG (answer from your documents)</option>
+              <option value="vision">Vision (images)</option>
+              <option value="embeddings">Embeddings (search vectors)</option>
+              <option value="agentic">Agentic work (tools, multi-step)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="budget">Budget: max price per million tokens (USD)</label>
+            <input id="budget" type="number" min="0" step="0.05" inputmode="decimal" placeholder="No limit">
+            <small>Blended for your input and output mix. Leave empty for no limit. At $1 or less, cost weighs heavily.</small>
+          </div>
+
+          <div class="field">
+            <label for="latency">Speed target</label>
+            <select id="latency">
+              <option value="balanced">Balanced</option>
+              <option value="fast">Fast (real-time chat, autocomplete)</option>
+              <option value="any">Do not care (batch jobs)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="quality">Quality bar</label>
+            <select id="quality">
+              <option value="good">Good (most production work)</option>
+              <option value="basic">Basic (classification, extraction, simple chat)</option>
+              <option value="frontier">Frontier (hardest reasoning, coding, research)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="context-need">Longest input you need to fit</label>
+            <select id="context-need">
+              <option value="8000">Up to 8K tokens (a few pages)</option>
+              <option value="32000" selected>Up to 32K tokens (a long report)</option>
+              <option value="128000">Up to 128K tokens (a short book)</option>
+              <option value="200000">Up to 200K tokens</option>
+              <option value="400000">Up to 400K tokens (a large codebase slice)</option>
+              <option value="1000000">Up to 1M tokens</option>
+              <option value="2000000">Up to 2M tokens</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="modality">Input type</label>
+            <select id="modality">
+              <option value="text">Text only</option>
+              <option value="image">Images</option>
+              <option value="file">Files (PDF and similar)</option>
+              <option value="audio">Audio</option>
+              <option value="video">Video</option>
+            </select>
+          </div>
+
+          <div class="field check">
+            <input id="local-only" type="checkbox">
+            <label for="local-only">Privacy: local only (data must not leave my machines)</label>
+            <small>Keeps only open-weight models you can run yourself. Hosted-only models are listed as excluded.</small>
+          </div>
+        </div>
+
+        <fieldset class="grid">
+          <legend>Expected monthly volume (for the cost estimate)</legend>
+          <div class="field">
+            <label for="vol-in">Input tokens per month, in millions</label>
+            <input id="vol-in" type="number" min="0" step="1" value="50" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="vol-out">Output tokens per month, in millions</label>
+            <input id="vol-out" type="number" min="0" step="1" value="10" inputmode="decimal">
+          </div>
+          <p class="muted span2">Monthly cost = input tokens x input price + output tokens x output price, with prices per million tokens. A rough guide: one page of English is about 500 to 700 tokens.</p>
+        </fieldset>
+      </form>
+    </section>
+
+    <section id="results" aria-labelledby="results-h">
+      <h2 id="results-h">2. Ranked models</h2>
+      <div class="results-top">
+        <div id="top-pick" class="top-pick" aria-live="polite"></div>
+        <aside class="weights-box" aria-labelledby="weights-h">
+          <h3 id="weights-h">How your profile weights each factor</h3>
+          <ul id="weights" class="weights"></ul>
+          <p class="muted">Weights shift with your constraints: a tight budget raises cost, a long input raises context fit, local-only raises privacy.</p>
+        </aside>
+      </div>
+
+      <div class="row">
+        <input id="include-live" type="checkbox" disabled>
+        <label for="include-live">Also rank other live models from OpenRouter (not reviewed: quality and speed not rated)</label>
+      </div>
+      <p id="result-count" class="muted"></p>
+
+      <h3>Comparison table</h3>
+      <p class="muted">Scores are 0 to 100. Factor columns show each factor's score before weighting. * means that figure is not verified.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Rank</th><th scope="col">Model</th><th scope="col">Score</th>
+              <th scope="col">Cost</th><th scope="col">Quality</th><th scope="col">Speed</th><th scope="col">Context fit</th><th scope="col">Privacy</th>
+              <th scope="col">Monthly cost</th><th scope="col">Price in / out per 1M</th><th scope="col">Context</th><th scope="col">Data</th>
+            </tr>
+          </thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+
+      <h3>Model cards</h3>
+      <div id="cards" class="cards"></div>
+
+      <h3>Excluded by hard constraints</h3>
+      <ul id="excluded" class="excluded"></ul>
+    </section>
+
+    <section id="playbook" aria-labelledby="playbook-h">
+      <h2 id="playbook-h">3. What to use when</h2>
+      <p>Rules you can apply without the ranker. Start at the top and stop at the first rule that matches.</p>
+      <ol class="rules">
+        <li><strong>Data cannot leave your machines?</strong> Use an open-weight model. On a laptop, use a small model (about 8B parameters) for basic chat and extraction. With one strong GPU, a mixture-of-experts model with a few billion active parameters gives much better quality for similar speed. Bigger open models need servers, so price the hardware before you commit.</li>
+        <li><strong>You need search or similarity, not generated text?</strong> Use an embedding model. They cost cents per million tokens. Pick one and stay on it: switching embedding models means re-embedding every document.</li>
+        <li><strong>High volume, simple answers (classification, tagging, routing, extraction)?</strong> Use the cheapest small tier that passes a 50 example test set. Price differences of 10x or more between tiers are common, and simple tasks rarely need a flagship. Ask for short, structured outputs to keep output tokens low.</li>
+        <li><strong>Answering from your own documents (RAG)?</strong> Retrieval quality matters more than model size. Use a mid-tier model and spend effort on retrieval. Only move to long-context models (hundreds of thousands of tokens) when chunking keeps losing the answer, and remember that every token you send is billed.</li>
+        <li><strong>Whole documents or codebases in one prompt?</strong> Filter by context window first: the model must fit your longest input with room for the answer. Then compare input prices, because long prompts are dominated by input cost.</li>
+        <li><strong>Hard reasoning, tricky code, or work where a mistake is expensive?</strong> Use a frontier tier. Check the cost at your real volume: frontier output tokens can cost 50 to 100 times a small tier. A common pattern is a cheap model for the first pass and a frontier model only for the hard cases.</li>
+        <li><strong>Agents that call tools over many steps?</strong> Reliability compounds: a small error rate per step becomes a large one over twenty steps. Favor stronger tiers, and set a cost cap per task.</li>
+        <li><strong>Real-time chat or autocomplete?</strong> Favor fast tiers (names like Flash, Haiku, mini, Lite, Luna). Speed classes here are editorial estimates, so measure time to first token in your own region before you ship.</li>
+        <li><strong>Still undecided?</strong> Pick the cheapest model that passes your test set, then re-run the switch check below every quarter.</li>
+      </ol>
+    </section>
+
+    <section id="switch" aria-labelledby="switch-h">
+      <h2 id="switch-h">4. Switch triggers: when to reconsider your pick</h2>
+      <ul class="rules">
+        <li><strong>A new model beats yours on your weights.</strong> A small score lead is noise. Run a trial when the lead is at least 5 points and the challenger passes your own test set.</li>
+        <li><strong>Pricing changes.</strong> Re-run your cost estimate when any provider changes prices. A 2x price cut on a model one tier up can make an upgrade free.</li>
+        <li><strong>Your spec goes stale.</strong> Model Scout marks any spec older than <span id="stale-days">90</span> days, or with no date, as stale. Re-check stale specs at the source before you rely on them.</li>
+        <li><strong>Your needs change.</strong> Longer inputs, a new input type, a privacy requirement, or 10x more volume all change the ranking. Update the profile above and look again.</li>
+        <li><strong>Deprecation notices.</strong> Providers retire old versions. Plan the move when the notice arrives, not on the shutdown date.</li>
+      </ul>
+      <div class="switch-box">
+        <h3>Check your current model</h3>
+        <label for="current-model">Model you use today</label>
+        <select id="current-model"><option value="">Choose your current model</option></select>
+        <div id="switch-result" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="about" aria-labelledby="about-h">
+      <h2 id="about-h">5. About the data, and what this app does not do</h2>
+      <ul>
+        <li>The bundled catalog is dated <strong id="catalog-date">(loading)</strong>. Prices and context windows for most models come from OpenRouter's public model list on that date. Buying direct from a provider can cost a different amount.</li>
+        <li>When your browser can reach OpenRouter, Model Scout fetches the live model list and replaces bundled prices with live ones, labelled with the fetch time. If the fetch fails (offline, blocked, or opened from a file with strict browser rules), it uses the bundled catalog and says so at the top.</li>
+        <li>A spec counts as stale when its verification date is missing or older than 90 days. Stale and unverified figures are labelled on every card.</li>
+        <li><strong>Quality tiers and speed classes are editorial estimates</strong> from each provider's own positioning of the model (flagship, mid-tier, small). They are not benchmark scores. Model Scout does not publish benchmark numbers.</li>
+        <li>For open-weight models the listed price is what a hosting provider charges. Running the model yourself has no per-token fee, but you pay for hardware and power, which this app does not estimate.</li>
+        <li>Model Scout runs entirely in your browser. It does not call any model, has no accounts, no server, and no tracking. Your task description never leaves the page.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <p>Model Scout v1. Ranking logic and data live in <a href="app.js">app.js</a> and <a href="catalog.json">catalog.json</a>. Always confirm prices on the provider's page before you commit.</p>
+    </div>
+  </footer>
+
+  <!-- Copy of catalog.json for when the page is opened as a local file (browsers block fetch on file://).
+       Keep in sync with: node tests/sync_embedded_catalog.js (tests fail if it drifts). -->
+  <script type="application/json" id="embedded-catalog">
+{"catalog_date":"2026-11-02","stale_after_days":90,"notes":["Prices are USD per million tokens. For models with an openrouter_id, prices and context windows are OpenRouter's listed figures on the snapshot date; buying direct from the provider may differ.","For open-weight models the OpenRouter price is what a hosting provider charges. Running the model yourself has no per-token fee but costs hardware and power.","quality_tier (1 to 5) and latency_class are editorial estimates based on each provider's own positioning of the model (flagship, mid-tier, small). They are not benchmark scores.","local_hardware is a rough guide from listed parameter counts: laptop, workstation (one strong GPU), server (multiple GPUs), cluster, or unknown."],"models":[{"id":"gpt-6-astra","model":"GPT-6 Astra","provider":"OpenAI","kind":"generation","openrouter_id":"openai/gpt-6-astra","context_window":1050000,"input_price_per_mtok":10,"output_price_per_mtok":50,"price_status":"verified","unverified_fields":[],"latency_class":"slow","quality_tier":5,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["OpenAI's flagship tier in the GPT-6 series","Long-horizon analysis, software engineering, deep research"],"limits":["Highest price tier in this catalog","Flagship models tend to respond slower than smaller tiers"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/openai/gpt-6-astra"},"last_verified":"2026-11-02"},{"id":"gpt-6.1-sol","model":"GPT-6.1 Sol","provider":"OpenAI","kind":"generation","openrouter_id":"openai/gpt-6.1-sol","context_window":1050000,"input_price_per_mtok":2,"output_price_per_mtok":10,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":4,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Positioned just below GPT-6 Astra","Agentic coding, computer use, document-heavy work"],"limits":["Hosted only","Not the top OpenAI tier"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/openai/gpt-6.1-sol"},"last_verified":"2026-11-02"},{"id":"gpt-6.1-terra","model":"GPT-6.1 Terra","provider":"OpenAI","kind":"generation","openrouter_id":"openai/gpt-6.1-terra","context_window":1050000,"input_price_per_mtok":1,"output_price_per_mtok":5,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":4,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Mid-tier GPT-6.1 model, priced below Sol","Everyday agentic, coding, and writing work; screenshot understanding"],"limits":["Hosted only","Below Sol and Astra on OpenAI's own positioning"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/openai/gpt-6.1-terra"},"last_verified":"2026-11-02"},{"id":"gpt-6-luna","model":"GPT-6 Luna","provider":"OpenAI","kind":"generation","openrouter_id":"openai/gpt-6-luna","context_window":1050000,"input_price_per_mtok":0.1,"output_price_per_mtok":0.5,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Fast, cost-efficient GPT-6 tier","High-volume chat, classification, lightweight agents"],"limits":["Hosted only","Small tier: expect weaker results on hard reasoning"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/openai/gpt-6-luna"},"last_verified":"2026-11-02"},{"id":"gpt-oss-120b","model":"gpt-oss-120b","provider":"OpenAI","kind":"generation","openrouter_id":"openai/gpt-oss-120b","context_window":131072,"input_price_per_mtok":0.029,"output_price_per_mtok":0.107,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":3,"task_fit":["chat","code","rag","agentic"],"input_modalities":["text"],"open_weights":true,"local_hardware":"server","strengths":["Open weights (Apache 2.0), can be self-hosted","Mixture-of-experts with about 5.1B active parameters"],"limits":["Text only","117B total parameters: needs a large GPU or a server to self-host","Older (2025) release"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/openai/gpt-oss-120b"},"last_verified":"2026-11-02"},{"id":"gpt-oss-20b","model":"gpt-oss-20b","provider":"OpenAI","kind":"generation","openrouter_id":"openai/gpt-oss-20b","context_window":131072,"input_price_per_mtok":0.03,"output_price_per_mtok":0.13,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":2,"task_fit":["chat","code","rag","agentic"],"input_modalities":["text"],"open_weights":true,"local_hardware":"workstation","strengths":["Open weights (Apache 2.0)","Small enough (21B total, 3.6B active) for a strong workstation"],"limits":["Text only","Small model: limited on complex reasoning","Older (2025) release"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/openai/gpt-oss-20b"},"last_verified":"2026-11-02"},{"id":"claude-fable-5.1","model":"Claude Fable 5.1","provider":"Anthropic","kind":"generation","openrouter_id":"anthropic/claude-fable-5.1","context_window":1000000,"input_price_per_mtok":10,"output_price_per_mtok":50,"price_status":"verified","unverified_fields":[],"latency_class":"slow","quality_tier":5,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Anthropic's top price tier in this catalog","Agentic coding, long-running workflows, long refactors"],"limits":["Highest price tier with GPT-6 Astra","Hosted only"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/anthropic/claude-fable-5.1"},"last_verified":"2026-11-02"},{"id":"claude-opus-5.5","model":"Claude Opus 5.5","provider":"Anthropic","kind":"generation","openrouter_id":"anthropic/claude-opus-5.5","context_window":1000000,"input_price_per_mtok":4,"output_price_per_mtok":20,"price_status":"verified","unverified_fields":[],"latency_class":"slow","quality_tier":5,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Anthropic flagship for demanding reasoning and coding","Multi-step changes in large codebases"],"limits":["Premium price","Hosted only"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/anthropic/claude-opus-5.5"},"last_verified":"2026-11-02"},{"id":"claude-sonnet-5.5","model":"Claude Sonnet 5.5","provider":"Anthropic","kind":"generation","openrouter_id":"anthropic/claude-sonnet-5.5","context_window":1000000,"input_price_per_mtok":2,"output_price_per_mtok":10,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":4,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Sonnet-class model for well-scoped everyday work","Building features, fixing bugs"],"limits":["Hosted only","Below Opus on Anthropic's own positioning"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/anthropic/claude-sonnet-5.5"},"last_verified":"2026-11-02"},{"id":"claude-haiku-5.5","model":"Claude Haiku 5.5","provider":"Anthropic","kind":"generation","openrouter_id":"anthropic/claude-haiku-5.5","context_window":1000000,"input_price_per_mtok":0.1,"output_price_per_mtok":0.5,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Small, fast model for high-volume work","Summarization, subagents, browser use"],"limits":["Hosted only","Small tier: weaker on the hardest tasks"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/anthropic/claude-haiku-5.5"},"last_verified":"2026-11-02"},{"id":"gemini-4-argon","model":"Gemini 4 Argon","provider":"Google","kind":"generation","openrouter_id":"google/gemini-4-argon","context_window":1048576,"input_price_per_mtok":2,"output_price_per_mtok":10,"price_status":"verified","unverified_fields":[],"latency_class":"slow","quality_tier":5,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["audio","file","image","text","video"],"open_weights":false,"local_hardware":null,"strengths":["Google's flagship reasoning model","Accepts text, image, file, audio, and video input"],"limits":["Hosted only","Flagship price and latency"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/google/gemini-4-argon"},"last_verified":"2026-11-02"},{"id":"gemini-3.8-flash","model":"Gemini 3.8 Flash","provider":"Google","kind":"generation","openrouter_id":"google/gemini-3.8-flash","context_window":1048576,"input_price_per_mtok":0.825,"output_price_per_mtok":4.125,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":4,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["audio","file","image","text","video"],"open_weights":false,"local_hardware":null,"strengths":["Google's most capable Flash model per Google","Multimodal input including audio and video"],"limits":["Hosted only","Flash tier, not the flagship"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/google/gemini-3.8-flash"},"last_verified":"2026-11-02"},{"id":"gemini-3.5-flash-lite","model":"Gemini 3.5 Flash Lite","provider":"Google","kind":"generation","openrouter_id":"google/gemini-3.5-flash-lite","context_window":1048576,"input_price_per_mtok":0.3,"output_price_per_mtok":2.5,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":2,"task_fit":["chat","rag","vision","agentic"],"input_modalities":["audio","file","image","text","video"],"open_weights":false,"local_hardware":null,"strengths":["High-efficiency model for focused subagent tasks","Multimodal input including audio and video"],"limits":["Hosted only","Lite tier: not for hard reasoning"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/google/gemini-3.5-flash-lite"},"last_verified":"2026-11-02"},{"id":"gemma-4-31b-it","model":"Gemma 4 31B","provider":"Google","kind":"generation","openrouter_id":"google/gemma-4-31b-it","context_window":262144,"input_price_per_mtok":0.2,"output_price_per_mtok":0.4,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["image","text","video"],"open_weights":true,"local_hardware":"workstation","strengths":["Open weights, 30.7B dense, text and image input","Configurable thinking mode, function calling"],"limits":["Needs a capable GPU to self-host","Max output listed at 16K tokens on OpenRouter"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/google/gemma-4-31b-it"},"last_verified":"2026-11-02"},{"id":"gemma-4-26b-a4b-it","model":"Gemma 4 26B A4B","provider":"Google","kind":"generation","openrouter_id":"google/gemma-4-26b-a4b-it","context_window":262144,"input_price_per_mtok":0.058,"output_price_per_mtok":0.173,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["image","text","video"],"open_weights":true,"local_hardware":"workstation","strengths":["Open weights MoE: 25.2B total, 3.8B active per token","Cheap to run for its size"],"limits":["Needs a capable GPU to self-host","Smaller open model: weaker than frontier hosted models"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/google/gemma-4-26b-a4b-it"},"last_verified":"2026-11-02"},{"id":"llama-4-maverick","model":"Llama 4 Maverick","provider":"Meta","kind":"generation","openrouter_id":"meta-llama/llama-4-maverick","context_window":524288,"input_price_per_mtok":0.1875,"output_price_per_mtok":0.6525,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":3,"task_fit":["chat","rag","vision"],"input_modalities":["image","text"],"open_weights":true,"local_hardware":"server","strengths":["Open weights MoE, 17B active parameters, 128 experts","Text and image input"],"limits":["Large total size: server-class hardware to self-host","2025 release, older than most of this catalog"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/meta-llama/llama-4-maverick"},"last_verified":"2026-11-02"},{"id":"llama-4-scout","model":"Llama 4 Scout","provider":"Meta","kind":"generation","openrouter_id":"meta-llama/llama-4-scout","context_window":1310720,"input_price_per_mtok":0.1,"output_price_per_mtok":0.3,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":2,"task_fit":["chat","rag","vision"],"input_modalities":["image","text"],"open_weights":true,"local_hardware":"server","strengths":["Open weights MoE, 17B active of 109B total","Very long listed context (1.3M tokens)"],"limits":["109B total parameters: server-class hardware to self-host","2025 release"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/meta-llama/llama-4-scout"},"last_verified":"2026-11-02"},{"id":"llama-3.3-70b-instruct","model":"Llama 3.3 70B Instruct","provider":"Meta","kind":"generation","openrouter_id":"meta-llama/llama-3.3-70b-instruct","context_window":131072,"input_price_per_mtok":0.1,"output_price_per_mtok":0.32,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":2,"task_fit":["chat","rag"],"input_modalities":["text"],"open_weights":true,"local_hardware":"server","strengths":["Open weights, widely supported by hosting tools","Multilingual"],"limits":["Text only","70B dense: needs a large GPU","2024 release"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/meta-llama/llama-3.3-70b-instruct"},"last_verified":"2026-11-02"},{"id":"llama-3.1-8b-instruct","model":"Llama 3.1 8B Instruct","provider":"Meta","kind":"generation","openrouter_id":"meta-llama/llama-3.1-8b-instruct","context_window":131072,"input_price_per_mtok":0.05,"output_price_per_mtok":0.08,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":1,"task_fit":["chat","rag"],"input_modalities":["text"],"open_weights":true,"local_hardware":"laptop","strengths":["Open weights, runs on a laptop with quantization","Very cheap when hosted"],"limits":["Text only","Small, 2024-era model: basic tasks only"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/meta-llama/llama-3.1-8b-instruct"},"last_verified":"2026-11-02"},{"id":"mistral-large-4-0","model":"Mistral Large 4","provider":"Mistral","kind":"generation","openrouter_id":"mistralai/mistral-large-4-0","context_window":1048576,"input_price_per_mtok":0.7,"output_price_per_mtok":2.1,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":4,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["image","text"],"open_weights":true,"local_hardware":"cluster","strengths":["Mistral's frontier multimodal model","Reasoning, coding, agentic work"],"limits":["About 1T total parameters per its Hugging Face id: impractical to self-host for most teams"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/mistralai/mistral-large-4-0"},"last_verified":"2026-11-02"},{"id":"mistral-small-2603","model":"Mistral Small 4","provider":"Mistral","kind":"generation","openrouter_id":"mistralai/mistral-small-2603","context_window":262144,"input_price_per_mtok":0.15,"output_price_per_mtok":0.6,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["image","text"],"open_weights":true,"local_hardware":"server","strengths":["Open weights (Mistral Small 4, 119B per its Hugging Face id)","Combines reasoning and general chat"],"limits":["119B total parameters: server-class hardware to self-host"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/mistralai/mistral-small-2603"},"last_verified":"2026-11-02"},{"id":"ministral-8b-2512","model":"Ministral 3 8B 2512","provider":"Mistral","kind":"generation","openrouter_id":"mistralai/ministral-8b-2512","context_window":262144,"input_price_per_mtok":0.15,"output_price_per_mtok":0.15,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":1,"task_fit":["chat","rag","vision"],"input_modalities":["image","text"],"open_weights":true,"local_hardware":"laptop","strengths":["Open weights, small 8B model with vision","Flat low price"],"limits":["Small model: basic tasks only"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/mistralai/ministral-8b-2512"},"last_verified":"2026-11-02"},{"id":"devstral-2512","model":"Devstral 2 2512","provider":"Mistral","kind":"generation","openrouter_id":"mistralai/devstral-2512","context_window":262144,"input_price_per_mtok":0.4,"output_price_per_mtok":2,"price_status":"verified","unverified_fields":[],"latency_class":"medium","quality_tier":3,"task_fit":["code","agentic"],"input_modalities":["file","text"],"open_weights":true,"local_hardware":"server","strengths":["Open weights 123B dense model specialized for agentic coding","256K context per Mistral"],"limits":["Coding specialist: not a general chat pick","123B dense: large GPU server to self-host","No image input"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/mistralai/devstral-2512"},"last_verified":"2026-11-02"},{"id":"deepseek-v4.1-flash","model":"DeepSeek V4.1 Flash","provider":"DeepSeek","kind":"generation","openrouter_id":"deepseek/deepseek-v4.1-flash","context_window":1048576,"input_price_per_mtok":0.045,"output_price_per_mtok":0.5,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["image","text"],"open_weights":true,"local_hardware":"unknown","strengths":["Open weights sparse MoE","Very low listed price for a 1M context model"],"limits":["Total parameter count not listed in the source: self-hosting needs unknown"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/deepseek/deepseek-v4.1-flash"},"last_verified":"2026-11-02"},{"id":"deepseek-v4-pro","model":"DeepSeek V4 Pro 0423","provider":"DeepSeek","kind":"generation","openrouter_id":"deepseek/deepseek-v4-pro","context_window":1048576,"input_price_per_mtok":1.6,"output_price_per_mtok":3.2,"price_status":"verified","unverified_fields":[],"latency_class":"slow","quality_tier":4,"task_fit":["chat","code","rag","agentic"],"input_modalities":["text"],"open_weights":true,"local_hardware":"cluster","strengths":["Open weights MoE, 1.6T total and 49B active parameters","Advanced reasoning and coding"],"limits":["Text only","1.6T parameters: cluster-class hardware to self-host"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/deepseek/deepseek-v4-pro"},"last_verified":"2026-11-02"},{"id":"grok-4.7","model":"Grok 4.7","provider":"xAI","kind":"generation","openrouter_id":"x-ai/grok-4.7","context_window":500000,"input_price_per_mtok":2,"output_price_per_mtok":6,"price_status":"verified","unverified_fields":[],"latency_class":"slow","quality_tier":5,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["xAI flagship for coding, agentic tasks, knowledge work"],"limits":["Hosted only","Context listed at 500K, shorter than several peers"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/x-ai/grok-4.7"},"last_verified":"2026-11-02"},{"id":"grok-4.20","model":"Grok 4.20","provider":"xAI","kind":"generation","openrouter_id":"x-ai/grok-4.20","context_window":2000000,"input_price_per_mtok":1.25,"output_price_per_mtok":2.5,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":4,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["file","image","text"],"open_weights":false,"local_hardware":null,"strengths":["Reasoning model positioned for speed and tool calling","Longest listed context in this catalog (2M tokens)"],"limits":["Hosted only","Older than Grok 4.7"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/x-ai/grok-4.20"},"last_verified":"2026-11-02"},{"id":"qwen3.6-35b-a3b","model":"Qwen3.6 35B A3B","provider":"Alibaba Qwen","kind":"generation","openrouter_id":"qwen/qwen3.6-35b-a3b","context_window":262144,"input_price_per_mtok":0.1,"output_price_per_mtok":0.9,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":3,"task_fit":["chat","code","rag","vision","agentic"],"input_modalities":["image","text","video"],"open_weights":true,"local_hardware":"workstation","strengths":["Open weights MoE: 35B total, 3B active","Text, image, and video input"],"limits":["Needs a capable GPU to self-host"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/qwen/qwen3.6-35b-a3b"},"last_verified":"2026-11-02"},{"id":"qwen3-coder-30b-a3b-instruct","model":"Qwen3 Coder 30B A3B Instruct","provider":"Alibaba Qwen","kind":"generation","openrouter_id":"qwen/qwen3-coder-30b-a3b-instruct","context_window":262144,"input_price_per_mtok":0.07,"output_price_per_mtok":0.28,"price_status":"verified","unverified_fields":[],"latency_class":"fast","quality_tier":2,"task_fit":["code","agentic"],"input_modalities":["text"],"open_weights":true,"local_hardware":"workstation","strengths":["Open weights coding model, 30.5B total MoE","Repository-scale code understanding, tool use"],"limits":["Text only","Coding specialist","2025 release"],"source":{"name":"OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-02","url":"https://openrouter.ai/qwen/qwen3-coder-30b-a3b-instruct"},"last_verified":"2026-11-02"},{"id":"text-embedding-3-small","model":"text-embedding-3-small","provider":"OpenAI","kind":"embedding","openrouter_id":null,"context_window":8191,"input_price_per_mtok":0.02,"output_price_per_mtok":0,"price_status":"verified","unverified_fields":["context_window"],"latency_class":"fast","quality_tier":2,"task_fit":["embeddings"],"input_modalities":["text"],"open_weights":false,"local_hardware":null,"strengths":["Very cheap hosted embeddings","Simple default for semantic search"],"limits":["Hosted only","Context limit (8,191 tokens) is last known, not re-checked for this release","Embeddings produce no output tokens"],"source":{"name":"OpenAI API pricing page, checked 2026-11-02","url":"https://developers.openai.com/api/docs/pricing"},"last_verified":"2026-11-02"},{"id":"text-embedding-3-large","model":"text-embedding-3-large","provider":"OpenAI","kind":"embedding","openrouter_id":null,"context_window":8191,"input_price_per_mtok":0.13,"output_price_per_mtok":0,"price_status":"verified","unverified_fields":["context_window"],"latency_class":"fast","quality_tier":3,"task_fit":["embeddings"],"input_modalities":["text"],"open_weights":false,"local_hardware":null,"strengths":["OpenAI's larger embedding model","Higher-dimension vectors than the small model"],"limits":["Hosted only","Context limit (8,191 tokens) is last known, not re-checked for this release"],"source":{"name":"OpenAI API pricing page, checked 2026-11-02","url":"https://developers.openai.com/api/docs/pricing"},"last_verified":"2026-11-02"},{"id":"nomic-embed-text-v1.5","model":"nomic-embed-text-v1.5","provider":"Nomic AI","kind":"embedding","openrouter_id":null,"context_window":8192,"input_price_per_mtok":0,"output_price_per_mtok":0,"price_status":"self-hosted","unverified_fields":[],"latency_class":"fast","quality_tier":2,"task_fit":["embeddings"],"input_modalities":["text"],"open_weights":true,"local_hardware":"laptop","strengths":["Open weights (Apache 2.0), runs on a laptop","Resizable (Matryoshka) embeddings"],"limits":["No per-token price: you pay for your own hardware","Text only"],"source":{"name":"Hugging Face model card and config.json (n_positions 8192, license apache-2.0), checked 2026-11-02","url":"https://huggingface.co/nomic-ai/nomic-embed-text-v1.5"},"last_verified":"2026-11-02"}]}
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

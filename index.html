@@ -746,9 +746,9 @@ footer a:hover{color:var(--accent)}
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>22</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
-        <div><dt>11</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>1724</dt><dd>passing tests across seventeen of the repositories</dd></div>
+        <div><dt>24</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
+        <div><dt>13</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>1866</dt><dd>passing tests across nineteen of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -759,12 +759,12 @@ footer a:hover{color:var(--accent)}
     <div class="wrap">
       <h2>Selected work</h2>
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
-      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>2</small></a>
+      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>3</small></a>
       <a href="#applied-ai" style="--sw:var(--c-aai)"><i></i>Applied AI <small>4</small></a>
       <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
       <a href="#entrepreneurship" style="--sw:var(--c-ent)"><i></i>Entrepreneurship <small>1</small></a>
       <a href="#money" style="--sw:var(--c-mon)"><i></i>Money Tools <small>1</small></a>
-      <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
+      <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>3</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
       <a href="#focus" style="--sw:var(--c-foc)"><i></i>Focus <small>1</small></a>
@@ -945,7 +945,7 @@ footer a:hover{color:var(--accent)}
       <div class="ai-open rv">
         <p class="fig">Fig. 1 <b>&bull;</b> distribution drift</p>
         <h2 id="ai-h">Models fail <span>quietly.</span></h2>
-        <p class="thesis">So the tooling has to be loud. Two projects: one that catches a model going stale before anyone notices, and one that puts a trained detector in your browser.</p>
+        <p class="thesis">So the tooling has to be loud. Three projects: one that catches a model going stale before anyone notices, one that puts a trained detector in your browser, and one that researches LLMs and recommends the right model for a task.</p>
 
         <article class="ai-card anim-rv" data-cat="ai">
           <span class="idx">04 / python mlops</span>
@@ -992,6 +992,24 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/smishield">Source</a></li>
             <li><a href="https://battlettt.github.io/smishield/">Live demo</a></li>
             <li><a href="https://github.com/battlettt/smishield/blob/main/README.md">README</a></li>
+          </ul>
+        </article>
+        <article class="ai-card anim-rv" data-cat="ai">
+          <span class="idx">23 / javascript model research</span>
+          <h3><a href="https://github.com/battlettt/model-scout">Model Scout</a></h3>
+          <p class="meta">Model research &amp; recommendation &middot; shipped v1</p>
+          <p class="desc">
+            Model Scout is an interactive website that researches LLMs and recommends the right model for a task. Describe your task and constraints, budget, latency, quality, privacy, context, and modality, and it returns a ranked, explained shortlist with monthly cost estimates. Prices come live from OpenRouter where possible, with a clearly dated bundled catalog as fallback, and every spec carries its source and date or is flagged unverified. Quality and speed ratings are editorial estimates, and the site says so.
+          </p>
+          <ul class="ai-stats">
+            <li><b>66</b><span>tests passing</span></li>
+            <li><b>32</b><span>models in catalog</span></li>
+            <li><b>0</b><span>API keys needed</span></li>
+          </ul>
+          <ul class="tags"><li>JavaScript</li><li>LLM research</li><li>Pricing</li><li>Client-side</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/model-scout">Source</a></li>
+            <li><a href="https://battlettt.github.io/model-scout/">Live app</a></li>
           </ul>
         </article>
       </div>
@@ -1452,6 +1470,24 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/transit-pulse">Source</a></li>
             <li><a href="https://github.com/battlettt/transit-pulse/blob/main/README.md">README</a></li>
             <li><a href="https://github.com/battlettt/transit-pulse/blob/main/examples/big-blue-bus/report.html">Example report</a></li>
+          </ul>
+        </article>
+        <article class="ai-card anim-rv" data-cat="engineering">
+          <span class="idx">24 / python automation</span>
+          <h3><a href="https://github.com/battlettt/pagepilot">PagePilot</a></h3>
+          <p class="meta">Browser automation agent &middot; shipped v1</p>
+          <p class="desc">
+            PagePilot is a local browser automation agent: plain-English tasks become explicit step plans shown before anything runs, with human gates before sign-in, payment, submit, send, or delete, resilient selectors that self-heal, and a full audit trail with screenshots. Plans are separate from the executor so they are testable without a browser, dry-run mode acts on nothing, and recipes cannot fill secret fields. Nothing is stored and nothing is hosted; it runs on your machine against your own browser session.
+          </p>
+          <ul class="ai-stats">
+            <li><b>76</b><span>tests passing</span></li>
+            <li><b>3</b><span>recipes shipped</span></li>
+            <li><b>0</b><span>credentials stored</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Playwright</li><li>Automation</li><li>CLI</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/pagepilot">Source</a></li>
+            <li><a href="https://battlettt.github.io/pagepilot/demo/">Sample audit report</a></li>
           </ul>
         </article>
       </div>

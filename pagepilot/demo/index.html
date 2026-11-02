@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PagePilot sample audit report</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #1d1d1f; line-height: 1.5; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+th, td { border: 1px solid #d0d0d7; padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+th { background: #f2f2f5; }
+pre { background: #f6f6f8; padding: 0.8rem; overflow-x: auto; white-space: pre-wrap; }
+.note { background: #fff8e1; border-left: 4px solid #e0a800; padding: 0.6rem 0.8rem; }
+.gate { border-left: 4px solid #c62828; padding: 0.2rem 0.8rem; background: #fdecea; }
+</style>
+</head>
+<body>
+<h1>PagePilot sample audit report</h1>
+<p class="note">This is a static page and cannot automate a browser; it shows the saved report from a mock run that used a fake page.</p>
+<p>Task: <strong>recipe contact-form</strong> (source: recipe:contact-form). Result: <strong>stopped_at_gate</strong>. Stopped at the gate before step 5 (submit). You declined, so that step and all later steps did not run.</p>
+<h2>Plan (printed before anything ran)</h2>
+<table>
+<tr><th>#</th><th>Action</th><th>Description</th><th>Gate</th></tr>
+<tr><td>1</td><td>goto</td><td>Open the contact page at https://www.example.com/contact</td><td>reversible</td></tr>
+<tr><td>2</td><td>fill</td><td>Enter the name &#x27;Sample User&#x27;</td><td>reversible</td></tr>
+<tr><td>3</td><td>select</td><td>Choose the &#x27;General&#x27; topic</td><td>reversible</td></tr>
+<tr><td>4</td><td>fill</td><td>Enter the message</td><td>reversible</td></tr>
+<tr><td>5</td><td>click</td><td>Submit the contact form</td><td>IRREVERSIBLE, needs approval</td></tr>
+<tr><td>6</td><td>wait_for</td><td>Wait for the confirmation</td><td>reversible</td></tr>
+</table>
+<h2>Per-step outcomes</h2>
+<table>
+<tr><th>#</th><th>Action</th><th>Status</th><th>Strategy</th><th>Retries</th><th>Screenshot</th><th>Notes</th></tr>
+<tr><td>1</td><td>goto</td><td>success</td><td>-</td><td>0</td><td>step-01.png</td><td></td></tr>
+<tr><td>2</td><td>fill</td><td>success</td><td>role</td><td>0</td><td>step-02.png</td><td></td></tr>
+<tr><td>3</td><td>select</td><td>success</td><td>role</td><td>0</td><td>step-03.png</td><td></td></tr>
+<tr><td>4</td><td>fill</td><td>success</td><td>attribute</td><td>1</td><td>step-04.png</td><td></td></tr>
+<tr><td>5</td><td>click</td><td>stopped_at_gate</td><td>-</td><td>0</td><td>-</td><td>You declined this irreversible step</td></tr>
+<tr><td>6</td><td>wait_for</td><td>skipped</td><td>-</td><td>0</td><td>-</td><td></td></tr>
+</table>
+<h2>Gate stop</h2>
+<div class="gate"><p>Step 5 (Submit the contact form) is IRREVERSIBLE. PagePilot stopped and asked:</p><pre>GATE: step 5 is IRREVERSIBLE (submit).
+  Submit the contact form
+Type &#x27;yes&#x27; to allow this step, anything else stops the run: no</pre><p>The answer was no, so step 5 and every later step did not run.</p></div>
+<h2>Final report</h2>
+<pre># PagePilot run report: demo-contact-form
+
+- Task: recipe contact-form
+- Source: recipe:contact-form
+- Started: 2026-11-02T09:00:00Z
+- Finished: 2026-11-02T09:00:00Z
+- Result: **stopped_at_gate**. Stopped at the gate before step 5 (submit). You declined, so that step and all later steps did not run.
+
+## Planned steps
+
+1. Open the contact page at https://www.example.com/contact (goto, REVERSIBLE)
+2. Enter the name &#x27;Sample User&#x27; (fill, REVERSIBLE)
+3. Choose the &#x27;General&#x27; topic (select, REVERSIBLE)
+4. Enter the message (fill, REVERSIBLE)
+5. Submit the contact form (click, IRREVERSIBLE)
+6. Wait for the confirmation (wait_for, REVERSIBLE)
+
+## Step outcomes
+
+| # | Action | Status | Strategy | Retries | Screenshot | Notes |
+|---|--------|--------|----------|---------|------------|-------|
+| 1 | goto | success | - | 0 | step-01.png |  |
+| 2 | fill | success | role | 0 | step-02.png |  |
+| 3 | select | success | role | 0 | step-03.png |  |
+| 4 | fill | success | attribute | 1 | step-04.png |  |
+| 5 | click | stopped_at_gate | - | 0 | - | You declined this irreversible step |
+| 6 | wait_for | skipped | - | 0 | - |  |
+
+## What actually changed
+
+- Entered &#x27;Sample User&#x27; into &#x27;Name&#x27; (in the page form only)
+- Entered &#x27;General&#x27; into &#x27;Topic&#x27; (in the page form only)
+- Entered &#x27;Hello, this is a test message.&#x27; into &#x27;Message&#x27; (in the page form only)
+</pre>
+<p>Regenerate with <code>python3 scripts/build_demo.py</code>. Source data: <code>demo/mock_run.json</code>.</p>
+</body>
+</html>
