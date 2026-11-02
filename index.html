@@ -622,7 +622,102 @@ footer a:hover{color:var(--accent)}
   *,*::before,*::after{animation:none!important;transition:none!important}
   .rv{opacity:1!important;transform:none!important}
   .pen path{stroke-dashoffset:0!important}
+  /* animation system (BRIEF-B): show everything, stop every reveal, handoff and ambient accent */
+  .anim-rv{opacity:1!important;transform:none!important}
+  .anim-ch::after{opacity:0!important}
+  .anim-ch>.wrap::before{transform:none!important}
+  #security .report li::before,#ai .plot__frame::after,#entrepreneurship .ent-fig .dot,#money .ai-card::after,
+  #engineering>.wrap>.ai-open::before,#engineering>.wrap>.ai-open h2::before,#product .prod-open h2 span,#research .note{animation:none!important}
+  #ai .plot__frame::after{opacity:0!important}
+  #applied-ai .ai-open h2 span::before{animation:none!important;transform:none!important}
 }
+</style>
+<style id="anim-system">
+/* ════════════════════════════════════════════════════════════════════
+   ANIMATION SYSTEM (BRIEF-B)  ·  additive only, transform + opacity only
+   Base CSS leaves everything visible and static. The script in
+   #anim-system-js adds .js-anim to <html> only when JavaScript runs,
+   IntersectionObserver exists and reduced motion is off; every hidden
+   pre-reveal state and every animation below is scoped under .js-anim.
+   Hooks: .anim-ch (chapter section), .anim-rv (card), .anim-in (revealed),
+   .anim-now (focus reveal: skip the transition). Reduced motion: see the
+   global prefers-reduced-motion rule in the main style block.
+   ════════════════════════════════════════════════════════════════════ */
+.anim-ch{--anim-prev:var(--paper);--anim-sw:var(--ink);isolation:isolate}
+#security{--anim-sw:var(--c-sec)}
+#ai{--anim-prev:#0a0e0c;--anim-sw:var(--c-ai)}
+#applied-ai{--anim-prev:#eef1f5;--anim-sw:var(--c-aai)}
+#music{--anim-prev:#fbf8f0;--anim-sw:var(--c-mus)}
+#entrepreneurship{--anim-prev:#130c09;--anim-sw:var(--c-ent)}
+#money{--anim-prev:#0f3d74;--anim-sw:var(--c-mon)}
+#engineering{--anim-prev:#e8efe5;--anim-sw:var(--c-eng)}
+#product{--anim-sw:var(--c-prod)}
+#research{--anim-prev:#fff5e6;--anim-sw:var(--c-res)}
+
+/* chapter handoff 1: a wash of the previous chapter's ground, stacked under
+   this chapter's content, crossfades out (opacity) as the chapter enters */
+.anim-ch::after{content:"";position:absolute;left:0;right:0;top:0;height:min(20rem,45vh);z-index:-1;pointer-events:none;opacity:0;background:linear-gradient(var(--anim-prev),transparent)}
+.js-anim .anim-ch:not(.anim-in)::after{opacity:.6}
+.js-anim .anim-ch.anim-in::after{transition:opacity 1.4s var(--ease) .1s}
+
+/* chapter handoff 2: a divider in the chapter's swatch draws across (scaleX) */
+.anim-ch>.wrap{position:relative}
+.anim-ch>.wrap::before{content:"";position:absolute;left:var(--gut);right:var(--gut);top:calc(clamp(4rem,9vw,7rem) / -2);height:2px;border-radius:1px;background:var(--anim-sw);opacity:.7;transform-origin:left center;pointer-events:none}
+.js-anim .anim-ch:not(.anim-in)>.wrap::before{transform:scaleX(0)}
+.js-anim .anim-ch.anim-in>.wrap::before{transition:transform 1.1s var(--ease) .15s}
+
+/* card reveal: rise + fade, both directions, once */
+.js-anim .anim-rv:not(.anim-in){opacity:0;transform:translateY(18px)}
+.js-anim .anim-rv.anim-in{transition:opacity .8s var(--ease),transform .8s var(--ease)}
+
+/* focus reveal: appear immediately, no transition */
+.js-anim .anim-now,.js-anim .anim-now::before,.js-anim .anim-now::after{transition-duration:0s!important;transition-delay:0s!important}
+
+/* ── per-chapter ambient accents (finite, transform/opacity only) ── */
+/* security: [ok] marks tick in down the scan report */
+.js-anim #security .sx.in .report li::before{animation:anim-tick .25s steps(1,end) .5s backwards}
+.js-anim #security .sx.in .report li:nth-child(2)::before{animation-delay:.75s}
+.js-anim #security .sx.in .report li:nth-child(3)::before{animation-delay:1s}
+.js-anim #security .sx.in .report li:nth-child(n+4)::before{animation-delay:1.25s}
+@keyframes anim-tick{from{opacity:0}to{opacity:1}}
+
+/* ai/ml: one measurement cursor sweeps across the plot */
+.js-anim #ai .plot__frame::after{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(86,98,122,.55) 0 1px,transparent 1px)}
+.js-anim #ai .plot.in .plot__frame::after{animation:anim-sweep 2.6s var(--ease) .6s 1}
+@keyframes anim-sweep{0%{opacity:0;transform:translateX(0)}12%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateX(100%)}}
+
+/* applied ai: the pen underlines the checked word */
+.js-anim #applied-ai .ai-open h2 span{position:relative}
+.js-anim #applied-ai .ai-open h2 span::before{content:"";position:absolute;left:.05em;right:.1em;bottom:-.02em;height:.07em;border-radius:.05em;background:var(--pen);transform-origin:left center;transform:scaleX(0);pointer-events:none}
+.js-anim #applied-ai .ai-open.in h2 span::before{animation:anim-draw .9s var(--ease) .7s forwards}
+@keyframes anim-draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* music: unchanged on purpose; its existing mus-live dot is the accent */
+
+/* entrepreneurship: the break-even dot pulses on the blueprint */
+.js-anim #entrepreneurship .ent-open.in .ent-fig .dot{transform-box:fill-box;transform-origin:center;animation:anim-dot 1.4s ease-in-out .9s 2}
+@keyframes anim-dot{50%{transform:scale(1.5);opacity:.65}}
+
+/* money: the TAKE-HOME stamp presses onto the slip */
+.js-anim #money .ai-card.anim-in::after{animation:anim-stamp .45s cubic-bezier(.3,1.4,.5,1) .6s backwards}
+@keyframes anim-stamp{from{opacity:0;transform:rotate(-6deg) scale(1.7)}to{opacity:1;transform:rotate(-6deg)}}
+
+/* semver guard: the release gate stripe shimmers softly */
+.js-anim #engineering>.wrap>.ai-open:nth-child(1).in::before{animation:anim-gate 1.6s ease-in-out .6s 2}
+@keyframes anim-gate{50%{opacity:.55}}
+
+/* transit pulse: the current station dot glows */
+.js-anim #engineering>.wrap>.ai-open:nth-child(2).in h2::before{animation:anim-station 1.6s ease-in-out .6s 2}
+@keyframes anim-station{50%{transform:scale(1.22);opacity:.75}}
+
+/* product: the "open." tile jiggles once, like an app icon */
+.js-anim #product .prod-open.in h2 span{animation:anim-jiggle .9s var(--ease) .6s 1}
+@keyframes anim-jiggle{0%,100%{transform:rotate(-4deg)}35%{transform:rotate(3deg) scale(1.04)}65%{transform:rotate(-6deg)}}
+
+/* research: the margin note is written in after the red-pen circle */
+.js-anim #research .np.in .note{animation:anim-note .7s var(--ease) 1.9s backwards}
+@keyframes anim-note{from{opacity:0;transform:rotate(-2deg) translateY(.3em)}to{opacity:1;transform:rotate(-2deg)}}
+/* ═══════════════════════ end ANIMATION SYSTEM ═══════════════════════ */
 </style>
 </head>
 <body>
@@ -675,7 +770,7 @@ footer a:hover{color:var(--accent)}
   </nav>
 
   <!-- ═════════ SECURITY ═════════ -->
-  <section class="ch" id="security" aria-labelledby="sec-h">
+  <section class="ch anim-ch" id="security" aria-labelledby="sec-h">
     <div class="wrap">
       <header class="sec-open rv">
         <p class="prompt" aria-hidden="true"><b>battlettt@portfolio</b>:~$ ls ./security --verbose</p>
@@ -811,14 +906,14 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ AI/ML ═════════ -->
-  <section class="ch" id="ai" aria-labelledby="ai-h">
+  <section class="ch anim-ch" id="ai" aria-labelledby="ai-h">
     <div class="wrap ai-grid">
       <div class="ai-open rv">
         <p class="fig">Fig. 1 <b>&bull;</b> distribution drift</p>
         <h2 id="ai-h">Models fail <span>quietly.</span></h2>
         <p class="thesis">So the tooling has to be loud. Two projects: one that catches a model going stale before anyone notices, and one that puts a trained detector in your browser.</p>
 
-        <article class="ai-card" data-cat="ai">
+        <article class="ai-card anim-rv" data-cat="ai">
           <span class="idx">04 / python mlops</span>
           <h3><a href="https://github.com/battlettt/driftwatch">Driftwatch</a></h3>
           <p class="meta">Drift detection &middot; shipped v0.2</p>
@@ -840,7 +935,7 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/driftwatch/blob/main/examples/loan_drift_demo.py">Demo script</a></li>
           </ul>
         </article>
-        <article class="ai-card" data-cat="ai">
+        <article class="ai-card anim-rv" data-cat="ai">
           <span class="idx">13 / typescript ml</span>
           <h3><a href="https://github.com/battlettt/smishield">Smishield</a></h3>
           <p class="meta">SMS smishing detection &middot; shipped v1</p>
@@ -882,7 +977,7 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ APPLIED AI ═════════ -->
-  <section class="ch" id="applied-ai" aria-labelledby="aai-h">
+  <section class="ch anim-ch" id="applied-ai" aria-labelledby="aai-h">
     <div class="wrap">
       <div class="ai-open rv">
         <p class="fig">Fig. 2 <b>&bull;</b> retrieval, not recall</p>
@@ -923,7 +1018,7 @@ footer a:hover{color:var(--accent)}
           </g>
         </svg>
 
-        <article class="ai-card" data-cat="ai">
+        <article class="ai-card anim-rv" data-cat="ai">
           <span class="idx">14 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/course-compass">Course Compass</a></h3>
           <p class="meta">Grounded study companion &middot; shipped v1</p>
@@ -953,7 +1048,7 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ MUSIC ═════════ -->
-  <section class="ch" id="music" aria-labelledby="mus-h">
+  <section class="ch anim-ch" id="music" aria-labelledby="mus-h">
     <div class="wrap">
       <div class="mus-open rv">
         <div class="mus-head">
@@ -1036,7 +1131,7 @@ footer a:hover{color:var(--accent)}
           </svg>
         </div>
 
-        <article class="ai-card" data-cat="music">
+        <article class="ai-card anim-rv" data-cat="music">
           <span class="idx">15 / python music</span>
           <h3><a href="https://github.com/battlettt/playlist-analyzer">Playlist Analyzer</a></h3>
           <p class="meta">Playlist analysis &amp; harmonic mixing &middot; shipped v1</p>
@@ -1066,7 +1161,7 @@ footer a:hover{color:var(--accent)}
 
 
   <!-- ═════════ ENTREPRENEURSHIP ═════════ -->
-  <section class="ch" id="entrepreneurship" aria-labelledby="ent-h">
+  <section class="ch anim-ch" id="entrepreneurship" aria-labelledby="ent-h">
     <div class="wrap">
       <div class="ent-open rv">
         <div class="ent-head">
@@ -1109,7 +1204,7 @@ footer a:hover{color:var(--accent)}
           </svg>
         </div>
 
-        <article class="ai-card" data-cat="entrepreneurship">
+        <article class="ai-card anim-rv" data-cat="entrepreneurship">
           <span class="idx">16 / python entrepreneurship</span>
           <h3><a href="https://github.com/battlettt/startup-cost-calculator">Startup Cost Calculator</a></h3>
           <p class="meta">Startup cost estimation &middot; shipped v1</p>
@@ -1141,7 +1236,7 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ MONEY TOOLS ═════════ -->
-  <section class="ch" id="money" aria-labelledby="mon-h">
+  <section class="ch anim-ch" id="money" aria-labelledby="mon-h">
     <div class="wrap">
       <div class="mon-open rv">
         <div class="mon-head">
@@ -1183,7 +1278,7 @@ footer a:hover{color:var(--accent)}
           </svg>
         </div>
 
-        <article class="ai-card" data-cat="money">
+        <article class="ai-card anim-rv" data-cat="money">
           <span class="idx">17 / python money tools</span>
           <h3><a href="https://github.com/battlettt/coop-offer-comparator">Co-op Offer Comparator</a></h3>
           <p class="meta">Co-op offer comparison by take-home pay &middot; shipped v1</p>
@@ -1213,14 +1308,14 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ ENGINEERING ═════════ -->
-  <section class="ch" id="engineering" aria-labelledby="eng-h">
+  <section class="ch anim-ch" id="engineering" aria-labelledby="eng-h">
     <div class="wrap">
       <div class="ai-open rv">
         <p class="fig">Fig. 1 <b>&bull;</b> exported API surface</p>
         <h2 id="eng-h">Ship the version <span>you meant.</span></h2>
         <p class="thesis">One CLI that catches a breaking change before it becomes a release-note apology.</p>
 
-        <article class="ai-card" data-cat="engineering">
+        <article class="ai-card anim-rv" data-cat="engineering">
           <span class="idx">10 / typescript devtools</span>
           <h3><a href="https://github.com/battlettt/semver-guard">Semver Guard</a></h3>
           <p class="meta">Breaking-change detection &middot; shipped v6</p>
@@ -1250,7 +1345,7 @@ footer a:hover{color:var(--accent)}
         <h2>Was the bus <span>actually on time?</span></h2>
         <p class="thesis">A small pipeline that turns public schedule and realtime feeds into an auditable reliability report.</p>
 
-        <article class="ai-card" data-cat="engineering">
+        <article class="ai-card anim-rv" data-cat="engineering">
           <span class="idx">11 / python data pipeline</span>
           <h3><a href="https://github.com/battlettt/transit-pulse">Transit Pulse</a></h3>
           <p class="meta">GTFS reliability analytics &middot; shipped v3</p>
@@ -1279,7 +1374,7 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ PRODUCT ═════════ -->
-  <section class="ch" id="product" aria-labelledby="prod-h">
+  <section class="ch anim-ch" id="product" aria-labelledby="prod-h">
     <div class="wrap">
       <header class="prod-open rv">
         <h2 id="prod-h">Things you can <span>open.</span></h2>
@@ -1379,10 +1474,10 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ RESEARCH ═════════ -->
-  <section class="ch" id="research" aria-labelledby="res-h">
+  <section class="ch anim-ch" id="research" aria-labelledby="res-h">
     <div class="wrap">
-      <div class="np-plate"><h2 id="res-h">The Research Desk</h2></div>
-      <div class="np-line"><span>Market research</span><span>Corrections printed in full</span></div>
+      <div class="np-plate anim-rv"><h2 id="res-h">The Research Desk</h2></div>
+      <div class="np-line anim-rv"><span>Market research</span><span>Corrections printed in full</span></div>
 
       <article class="np rv" data-cat="research">
         <div>
@@ -1592,5 +1687,41 @@ footer a:hover{color:var(--accent)}
   var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { size(); draw(); }, 150); });
 })();
 </script>
+<!-- ═════════ ANIMATION SYSTEM (BRIEF-B): scroll + focus reveals; existing scripts above are untouched ═════════ -->
+<script id="anim-system-js">
+(function () {
+  /* opt in only when motion is allowed and the observer exists; otherwise
+     the page stays in its fully visible base state */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+  var els = document.querySelectorAll('.anim-ch, .anim-rv'), i;
+  document.documentElement.classList.add('js-anim');
+
+  /* one observer for chapters and cards; works the same scrolling down or up,
+     with wheel, keys or touch. Reveal once, then stop watching (no re-hide) */
+  var fired = false;
+  var io = new IntersectionObserver(function (es) {
+    fired = true;
+    for (var k = 0; k < es.length; k++) {
+      if (es[k].isIntersecting) { es[k].target.classList.add('anim-in'); io.unobserve(es[k].target); }
+    }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0 });
+  for (i = 0; i < els.length; i++) io.observe(els[i]);
+  /* safety net: if the observer never reports, never leave the page hidden */
+  setTimeout(function () { if (!fired) for (i = 0; i < els.length; i++) els[i].classList.add('anim-in'); }, 2000);
+
+  /* keyboard focus inside a not-yet-revealed block reveals it (and every
+     hidden ancestor, including the older .rv blocks) immediately */
+  document.addEventListener('focusin', function (e) {
+    var n = e.target, hit = [];
+    for (; n && n.classList; n = n.parentElement) {
+      var c = n.classList;
+      if (c.contains('rv') && !c.contains('in')) { c.add('anim-now', 'in'); hit.push(n); }
+      if ((c.contains('anim-rv') || c.contains('anim-ch')) && !c.contains('anim-in')) { c.add('anim-now', 'anim-in'); io.unobserve(n); hit.push(n); }
+    }
+    if (hit.length) setTimeout(function () { for (var k = 0; k < hit.length; k++) hit[k].classList.remove('anim-now'); }, 120);
+  });
+})();
+</script>
+<!-- ═════════ end ANIMATION SYSTEM ═════════ -->
 </body>
 </html>
