@@ -775,7 +775,7 @@ footer a:hover{color:var(--accent)}
       <header class="sec-open rv">
         <p class="prompt" aria-hidden="true"><b>battlettt@portfolio</b>:~$ ls ./security --verbose</p>
         <h2 id="sec-h" data-scramble>Security</h2>
-        <p class="thesis">Four tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
+        <p class="thesis">Five tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
       </header>
 
       <article class="sx rv" data-cat="security">
@@ -899,6 +899,38 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/authlog-sentinel">source</a></li>
             <li><a href="https://github.com/battlettt/authlog-sentinel/blob/main/README.md">README</a></li>
             <li><a href="https://github.com/battlettt/authlog-sentinel/blob/main/examples/sample-auth.log">sample-log</a></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="sx rv" data-cat="security">
+        <div>
+          <span class="sx__idx"><b>18</b> / email forensics</span>
+          <h3><a href="https://github.com/battlettt/phishlens" data-scramble>PhishLens</a></h3>
+          <p class="sx__meta">Python &middot; shipped v1</p>
+          <p class="desc">
+            Paste in suspicious email headers or a URL and it hands back a plain-English verdict:
+            safe, suspicious, or likely phishing, with the reasons spelled out. It checks SPF, DKIM,
+            and DMARC alignment separately, spots From vs Return-Path mismatches and display-name
+            spoofing, and catches URL tricks like punycode, @-traps, and IP-literal hosts. Nothing is
+            ever fetched or stored: every analysis runs in memory on the pasted text, and every URL
+            in the output is defanged.
+          </p>
+          <ul class="tags"><li>Python</li><li>Standard library</li><li>Headers</li><li>URLs</li></ul>
+        </div>
+        <div>
+          <div class="report">
+            <p class="report__h">scan report: phishlens</p>
+            <ul>
+              <li><span class="k">unit tests passing</span><span class="lead"></span><span class="v">79</span></li>
+              <li><span class="k">network requests during analysis</span><span class="lead"></span><span class="v">0</span></li>
+              <li><span class="k">analyzed content stored</span><span class="lead"></span><span class="v">0 bytes</span></li>
+            </ul>
+          </div>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/phishlens">source</a></li>
+            <li><a href="https://github.com/battlettt/phishlens/blob/main/README.md">README</a></li>
+            <li><a href="https://battlettt.github.io/phishlens/demo/">demo</a></li>
           </ul>
         </div>
       </article>

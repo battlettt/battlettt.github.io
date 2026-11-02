@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhishLens: sample walkthrough</title>
+<style>
+  :root { --ink:#1d2433; --muted:#5b6475; --line:#d9dee7; --bg:#f6f7fb; --card:#fff;
+          --bad:#b42318; --bad-bg:#fdecea; --warn:#a15c00; --warn-bg:#fff4e0; --ok:#137333; --ok-bg:#e6f4ea; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); background:var(--bg); }
+  header, main, footer { max-width:880px; margin:0 auto; padding:0 20px; }
+  header { padding-top:40px; }
+  h1 { margin:0 0 4px; font-size:2rem; }
+  .tag { color:var(--muted); margin:0 0 16px; }
+  .notice { background:#eef2ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px 16px; }
+  .case { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:24px; margin:28px 0; }
+  .label { display:inline-block; margin:0; padding:2px 10px; border-radius:999px; background:#eceff5; color:var(--muted); font-size:.85rem; font-weight:600; letter-spacing:.02em; text-transform:uppercase; }
+  h2 { margin:10px 0 4px; }
+  h3 { margin:24px 0 8px; font-size:1.05rem; }
+  .verdict { display:flex; gap:14px; align-items:center; border-radius:10px; padding:14px 16px; margin-top:16px; }
+  .verdict p { margin:0; }
+  .verdict.bad { background:var(--bad-bg); } .verdict.warn { background:var(--warn-bg); } .verdict.ok { background:var(--ok-bg); }
+  .badge { flex:none; font-weight:700; color:#fff; padding:6px 12px; border-radius:6px; white-space:nowrap; }
+  .badge.bad { background:var(--bad); } .badge.warn { background:var(--warn); } .badge.ok { background:var(--ok); }
+  .badge.small { font-size:.75rem; padding:2px 8px; }
+  table.auth { width:100%; border-collapse:collapse; }
+  .auth th, .auth td { text-align:left; vertical-align:top; padding:8px; border-top:1px solid var(--line); }
+  .auth th { width:70px; } .auth .st { width:190px; font-weight:600; white-space:nowrap; }
+  .reasons li, .links li, .advice li { margin-bottom:10px; }
+  .sev { display:inline-block; font-size:.72rem; font-weight:700; padding:1px 6px; border-radius:4px; color:#fff; }
+  .sev.high { background:var(--bad); } .sev.medium { background:var(--warn); } .sev.low { background:#6b7280; }
+  .muted, .none { color:var(--muted); }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em; word-break:break-all; }
+  pre { background:#0f172a; color:#e2e8f0; padding:14px; border-radius:8px; overflow-x:auto; font-size:.8rem; line-height:1.45; }
+  details { margin-top:14px; } summary { cursor:pointer; color:#3446a8; font-weight:600; }
+  footer { color:var(--muted); padding-bottom:40px; font-size:.9rem; }
+  a { color:#3446a8; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PhishLens</h1>
+  <p class="tag">Plain-English verdicts for pasted email headers and links.</p>
+  <p class="notice"><strong>This page is a static showcase, not a live analyzer.</strong>
+  Both emails below are <strong>made-up samples</strong>, and their verdicts were computed ahead of
+  time by the PhishLens command-line tool. Every link and domain is defanged
+  (<code>hxxps://</code>, <code>[.]</code>), so nothing here is clickable except the project link.
+  To analyze your own email, run PhishLens locally: it works offline and stores nothing.</p>
+  <p>Source code: <a href="https://github.com/battlettt/phishlens">github.com/battlettt/phishlens</a></p>
+</header>
+<main>
+
+  <section class="case" id="sample-1">
+    <p class="label">Sample 1 of 2 &middot; made up for this demo</p>
+    <h2>A phishing email pretending to be PayPal</h2>
+    <p>The display name says PayPal, but the address, envelope sender, delivery path, authentication, and links all tell a different story.</p>
+    <details>
+      <summary>Show the pasted headers and body (defanged)</summary>
+      <pre>Delivered-To: jordan[.]lee@example[.]org
+Received: by 2002:a05:6a10:8f0a:b0:4d1:1c2a with SMTP id k10csp912345pxb;
+        Mon, 2 Nov 2026 08:14:09 -0800 (PST)
+Received: from mail[.]paypal[.]com (unknown [198[.]51[.]100[.]77])
+        by mx[.]example[.]org (Postfix) with ESMTP id 4F2A81C0042
+        for &lt;jordan[.]lee@example[.]org&gt;; Mon, 2 Nov 2026 16:14:07 +0000 (UTC)
+Authentication-Results: mx[.]example[.]org;
+       spf=fail (mx[.]example[.]org: domain of bounce@mailer-notify[.]top does not designate
+        198[.]51[.]100[.]77 as permitted sender) smtp[.]mailfrom=bounce@mailer-notify[.]top;
+       dkim=none;
+       dmarc=none header[.]from=paypa1-secure[.]com
+Authentication-Results: paypal[.]com; spf=pass smtp[.]mailfrom=paypal[.]com;
+       dkim=pass header.d=paypal[.]com; dmarc=pass header[.]from=paypal[.]com
+Return-Path: &lt;bounce@mailer-notify[.]top&gt;
+From: &quot;PayPal Security&quot; &lt;service@paypa1-secure[.]com&gt;
+Reply-To: paypal[.]resolution[.]team@gmail[.]com
+To: jordan[.]lee@example[.]org
+Subject: Your account has been limited - action required
+Date: Mon, 2 Nov 2026 16:14:02 +0000
+Message-ID: &lt;20261102161402.7731@mailer-notify[.]top&gt;
+MIME-Version: 1.0
+Content-Type: text/html; charset=&quot;utf-8&quot;
+
+&lt;html&gt;&lt;body&gt;
+&lt;p&gt;We noticed unusual activity on your account. Confirm your details at
+&lt;a href=&quot;hxxp://198[.]51[.]100[.]23:8080/paypal[.]com/webscr/login[.]php&quot;&gt;hxxps://www[.]paypal[.]com/signin&lt;/a&gt;
+within 24 hours or your account will be closed.&lt;/p&gt;
+&lt;p&gt;Or use this short link: &lt;a href=&quot;hxxps://bit[.]ly/3xPpL2k&quot;&gt;Restore access&lt;/a&gt;&lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;
+</pre>
+    </details>
+    <div class="verdict bad">
+      <span class="badge bad">LIKELY PHISHING</span>
+      <p>This email shows strong signs of phishing. It is very likely not from who it claims to be, or it tries to send you somewhere dangerous.</p>
+    </div>
+    <h3>Authentication, checked separately</h3>
+    <table class="auth"><tr><th>SPF</th><td class="st">FAIL</td><td>The sending server is NOT on the list of servers allowed to send mail for mailer-notify[.]top.</td></tr><tr><th>DKIM</th><td class="st">NONE</td><td>The message is not digitally signed.</td></tr><tr><th>DMARC</th><td class="st">NONE</td><td>paypa1-secure[.]com publishes no DMARC policy, so the From address is not protected against spoofing.</td></tr></table>
+    <h3>Why</h3>
+    <ol class="reasons"><li><span class="sev high">HIGH</span> <strong>The sender&#x27;s name claims to be PayPal, but the address is not PayPal&#x27;s</strong><br>The name says &#x27;PayPal Security&#x27; but the address is service@paypa1-secure[.]com. PayPal sends from its own domain (such as paypal[.]com), not this one.</li><li><span class="sev high">HIGH</span> <strong>The From domain imitates PayPal</strong><br>&#x27;paypa1-secure[.]com&#x27; is spelled to look like PayPal&#x27;s real domain (paypal[.]com or paypal[.]me), but it is a different domain: paypa1-secure[.]com.</li><li><span class="sev high">HIGH</span> <strong>A link in the message is dangerous: hxxp://198[.]51[.]100[.]23:8080/paypal[.]com/webscr/login[.]php</strong><br>The link text shows one site but the link goes to another. You see &#x27;hxxps://www[.]paypal[.]com/signin&#x27;, but clicking would take you to 198[.]51[.]100[.]23. Showing a trusted address while linking elsewhere is a classic phishing trick.</li><li><span class="sev medium">MEDIUM</span> <strong>SPF failed</strong><br>The server that delivered this was not authorized to send mail for mailer-notify[.]top. That is a common sign of a forged sender.</li><li><span class="sev medium">MEDIUM</span> <strong>Nothing proves this email really came from paypa1-secure[.]com</strong><br>No DMARC pass was recorded and neither SPF nor DKIM passed for a domain matching the From address.</li><li><span class="sev medium">MEDIUM</span> <strong>Authentication results contradict each other</strong><br>A lower Authentication-Results header (from &#x27;paypal[.]com&#x27;) claims SPF passed, but the receiving server&#x27;s own check says fail. Fake &#x27;pass&#x27; headers added by the sender are a known trick; trust the top one.</li><li><span class="sev medium">MEDIUM</span> <strong>Replies would go to a different address than the sender</strong><br>The email is from service@paypa1-secure[.]com, but pressing Reply sends your answer to paypal[.]resolution[.]team@gmail[.]com (a free personal mailbox). Scammers do this to receive replies while hiding behind a believable From address.</li><li><span class="sev medium">MEDIUM</span> <strong>The From and Return-Path domains do not match</strong><br>The email claims to be from paypa1-secure[.]com, but the hidden envelope sender (Return-Path) is mailer-notify[.]top, and authentication does not connect the two.</li><li><span class="sev medium">MEDIUM</span> <strong>A link in the message is suspicious: hxxps://bit[.]ly/3xPpL2k</strong><br>The link uses a URL shortener that hides the real destination. bit[.]ly is a link-shortening service. PhishLens does not open links, so the final site cannot be checked; phishers use shorteners for exactly that reason.</li><li><span class="sev low">LOW</span> <strong>The first server in the delivery chain does not belong to the sender&#x27;s domain</strong><br>The email claims to be from paypa1-secure[.]com but first entered the mail system at mail[.]paypal[.]com (IP 198[.]51[.]100[.]77). The receiving server could not confirm that name: the server&#x27;s real network name is unknown, so the name it gave may be made up.</li></ol>
+    <h3>Links found in the message</h3>
+    <ul class="links"><li><code>hxxp://198[.]51[.]100[.]23:8080/paypal[.]com/webscr/login[.]php</code> <span class="badge small bad">LIKELY PHISHING</span><br><span class="muted">Shown as: &ldquo;hxxps://www[.]paypal[.]com/signin&rdquo;</span></li><li><code>hxxps://bit[.]ly/3xPpL2k</code> <span class="badge small warn">SUSPICIOUS</span><br><span class="muted">Shown as: &ldquo;Restore access&rdquo;</span></li></ul>
+    <h3>What to do</h3>
+    <ul class="advice"><li>Do not click any links, open any attachments, or reply.</li><li>Do not enter passwords, codes, or payment details anywhere this email points you.</li><li>Report it: use your email app&#x27;s &#x27;Report phishing&#x27; button or forward it to your IT or security team, then delete it.</li><li>If you already clicked or typed a password, change that password on the real website (type the address yourself) and tell your IT team or bank.</li></ul>
+    <details>
+      <summary>Full terminal output of <code>python -m phishlens --demo</code> for this sample</summary>
+      <pre>PhishLens: email header analysis
+================================
+
+VERDICT: LIKELY PHISHING
+This email shows strong signs of phishing. It is very likely not from who it
+claims to be, or it tries to send you somewhere dangerous.
+
+Sender details (as pasted):
+  From:         &quot;PayPal Security&quot; &lt;service@paypa1-secure[.]com&gt;
+  Reply-To:     paypal[.]resolution[.]team@gmail[.]com
+  Return-Path:  bounce@mailer-notify[.]top
+  Message-ID:   &lt;20261102161402[.]7731@mailer-notify[.]top&gt;
+  First server: mail[.]paypal[.]com (network name unknown, IP 198[.]51[.]100[.]77)
+  Servers seen: 2 Received line(s)
+  Subject:      Your account has been limited - action required
+
+Authentication checks (from the pasted Authentication-Results):
+  SPF:   FAIL
+         The sending server is NOT on the list of servers allowed to send mail
+         for mailer-notify[.]top.
+  DKIM:  NONE
+         The message is not digitally signed.
+  DMARC: NONE
+         paypa1-secure[.]com publishes no DMARC policy, so the From address is
+         not protected against spoofing.
+
+Why (most serious first):
+  1. [HIGH] The sender&#x27;s name claims to be PayPal, but the address is not
+     PayPal&#x27;s
+     The name says &#x27;PayPal Security&#x27; but the address is
+     service@paypa1-secure[.]com. PayPal sends from its own domain (such as
+     paypal[.]com), not this one.
+  2. [HIGH] The From domain imitates PayPal
+     &#x27;paypa1-secure[.]com&#x27; is spelled to look like PayPal&#x27;s real domain
+     (paypal[.]com or paypal[.]me), but it is a different domain:
+     paypa1-secure[.]com.
+  3. [HIGH] A link in the message is dangerous:
+     hxxp://198[.]51[.]100[.]23:8080/paypal[.]com/webscr/login[.]php
+     The link text shows one site but the link goes to another. You see
+     &#x27;hxxps://www[.]paypal[.]com/signin&#x27;, but clicking would take you to
+     198[.]51[.]100[.]23. Showing a trusted address while linking elsewhere is
+     a classic phishing trick.
+  4. [MEDIUM] SPF failed
+     The server that delivered this was not authorized to send mail for
+     mailer-notify[.]top. That is a common sign of a forged sender.
+  5. [MEDIUM] Nothing proves this email really came from paypa1-secure[.]com
+     No DMARC pass was recorded and neither SPF nor DKIM passed for a domain
+     matching the From address.
+  6. [MEDIUM] Authentication results contradict each other
+     A lower Authentication-Results header (from &#x27;paypal[.]com&#x27;) claims SPF
+     passed, but the receiving server&#x27;s own check says fail. Fake &#x27;pass&#x27;
+     headers added by the sender are a known trick; trust the top one.
+  7. [MEDIUM] Replies would go to a different address than the sender
+     The email is from service@paypa1-secure[.]com, but pressing Reply sends
+     your answer to paypal[.]resolution[.]team@gmail[.]com (a free personal
+     mailbox). Scammers do this to receive replies while hiding behind a
+     believable From address.
+  8. [MEDIUM] The From and Return-Path domains do not match
+     The email claims to be from paypa1-secure[.]com, but the hidden envelope
+     sender (Return-Path) is mailer-notify[.]top, and authentication does not
+     connect the two.
+  9. [MEDIUM] A link in the message is suspicious: hxxps://bit[.]ly/3xPpL2k
+     The link uses a URL shortener that hides the real destination. bit[.]ly
+     is a link-shortening service. PhishLens does not open links, so the final
+     site cannot be checked; phishers use shorteners for exactly that reason.
+  10. [LOW] The first server in the delivery chain does not belong to the
+      sender&#x27;s domain
+      The email claims to be from paypa1-secure[.]com but first entered the
+      mail system at mail[.]paypal[.]com (IP 198[.]51[.]100[.]77). The
+      receiving server could not confirm that name: the server&#x27;s real network
+      name is unknown, so the name it gave may be made up.
+
+Links found in the message (2):
+  1. hxxp://198[.]51[.]100[.]23:8080/paypal[.]com/webscr/login[.]php
+     Shown as: &quot;hxxps://www[.]paypal[.]com/signin&quot;
+     Link verdict: LIKELY PHISHING
+       - [HIGH] The link text shows one site but the link goes to another
+       - [MEDIUM] The link goes to a raw IP address instead of a website name
+       - [MEDIUM] The link uses an unusual port (8080)
+       - [MEDIUM] A sign-in style page is served over plain http
+  2. hxxps://bit[.]ly/3xPpL2k
+     Shown as: &quot;Restore access&quot;
+     Link verdict: SUSPICIOUS
+       - [MEDIUM] The link uses a URL shortener that hides the real
+         destination
+
+What to do:
+  - Do not click any links, open any attachments, or reply.
+  - Do not enter passwords, codes, or payment details anywhere this email
+    points you.
+  - Report it: use your email app&#x27;s &#x27;Report phishing&#x27; button or forward it to
+    your IT or security team, then delete it.
+  - If you already clicked or typed a password, change that password on the
+    real website (type the address yourself) and tell your IT team or bank.
+
+PhishLens only read the text you pasted. It did not open any links, contact
+any server, look up any domain, or save anything.</pre>
+    </details>
+  </section>
+
+  <section class="case" id="sample-2">
+    <p class="label">Sample 2 of 2 &middot; made up for this demo</p>
+    <h2>A legitimate security notice from GitHub</h2>
+    <p>This one is sent through an email service, yet SPF, DKIM, and DMARC all pass and align with the From domain, and the only link goes to github[.]com.</p>
+    <details>
+      <summary>Show the pasted headers and body (defanged)</summary>
+      <pre>Delivered-To: jordan[.]lee@example[.]org
+Received: from mx[.]example[.]org (mx[.]example[.]org [203[.]0[.]113[.]10])
+        by mail[.]example[.]org with LMTP id 8ZqvEe0vRmd; Mon, 2 Nov 2026 09:02:13 +0000
+Received: from o7[.]sgmail[.]github[.]com (o7[.]sgmail[.]github[.]com [203[.]0[.]113[.]45])
+        by mx[.]example[.]org (Postfix) with ESMTPS id 1B2C3D4E5F
+        for &lt;jordan[.]lee@example[.]org&gt;; Mon, 2 Nov 2026 09:02:12 +0000 (UTC)
+Authentication-Results: mx[.]example[.]org;
+       dkim=pass header.i=@github[.]com header.s=pf2023 header.b=Qm9vb2;
+       spf=pass (mx[.]example[.]org: domain of bounces+1234567@sgmail[.]github[.]com designates
+        203[.]0[.]113[.]45 as permitted sender) smtp[.]mailfrom=bounces+1234567@sgmail[.]github[.]com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header[.]from=github[.]com
+Return-Path: &lt;bounces+1234567@sgmail[.]github[.]com&gt;
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=github[.]com; s=pf2023;
+        h=from:to:subject:date; bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=; b=Qm9vb2
+From: GitHub &lt;noreply@github[.]com&gt;
+To: jordan[.]lee@example[.]org
+Subject: [GitHub] A new SSH key was added to your account
+Date: Mon, 2 Nov 2026 09:02:10 +0000
+Message-ID: &lt;6745f1a2b3c4d_5e6f7a8b9@github[.]com&gt;
+MIME-Version: 1.0
+Content-Type: text/plain; charset=&quot;utf-8&quot;
+
+Hey jordan-lee!
+
+A new public key was added to your account. If you did not add it, remove it here:
+hxxps://github[.]com/settings/keys
+</pre>
+    </details>
+    <div class="verdict ok">
+      <span class="badge ok">LOOKS SAFE</span>
+      <p>No warning signs were found in the pasted headers and links. The sender checks that could be verified are consistent with who the email says it is from.</p>
+    </div>
+    <h3>Authentication, checked separately</h3>
+    <table class="auth"><tr><th>SPF</th><td class="st">PASS (aligned)</td><td>The sending server was authorized to send mail for sgmail[.]github[.]com, which matches the From domain (github[.]com).</td></tr><tr><th>DKIM</th><td class="st">PASS (aligned)</td><td>The message carries a valid digital signature from github[.]com, which matches the From domain (github[.]com), and it was not altered in transit.</td></tr><tr><th>DMARC</th><td class="st">PASS</td><td>The From domain (github[.]com) is authenticated: SPF or DKIM passed for a matching domain. The domain&#x27;s policy is p=reject.</td></tr></table>
+    <h3>Why</h3>
+    <ol class="reasons"><li class="none">No warning signs found.</li></ol>
+    <h3>Links found in the message</h3>
+    <ul class="links"><li><code>hxxps://github[.]com/settings/keys</code> <span class="badge small ok">LOOKS SAFE</span></li></ul>
+    <h3>What to do</h3>
+    <ul class="advice"><li>Nothing here looks wrong, but PhishLens can only judge the text you pasted.</li><li>Stay careful with unexpected requests for passwords, payments, or gift cards, even from senders that pass these checks.</li></ul>
+    <details>
+      <summary>Full terminal output of <code>python -m phishlens --demo</code> for this sample</summary>
+      <pre>PhishLens: email header analysis
+================================
+
+VERDICT: LOOKS SAFE
+No warning signs were found in the pasted headers and links. The sender checks
+that could be verified are consistent with who the email says it is from.
+
+Sender details (as pasted):
+  From:         &quot;GitHub&quot; &lt;noreply@github[.]com&gt;
+  Return-Path:  bounces+1234567@sgmail[.]github[.]com
+  Message-ID:   &lt;6745f1a2b3c4d_5e6f7a8b9@github[.]com&gt;
+  First server: o7[.]sgmail[.]github[.]com (IP 203[.]0[.]113[.]45)
+  Servers seen: 2 Received line(s)
+  Subject:      [GitHub] A new SSH key was added to your account
+
+Authentication checks (from the pasted Authentication-Results):
+  SPF:   PASS (aligned)
+         The sending server was authorized to send mail for
+         sgmail[.]github[.]com, which matches the From domain (github[.]com).
+  DKIM:  PASS (aligned)
+         The message carries a valid digital signature from github[.]com,
+         which matches the From domain (github[.]com), and it was not altered
+         in transit.
+  DMARC: PASS
+         The From domain (github[.]com) is authenticated: SPF or DKIM passed
+         for a matching domain. The domain&#x27;s policy is p=reject.
+
+Why (most serious first):
+  No warning signs found.
+
+Links found in the message (1):
+  1. hxxps://github[.]com/settings/keys
+     Link verdict: LOOKS SAFE
+
+What to do:
+  - Nothing here looks wrong, but PhishLens can only judge the text you
+    pasted.
+  - Stay careful with unexpected requests for passwords, payments, or gift
+    cards, even from senders that pass these checks.
+
+PhishLens only read the text you pasted. It did not open any links, contact
+any server, look up any domain, or save anything.</pre>
+    </details>
+  </section>
+</main>
+<footer>
+  <p>PhishLens never opens a mailbox, sends mail, fetches links, or saves what you paste.
+  Run it with <code>python -m phishlens --demo</code> to reproduce these results.
+  <a href="https://github.com/battlettt/phishlens">View the repository</a>.</p>
+</footer>
+</body>
+</html>
