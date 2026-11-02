@@ -746,9 +746,9 @@ footer a:hover{color:var(--accent)}
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>17</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, and research</dd></div>
-        <div><dt>9</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>1311</dt><dd>passing tests across twelve of the repositories</dd></div>
+        <div><dt>22</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
+        <div><dt>11</dt><dd>live deployments you can open today</dd></div>
+        <div><dt>1724</dt><dd>passing tests across seventeen of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -760,7 +760,7 @@ footer a:hover{color:var(--accent)}
       <h2>Selected work</h2>
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
       <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>2</small></a>
-      <a href="#applied-ai" style="--sw:var(--c-aai)"><i></i>Applied AI <small>1</small></a>
+      <a href="#applied-ai" style="--sw:var(--c-aai)"><i></i>Applied AI <small>4</small></a>
       <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
       <a href="#entrepreneurship" style="--sw:var(--c-ent)"><i></i>Entrepreneurship <small>1</small></a>
       <a href="#money" style="--sw:var(--c-mon)"><i></i>Money Tools <small>1</small></a>
@@ -1016,7 +1016,7 @@ footer a:hover{color:var(--accent)}
       <div class="ai-open rv">
         <p class="fig">Fig. 2 <b>&bull;</b> retrieval, not recall</p>
         <h2 id="aai-h">An answer you can <span>check.</span></h2>
-        <p class="thesis">A chatbot will answer from memory and sound sure either way. This one answers only from your notes, cites the exact chunks it used, and says plainly when your notes do not cover the question.</p>
+        <p class="thesis">A chatbot will answer from memory and sound sure either way. This one answers only from your notes, cites the exact chunks it used, and says plainly when your notes do not cover the question. Three more applied AI tools now sit alongside it: a scam detector built for seniors, a codebase atlas, and a marketplace trust toolkit.</p>
         <svg class="aai-fig" viewBox="0 0 320 280" role="img" aria-labelledby="aai-fig-t aai-fig-d" xmlns="http://www.w3.org/2000/svg">
           <title id="aai-fig-t">An answer page with its claims checked against source notes</title>
           <desc id="aai-fig-d">Illustration only, not data. A ruled notebook page holds an answer drawn as grey lines of text. Three highlighted claims end in citation brackets numbered 1 to 3. Each cited line has a check mark in the margin and a dashed thread to a matching numbered source-note card on the right.</desc>
@@ -1075,6 +1075,57 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://github.com/battlettt/course-compass">Source</a></li>
             <li><a href="https://battlettt.github.io/course-compass/demo/">Live demo</a></li>
             <li><a href="https://github.com/battlettt/course-compass/blob/main/docs/LEARNING.md">What it taught me</a></li>
+          </ul>
+        </article>
+        <article class="ai-card anim-rv" data-cat="ai">
+          <span class="idx">20 / python applied ai</span>
+          <h3><a href="https://github.com/battlettt/senior-scam-shield">Senior Scam Shield</a></h3>
+          <p class="meta">Multi-channel scam detector &middot; shipped v1</p>
+          <p class="desc">
+            Senior Scam Shield is a multi-channel scam detector built for seniors: paste an SMS, an email, or a phone call transcript and get a plain-English verdict, the reasons behind it, and what to do. A weighted engine combines text signals, URL analysis, impersonation detection, pressure language, and dangerous request types, and it says plainly when it is unsure and suggests a trusted person checks it. Output is senior-first: large print, simple language, a printable report, and a family share sheet. Nothing is ever sent, stored, or logged, and adversarial tests prove legitimate bank messages stay clean while spoofed versions of the same messages are caught.
+          </p>
+          <ul class="ai-stats">
+            <li><b>93</b><span>tests passing</span></li>
+            <li><b>22</b><span>adversarial messages classified correctly</span></li>
+            <li><b>0</b><span>network requests during analysis</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Scam detection</li><li>Multi-channel</li><li>Local-only</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/senior-scam-shield">Source</a></li>
+          </ul>
+        </article>
+        <article class="ai-card anim-rv" data-cat="ai">
+          <span class="idx">21 / python applied ai</span>
+          <h3><a href="https://github.com/battlettt/codebase-atlas">Codebase Atlas</a></h3>
+          <p class="meta">Codebase onboarding intelligence &middot; shipped v1</p>
+          <p class="desc">
+            Codebase Atlas is onboarding intelligence for a repo: point it at code and get an architecture map, data flow, dependency graph, and a start-here reading order, plus Q&amp;A grounded in the code with file and line citations, change-impact analysis, a good-first-issue finder, and drift detection. It works across Python, TypeScript, and Go, fully offline, with retrieval first and a language model second, so the map is useful even with no model at all. When the code does not support an answer, it says so instead of inventing architecture.
+          </p>
+          <ul class="ai-stats">
+            <li><b>85</b><span>tests passing</span></li>
+            <li><b>3</b><span>languages supported</span></li>
+            <li><b>0</b><span>model required</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Code analysis</li><li>RAG</li><li>Offline</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/codebase-atlas">Source</a></li>
+          </ul>
+        </article>
+        <article class="ai-card anim-rv" data-cat="ai">
+          <span class="idx">22 / python applied ai</span>
+          <h3><a href="https://github.com/battlettt/marketplace-trust">Marketplace Trust</a></h3>
+          <p class="meta">Secondhand trust toolkit &middot; shipped v1</p>
+          <p class="desc">
+            Marketplace Trust is a secondhand marketplace trust toolkit: fair price ranges with reasoning, scam detection, negotiation coaching, meetup safety, and price trends, all from pasted text only. Price estimates show their comparables, condition grading, depreciation, and regional adjustment, and refuse a number when comparables are too thin. Scam verdicts quote the triggering text, negotiation prices stay ordered and never appear for likely scams, and safety warnings sit at the top, never buried. Nothing is scraped and nothing is sent anywhere.
+          </p>
+          <ul class="ai-stats">
+            <li><b>111</b><span>tests passing</span></li>
+            <li><b>5</b><span>tools in one suite</span></li>
+            <li><b>0</b><span>marketplace accounts needed</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Pricing</li><li>Scam detection</li><li>CLI</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/marketplace-trust">Source</a></li>
           </ul>
         </article>
       </div>
