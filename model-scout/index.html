@@ -5,146 +5,179 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Model Scout: pick the right LLM for your task</title>
   <meta name="description" content="Describe your task and constraints. Model Scout ranks LLMs on cost, quality, speed, context, and privacy, and explains every pick.">
+  <meta name="color-scheme" content="light dark">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <a class="skip" href="#results">Skip to results</a>
-  <header class="site">
+  <header class="masthead">
     <div class="wrap">
+      <p class="kicker"><span class="kicker-mark" aria-hidden="true"></span>LLM selection instrument</p>
       <h1>Model Scout</h1>
       <p class="tagline">Describe your task. Get a ranked shortlist of LLMs, the reason for each pick, what you give up, and what it costs per month.</p>
-      <nav aria-label="Sections">
-        <a href="#profile-section">Task profile</a>
-        <a href="#results">Results</a>
-        <a href="#playbook">What to use when</a>
-        <a href="#switch">Switch triggers</a>
-        <a href="#about">About the data</a>
+      <nav class="sections" aria-label="Sections">
+        <a href="#profile-section"><span class="nav-num">1</span> Task profile</a>
+        <a href="#results"><span class="nav-num">2</span> Results</a>
+        <a href="#playbook"><span class="nav-num">3</span> What to use when</a>
+        <a href="#switch"><span class="nav-num">4</span> Switch triggers</a>
+        <a href="#about"><span class="nav-num">5</span> About the data</a>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <section id="data-status" class="status" aria-live="polite">
-      <p>Loading the model catalog...</p>
+    <section id="data-status" class="status" data-state="loading" aria-live="polite">
+      <p class="loading-line"><span class="spinner" aria-hidden="true"></span>Loading the model catalog...</p>
     </section>
     <noscript><p class="verdict warn">The ranking needs JavaScript. The playbook and switch triggers below still work as plain guidance.</p></noscript>
 
-    <section id="profile-section" aria-labelledby="profile-h">
-      <h2 id="profile-h">1. Describe your task</h2>
-      <form id="profile" novalidate>
-        <div class="field wide">
+    <section id="profile-section" class="block" aria-labelledby="profile-h">
+      <div class="block-head">
+        <h2 id="profile-h"><span class="sec-num">1.</span> Describe your task</h2>
+        <p class="block-lede">Start with a sentence, then adjust the constraints. The ranking below updates as you type.</p>
+      </div>
+      <form id="profile" class="panel profiler" novalidate>
+        <div class="field describe">
           <label for="task-desc">In plain words, what will the model do?</label>
-          <textarea id="task-desc" rows="3" placeholder="Example: answer customer questions from our 300 page product manual, cheaply, at high volume"></textarea>
-          <div class="row">
-            <button type="button" id="suggest">Suggest settings from my description</button>
+          <textarea id="task-desc" rows="3" aria-describedby="task-desc-help" placeholder="Example: answer customer questions from our 300 page product manual, cheaply, at high volume"></textarea>
+          <small id="task-desc-help">Optional. Your description stays in this page and is never sent anywhere.</small>
+          <div class="row suggest-row">
+            <button type="button" id="suggest" class="btn primary">Suggest settings from my description</button>
             <span id="suggest-result" class="muted" aria-live="polite"></span>
           </div>
         </div>
 
-        <div class="grid">
-          <div class="field">
-            <label for="task-type">Task type</label>
-            <select id="task-type">
-              <option value="chat">Chat and writing</option>
-              <option value="code">Code</option>
-              <option value="rag">RAG (answer from your documents)</option>
-              <option value="vision">Vision (images)</option>
-              <option value="embeddings">Embeddings (search vectors)</option>
-              <option value="agentic">Agentic work (tools, multi-step)</option>
-            </select>
-          </div>
+        <div class="groups">
+          <fieldset class="group">
+            <legend><span class="group-num">A</span> The work</legend>
+            <div class="field">
+              <label for="task-type">Task type</label>
+              <select id="task-type">
+                <option value="chat">Chat and writing</option>
+                <option value="code">Code</option>
+                <option value="rag">RAG (answer from your documents)</option>
+                <option value="vision">Vision (images)</option>
+                <option value="embeddings">Embeddings (search vectors)</option>
+                <option value="agentic">Agentic work (tools, multi-step)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="modality">Input type</label>
+              <select id="modality" aria-describedby="modality-help">
+                <option value="text">Text only</option>
+                <option value="image">Images</option>
+                <option value="file">Files (PDF and similar)</option>
+                <option value="audio">Audio</option>
+                <option value="video">Video</option>
+              </select>
+              <small id="modality-help">Hard constraint: models that cannot read this input are excluded.</small>
+            </div>
+          </fieldset>
 
-          <div class="field">
-            <label for="budget">Budget: max price per million tokens (USD)</label>
-            <input id="budget" type="number" min="0" step="0.05" inputmode="decimal" placeholder="No limit">
-            <small>Blended for your input and output mix. Leave empty for no limit. At $1 or less, cost weighs heavily.</small>
-          </div>
+          <fieldset class="group">
+            <legend><span class="group-num">B</span> Performance</legend>
+            <div class="field">
+              <label for="quality">Quality bar</label>
+              <select id="quality">
+                <option value="good">Good (most production work)</option>
+                <option value="basic">Basic (classification, extraction, simple chat)</option>
+                <option value="frontier">Frontier (hardest reasoning, coding, research)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="latency">Speed target</label>
+              <select id="latency">
+                <option value="balanced">Balanced</option>
+                <option value="fast">Fast (real-time chat, autocomplete)</option>
+                <option value="any">Do not care (batch jobs)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="context-need">Longest input you need to fit</label>
+              <select id="context-need">
+                <option value="8000">Up to 8K tokens (a few pages)</option>
+                <option value="32000" selected>Up to 32K tokens (a long report)</option>
+                <option value="128000">Up to 128K tokens (a short book)</option>
+                <option value="200000">Up to 200K tokens</option>
+                <option value="400000">Up to 400K tokens (a large codebase slice)</option>
+                <option value="1000000">Up to 1M tokens</option>
+                <option value="2000000">Up to 2M tokens</option>
+              </select>
+            </div>
+          </fieldset>
 
-          <div class="field">
-            <label for="latency">Speed target</label>
-            <select id="latency">
-              <option value="balanced">Balanced</option>
-              <option value="fast">Fast (real-time chat, autocomplete)</option>
-              <option value="any">Do not care (batch jobs)</option>
-            </select>
-          </div>
+          <fieldset class="group">
+            <legend><span class="group-num">C</span> Budget and privacy</legend>
+            <div class="field">
+              <label for="budget">Budget: max price per million tokens (USD)</label>
+              <div class="affix">
+                <span class="affix-mark" aria-hidden="true">$</span>
+                <input id="budget" type="number" min="0" step="0.05" inputmode="decimal" placeholder="No limit" aria-describedby="budget-help budget-error">
+              </div>
+              <small id="budget-help">Blended for your input and output mix. Leave empty for no limit. At $1 or less, cost weighs heavily.</small>
+              <p id="budget-error" class="field-error" aria-live="polite"></p>
+            </div>
+            <div class="field check">
+              <input id="local-only" type="checkbox" aria-describedby="local-only-help">
+              <label for="local-only">Privacy: local only (data must not leave my machines)</label>
+              <small id="local-only-help">Keeps only open-weight models you can run yourself. Hosted-only models are listed as excluded.</small>
+            </div>
+          </fieldset>
 
-          <div class="field">
-            <label for="quality">Quality bar</label>
-            <select id="quality">
-              <option value="good">Good (most production work)</option>
-              <option value="basic">Basic (classification, extraction, simple chat)</option>
-              <option value="frontier">Frontier (hardest reasoning, coding, research)</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="context-need">Longest input you need to fit</label>
-            <select id="context-need">
-              <option value="8000">Up to 8K tokens (a few pages)</option>
-              <option value="32000" selected>Up to 32K tokens (a long report)</option>
-              <option value="128000">Up to 128K tokens (a short book)</option>
-              <option value="200000">Up to 200K tokens</option>
-              <option value="400000">Up to 400K tokens (a large codebase slice)</option>
-              <option value="1000000">Up to 1M tokens</option>
-              <option value="2000000">Up to 2M tokens</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="modality">Input type</label>
-            <select id="modality">
-              <option value="text">Text only</option>
-              <option value="image">Images</option>
-              <option value="file">Files (PDF and similar)</option>
-              <option value="audio">Audio</option>
-              <option value="video">Video</option>
-            </select>
-          </div>
-
-          <div class="field check">
-            <input id="local-only" type="checkbox">
-            <label for="local-only">Privacy: local only (data must not leave my machines)</label>
-            <small>Keeps only open-weight models you can run yourself. Hosted-only models are listed as excluded.</small>
-          </div>
+          <fieldset class="group">
+            <legend><span class="group-num">D</span> Expected monthly volume (for the cost estimate)</legend>
+            <div class="field">
+              <label for="vol-in">Input tokens per month, in millions</label>
+              <input id="vol-in" type="number" min="0" step="1" value="50" inputmode="decimal" aria-describedby="vol-in-error">
+              <p id="vol-in-error" class="field-error" aria-live="polite"></p>
+            </div>
+            <div class="field">
+              <label for="vol-out">Output tokens per month, in millions</label>
+              <input id="vol-out" type="number" min="0" step="1" value="10" inputmode="decimal" aria-describedby="vol-out-error">
+              <p id="vol-out-error" class="field-error" aria-live="polite"></p>
+            </div>
+            <details class="disclose">
+              <summary>How the monthly cost is calculated</summary>
+              <p class="muted">Monthly cost = input tokens x input price + output tokens x output price, with prices per million tokens. A rough guide: one page of English is about 500 to 700 tokens.</p>
+            </details>
+          </fieldset>
         </div>
-
-        <fieldset class="grid">
-          <legend>Expected monthly volume (for the cost estimate)</legend>
-          <div class="field">
-            <label for="vol-in">Input tokens per month, in millions</label>
-            <input id="vol-in" type="number" min="0" step="1" value="50" inputmode="decimal">
-          </div>
-          <div class="field">
-            <label for="vol-out">Output tokens per month, in millions</label>
-            <input id="vol-out" type="number" min="0" step="1" value="10" inputmode="decimal">
-          </div>
-          <p class="muted span2">Monthly cost = input tokens x input price + output tokens x output price, with prices per million tokens. A rough guide: one page of English is about 500 to 700 tokens.</p>
-        </fieldset>
       </form>
     </section>
 
-    <section id="results" aria-labelledby="results-h">
-      <h2 id="results-h">2. Ranked models</h2>
+    <section id="results" class="block" aria-labelledby="results-h" tabindex="-1">
+      <div class="block-head">
+        <h2 id="results-h"><span class="sec-num">2.</span> Ranked models</h2>
+        <p id="result-count" class="block-lede readout" aria-live="polite">Ranking will appear once the catalog loads.</p>
+      </div>
+
       <div class="results-top">
-        <div id="top-pick" class="top-pick" aria-live="polite"></div>
-        <aside class="weights-box" aria-labelledby="weights-h">
+        <div id="top-pick" class="top-pick" aria-live="polite" aria-busy="true">
+          <p class="eyebrow">Top pick for this profile</p>
+          <p class="loading-line"><span class="spinner" aria-hidden="true"></span>Loading the model catalog...</p>
+          <div class="skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+        <aside class="weights-box panel" aria-labelledby="weights-h">
           <h3 id="weights-h">How your profile weights each factor</h3>
           <ul id="weights" class="weights"></ul>
-          <p class="muted">Weights shift with your constraints: a tight budget raises cost, a long input raises context fit, local-only raises privacy.</p>
+          <p class="muted small-print">Weights shift with your constraints: a tight budget raises cost, a long input raises context fit, local-only raises privacy.</p>
         </aside>
       </div>
 
-      <div class="row">
-        <input id="include-live" type="checkbox" disabled>
-        <label for="include-live">Also rank other live models from OpenRouter (not reviewed: quality and speed not rated)</label>
+      <div class="toolbar">
+        <div class="check">
+          <input id="include-live" type="checkbox" disabled aria-describedby="include-live-help">
+          <label for="include-live">Also rank other live models from OpenRouter (not reviewed: quality and speed not rated)</label>
+        </div>
+        <small id="include-live-help">Turns on once the live OpenRouter list has loaded.</small>
       </div>
-      <p id="result-count" class="muted"></p>
 
-      <h3>Comparison table</h3>
-      <p class="muted">Scores are 0 to 100. Factor columns show each factor's score before weighting. * means that figure is not verified.</p>
+      <div class="sub-head">
+        <h3>Comparison table</h3>
+        <p class="muted">Scores are 0 to 100. Factor columns show each factor's score before weighting. * means that figure is not verified.</p>
+      </div>
       <div class="table-wrap" tabindex="0" role="region" aria-label="Comparison table">
-        <table>
+        <table class="compare">
           <thead>
             <tr>
               <th scope="col">Rank</th><th scope="col">Model</th><th scope="col">Score</th>
@@ -152,21 +185,30 @@
               <th scope="col">Monthly cost</th><th scope="col">Price in / out per 1M</th><th scope="col">Context</th><th scope="col">Data</th>
             </tr>
           </thead>
-          <tbody id="compare-body"></tbody>
+          <tbody id="compare-body">
+            <tr class="placeholder"><td colspan="12">Loading rankings...</td></tr>
+          </tbody>
         </table>
       </div>
 
-      <h3>Model cards</h3>
+      <div class="sub-head">
+        <h3>Model cards</h3>
+        <p class="muted">Every ranked model, with its reasons, trade-offs, source, and data status.</p>
+      </div>
       <div id="cards" class="cards"></div>
 
-      <h3>Excluded by hard constraints</h3>
+      <div class="sub-head">
+        <h3>Excluded by hard constraints</h3>
+      </div>
       <ul id="excluded" class="excluded"></ul>
     </section>
 
-    <section id="playbook" aria-labelledby="playbook-h">
-      <h2 id="playbook-h">3. What to use when</h2>
-      <p>Rules you can apply without the ranker. Start at the top and stop at the first rule that matches.</p>
-      <ol class="rules">
+    <section id="playbook" class="block" aria-labelledby="playbook-h">
+      <div class="block-head">
+        <h2 id="playbook-h"><span class="sec-num">3.</span> What to use when</h2>
+        <p class="block-lede">Rules you can apply without the ranker. Start at the top and stop at the first rule that matches.</p>
+      </div>
+      <ol class="rules numbered">
         <li><strong>Data cannot leave your machines?</strong> Use an open-weight model. On a laptop, use a small model (about 8B parameters) for basic chat and extraction. With one strong GPU, a mixture-of-experts model with a few billion active parameters gives much better quality for similar speed. Bigger open models need servers, so price the hardware before you commit.</li>
         <li><strong>You need search or similarity, not generated text?</strong> Use an embedding model. They cost cents per million tokens. Pick one and stay on it: switching embedding models means re-embedding every document.</li>
         <li><strong>High volume, simple answers (classification, tagging, routing, extraction)?</strong> Use the cheapest small tier that passes a 50 example test set. Price differences of 10x or more between tiers are common, and simple tasks rarely need a flagship. Ask for short, structured outputs to keep output tokens low.</li>
@@ -179,26 +221,34 @@
       </ol>
     </section>
 
-    <section id="switch" aria-labelledby="switch-h">
-      <h2 id="switch-h">4. Switch triggers: when to reconsider your pick</h2>
-      <ul class="rules">
-        <li><strong>A new model beats yours on your weights.</strong> A small score lead is noise. Run a trial when the lead is at least 5 points and the challenger passes your own test set.</li>
-        <li><strong>Pricing changes.</strong> Re-run your cost estimate when any provider changes prices. A 2x price cut on a model one tier up can make an upgrade free.</li>
-        <li><strong>Your spec goes stale.</strong> Model Scout marks any spec older than <span id="stale-days">90</span> days, or with no date, as stale. Re-check stale specs at the source before you rely on them.</li>
-        <li><strong>Your needs change.</strong> Longer inputs, a new input type, a privacy requirement, or 10x more volume all change the ranking. Update the profile above and look again.</li>
-        <li><strong>Deprecation notices.</strong> Providers retire old versions. Plan the move when the notice arrives, not on the shutdown date.</li>
-      </ul>
-      <div class="switch-box">
-        <h3>Check your current model</h3>
-        <label for="current-model">Model you use today</label>
-        <select id="current-model"><option value="">Choose your current model</option></select>
-        <div id="switch-result" aria-live="polite"></div>
+    <section id="switch" class="block" aria-labelledby="switch-h">
+      <div class="block-head">
+        <h2 id="switch-h"><span class="sec-num">4.</span> Switch triggers: when to reconsider your pick</h2>
+      </div>
+      <div class="switch-layout">
+        <ul class="rules ticks">
+          <li><strong>A new model beats yours on your weights.</strong> A small score lead is noise. Run a trial when the lead is at least 5 points and the challenger passes your own test set.</li>
+          <li><strong>Pricing changes.</strong> Re-run your cost estimate when any provider changes prices. A 2x price cut on a model one tier up can make an upgrade free.</li>
+          <li><strong>Your spec goes stale.</strong> Model Scout marks any spec older than <span id="stale-days">90</span> days, or with no date, as stale. Re-check stale specs at the source before you rely on them.</li>
+          <li><strong>Your needs change.</strong> Longer inputs, a new input type, a privacy requirement, or 10x more volume all change the ranking. Update the profile above and look again.</li>
+          <li><strong>Deprecation notices.</strong> Providers retire old versions. Plan the move when the notice arrives, not on the shutdown date.</li>
+        </ul>
+        <div class="switch-box panel">
+          <h3>Check your current model</h3>
+          <div class="field">
+            <label for="current-model">Model you use today</label>
+            <select id="current-model"><option value="">Choose your current model</option></select>
+          </div>
+          <div id="switch-result" aria-live="polite"></div>
+        </div>
       </div>
     </section>
 
-    <section id="about" aria-labelledby="about-h">
-      <h2 id="about-h">5. About the data, and what this app does not do</h2>
-      <ul>
+    <section id="about" class="block" aria-labelledby="about-h">
+      <div class="block-head">
+        <h2 id="about-h"><span class="sec-num">5.</span> About the data, and what this app does not do</h2>
+      </div>
+      <ul class="rules ticks about">
         <li>The bundled catalog is dated <strong id="catalog-date">(loading)</strong>. Prices and context windows for most models come from OpenRouter's public model list on that date. Buying direct from a provider can cost a different amount.</li>
         <li>When your browser can reach OpenRouter, Model Scout fetches the live model list and replaces bundled prices with live ones, labelled with the fetch time. If the fetch fails (offline, blocked, or opened from a file with strict browser rules), it uses the bundled catalog and says so at the top.</li>
         <li>A spec counts as stale when its verification date is missing or older than 90 days. Stale and unverified figures are labelled on every card.</li>

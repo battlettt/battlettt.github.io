@@ -398,7 +398,7 @@
   // =====================================================================
   // Browser UI
   // =====================================================================
-  var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, now: new Date() };
+  var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, now: new Date(), lastOrder: null };
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -460,71 +460,120 @@
     return esc(fmtMoney(mc));
   }
 
+  /** Large monthly cost readout for the top pick and the model cards. */
+  function costFigure(r, p) {
+    var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens);
+    if (p.localOnly) {
+      return '<span class="figure-value cost">Self-hosted<span class="unit">hosted reference ' + esc(fmtMoney(mc)) + " per month</span></span>";
+    }
+    return '<span class="figure-value cost">' + esc(fmtMoney(mc)) + '<span class="unit">per month at your volume</span></span>';
+  }
+
+  var BEST_FLAG = '<span class="best-flag"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.5l1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.3 4 13.5l1-4.4-3.4-3 4.5-.5z"/></svg>Best pick</span>';
+  var COLUMNS = ["Rank", "Model", "Score", "Cost", "Quality", "Speed", "Context fit", "Privacy", "Monthly cost", "Price in / out per 1M", "Context", "Data"];
+
+  function flagList(items) {
+    return items.length ? '<ul class="flags">' + items.join("") + "</ul>" : "";
+  }
+
+  /** Inline errors next to the number fields. Values are still read the same way by readProfile. */
+  function validateFields() {
+    [["budget", "Enter a price of 0 or more, or leave it empty for no limit. Until then there is no budget limit."],
+     ["vol-in", "Enter 0 or more million tokens. Until then input volume counts as 0."],
+     ["vol-out", "Enter 0 or more million tokens. Until then output volume counts as 0."]].forEach(function (f) {
+      var el = $(f[0]), msg = $(f[0] + "-error");
+      if (!el || !msg) return;
+      var raw = el.value.trim();
+      var bad = (el.validity && el.validity.badInput) || (raw !== "" && (!isFinite(parseFloat(raw)) || parseFloat(raw) < 0));
+      if (bad) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
+      if (msg.textContent !== (bad ? f[1] : "")) msg.textContent = bad ? f[1] : "";
+    });
+  }
+
   function render() {
     if (!state.base.length) return;
+    validateFields();
     var p = readProfile();
     var res = rankModels(candidates(), p, state.now);
     renderWeights(res.weights);
     var top = res.ranked[0];
 
+    // The reveal animation plays only when the ranking order changes, not on every keystroke.
+    var order = res.ranked.map(function (r) { return r.model.id; }).join("|");
+    var reveal = order !== state.lastOrder;
+    state.lastOrder = order;
+
     // headline
     var head = $("top-pick");
+    head.setAttribute("aria-busy", "false");
+    head.classList.toggle("is-reveal", reveal);
+    head.classList.toggle("is-empty", !top);
     if (!top) {
-      head.innerHTML = '<h3>No model fits every hard constraint</h3><p>Every candidate was excluded. See the excluded list below and loosen a constraint (for example turn off local-only or change the modality).</p>';
+      head.innerHTML = '<p class="eyebrow">No result for this profile</p>' +
+        '<h3>No model fits every hard constraint</h3><p>Every candidate was excluded. See the excluded list below and loosen a constraint (for example turn off local-only or change the modality).</p>';
     } else {
       var tf = dataFlags(top.model, state.now);
-      head.innerHTML =
+      head.innerHTML = BEST_FLAG +
         '<p class="eyebrow">Top pick for this profile</p>' +
         "<h3>" + esc(top.model.model) + ' <span class="provider">' + esc(top.model.provider) + "</span></h3>" +
-        '<p class="score-big">' + top.total + ' <small>of 100</small></p>' +
-        '<p><strong>Why:</strong> ' + esc(top.explain.why) + "</p>" +
-        '<p><strong>What you trade away:</strong> ' + esc(top.explain.tradeoffs) + "</p>" +
-        '<p><strong>Estimated monthly cost:</strong> ' + costCell(top, p) + "</p>" +
-        (tf.length ? '<ul class="flags">' + tf.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + "</li>"; }).join("") + "</ul>" : "") +
-        (top.flags.length ? '<ul class="flags">' + top.flags.map(function (f) { return '<li class="warn">' + esc(f) + "</li>"; }).join("") + "</ul>" : "");
+        '<div class="figures">' +
+          '<p class="score-big"><span class="figure-label">Score</span><span class="figure-value score">' + top.total + " <small>of 100</small></span></p>" +
+          '<p><span class="figure-label">Estimated monthly cost</span>' + costFigure(top, p) + "</p>" +
+        "</div>" +
+        '<p class="reason"><strong>Why:</strong> ' + esc(top.explain.why) + "</p>" +
+        '<p class="reason"><strong>What you trade away:</strong> ' + esc(top.explain.tradeoffs) + "</p>" +
+        flagList(tf.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + "</li>"; })) +
+        flagList(top.flags.map(function (f) { return '<li class="warn">' + esc(f) + "</li>"; }));
     }
 
-    // table
+    // table: every cell carries its column name so narrow screens can stack rows as labelled cards
+    function td(i, cls, html) { return '<td class="' + cls + '" data-label="' + esc(COLUMNS[i]) + '">' + html + "</td>"; }
     var rows = res.ranked.map(function (r) {
       var c = r.components, m = r.model;
       return '<tr class="' + (r.rank === 1 ? "is-top" : "") + '">' +
-        "<td>" + r.rank + "</td>" +
-        '<th scope="row"><a href="#card-' + esc(m.id) + '">' + esc(m.model) + "</a><br><small>" + esc(m.provider) + "</small></th>" +
-        '<td class="num"><strong>' + r.total + "</strong></td>" +
-        ["cost", "quality", "latency", "context", "privacy"].map(function (k) { return '<td class="num">' + pct(c[k]) + "</td>"; }).join("") +
-        '<td class="num">' + costCell(r, p) + "</td>" +
-        '<td class="num">' + fmtPrice(m.input_price_per_mtok) + " / " + fmtPrice(m.output_price_per_mtok) + "</td>" +
-        '<td class="num">' + esc(fmtTokens(m.context_window)) + (m.unverified_fields && m.unverified_fields.indexOf("context_window") >= 0 ? "*" : "") + "</td>" +
-        "<td>" + dataBadge(m) + "</td></tr>";
+        td(0, "rank-cell", "#" + r.rank) +
+        '<th scope="row"><a href="#card-' + esc(m.id) + '">' + esc(m.model) + "</a><br><small>" + esc(m.provider) + "</small>" +
+          (r.rank === 1 ? '<span class="pick-tag">Best pick</span>' : "") + "</th>" +
+        td(2, "num score-cell", "<strong>" + r.total + "</strong>") +
+        ["cost", "quality", "latency", "context", "privacy"].map(function (k, i) { return td(3 + i, "num", String(pct(c[k]))); }).join("") +
+        td(8, "num money", costCell(r, p)) +
+        td(9, "num", fmtPrice(m.input_price_per_mtok) + " / " + fmtPrice(m.output_price_per_mtok)) +
+        td(10, "num", esc(fmtTokens(m.context_window)) + (m.unverified_fields && m.unverified_fields.indexOf("context_window") >= 0 ? "*" : "")) +
+        td(11, "wide-cell", dataBadge(m)) + "</tr>";
     }).join("");
-    $("compare-body").innerHTML = rows || '<tr><td colspan="12">No candidates.</td></tr>';
+    $("compare-body").innerHTML = rows || '<tr class="empty-row"><td colspan="12">No candidates. Every model was excluded by a hard constraint.</td></tr>';
     $("result-count").textContent = res.ranked.length + " ranked, " + res.excluded.length + " excluded by hard constraints.";
 
     // cards
-    $("cards").innerHTML = res.ranked.map(function (r) {
+    var cards = $("cards");
+    cards.classList.toggle("is-reveal", reveal);
+    cards.innerHTML = res.ranked.length ? res.ranked.map(function (r, idx) {
       var m = r.model, c = r.components;
       var flags = dataFlags(m, state.now).map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + "</li>"; })
         .concat(r.flags.map(function (f) { return '<li class="warn">' + esc(f) + "</li>"; }))
         .concat(r.notes.map(function (f) { return '<li class="info">' + esc(f) + "</li>"; }));
       if (m.live && m.live.changes.length) flags.push('<li class="info">Live data changed: ' + esc(m.live.changes.join("; ")) + ".</li>");
-      return '<article class="card' + (r.rank === 1 ? " is-top" : "") + '" id="card-' + esc(m.id) + '">' +
-        '<header><span class="rank">#' + r.rank + "</span><h3>" + esc(m.model) + '</h3><span class="provider">' + esc(m.provider) + "</span>" +
-        '<span class="card-score">' + r.total + "</span></header>" +
+      return '<article class="card' + (r.rank === 1 ? " is-top" : "") + '" id="card-' + esc(m.id) + '" style="--i:' + Math.min(idx, 8) + '">' +
+        (r.rank === 1 ? BEST_FLAG : "") +
+        '<header class="card-head"><span class="rank">#' + r.rank + "</span>" +
+          "<div><h3>" + esc(m.model) + '</h3><span class="provider">' + esc(m.provider) + "</span></div>" +
+          '<span class="card-score">' + r.total + "<small>of 100</small></span></header>" +
+        '<div class="card-cost"><span class="figure-label">Monthly</span>' + costFigure(r, p) + "</div>" +
         '<dl class="breakdown">' + ["cost", "quality", "latency", "context", "privacy"].map(function (k) {
           return "<dt>" + COMPONENT_LABELS[k] + "</dt><dd>" + bar(c[k]) + " " + pct(c[k]) + "</dd>";
         }).join("") + "</dl>" +
-        '<p><strong>Why this model:</strong> ' + esc(r.explain.why) + "</p>" +
-        '<p><strong>Trade-offs:</strong> ' + esc(r.explain.tradeoffs) + "</p>" +
+        '<p class="reason"><strong>Why this model:</strong> ' + esc(r.explain.why) + "</p>" +
+        '<p class="reason"><strong>Trade-offs:</strong> ' + esc(r.explain.tradeoffs) + "</p>" +
         '<p class="facts">' + "Price in/out per 1M tokens: " + fmtPrice(m.input_price_per_mtok) + " / " + fmtPrice(m.output_price_per_mtok) +
         ". Context: " + esc(fmtTokens(m.context_window)) + ". Speed: " + esc(m.latency_class || "not rated") +
         ". Quality tier: " + (m.quality_tier != null ? m.quality_tier + " of 5 (editorial)" : "not rated") +
         ". Open weights: " + (m.open_weights ? "yes" : "no") + ". Monthly: " + costCell(r, p) + ".</p>" +
         (m.strengths.length ? '<p class="facts"><strong>Strengths:</strong> ' + esc(m.strengths.join("; ")) + ".</p>" : "") +
         (m.limits.length ? '<p class="facts"><strong>Limits:</strong> ' + esc(m.limits.join("; ")) + ".</p>" : "") +
-        (flags.length ? '<ul class="flags">' + flags.join("") + "</ul>" : "") +
+        flagList(flags) +
         '<p class="source">Source: <a href="' + esc(safeUrl(m.source.url)) + '" rel="noopener">' + esc(m.source.name) + "</a>. " + dataBadge(m) + "</p>" +
         "</article>";
-    }).join("");
+    }).join("") : '<p class="cards-empty">No model cards to show: every candidate failed a hard constraint. Loosen one in the profile above.</p>';
 
     // excluded
     $("excluded").innerHTML = res.excluded.length ? res.excluded.map(function (r) {
@@ -574,7 +623,7 @@
     if (st.stale) html += '<span class="badge stale">Stale</span> This catalog is older than ' + c.stale_after_days + " days. Treat prices as possibly out of date. ";
     html += "</p>";
     var L = state.live;
-    if (!L) html += '<p class="muted">Checking OpenRouter for live prices...</p>';
+    if (!L) html += '<p class="loading-line"><span class="spinner" aria-hidden="true"></span>Checking OpenRouter for live prices...</p>';
     else if (L.ok) {
       html += '<p><span class="badge live">Live</span> OpenRouter model list fetched ' + esc(L.fetchedAt.toLocaleString()) +
         ": " + L.matched + " catalog models updated with live prices" + (L.changed.length ? " (" + L.changed.length + " changed since the bundled snapshot)" : ", none changed since the bundled snapshot") +
@@ -582,8 +631,12 @@
     } else {
       html += '<p><span class="badge warn">Offline</span> Live data unavailable (' + esc(L.error) + "). Using the bundled catalog dated " + esc(c.catalog_date) + ".</p>";
     }
-    $("data-status").innerHTML = html;
+    var box = $("data-status");
+    box.innerHTML = html;
+    box.setAttribute("data-state", !L ? "loading" : !L.ok ? "offline" : st.stale ? "stale" : "live");
     $("include-live").disabled = !(L && L.ok);
+    $("include-live-help").textContent = !L ? "Turns on once the live OpenRouter list has loaded." :
+      L.ok ? L.liveOnly + " unreviewed live models are available." : "Unavailable: live data could not be loaded.";
   }
 
   function applySuggestions() {
@@ -654,7 +707,13 @@
       render();
       return loadLive().then(function () { renderStatus(); render(); });
     }).catch(function (e) {
+      $("data-status").setAttribute("data-state", "error");
       $("data-status").innerHTML = '<p class="verdict warn">Could not load the model catalog (' + esc(e.message) + "). Try serving the folder with python3 -m http.server.</p>";
+      var head = $("top-pick");
+      head.setAttribute("aria-busy", "false");
+      head.classList.add("is-empty");
+      head.innerHTML = '<p class="eyebrow">No ranking</p><h3>The model catalog did not load</h3><p>Rankings need the catalog. See the message at the top of the page.</p>';
+      $("compare-body").innerHTML = '<tr class="empty-row"><td colspan="12">No catalog loaded.</td></tr>';
     });
   }
 
