@@ -40,6 +40,7 @@
 
   /* chapter swatches, used in the chapter bar */
   --c-sec:#3fbf77; --c-ai:#d9831f; --c-mus:#7c5cbf; --c-ent:#0f766e; --c-mon:#4d7c0f; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
+  --c-foc: #5b8a6a;
   --c-aai:#c2187a;
 }
 @media (prefers-color-scheme:dark){
@@ -766,6 +767,7 @@ footer a:hover{color:var(--accent)}
       <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>2</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
+      <a href="#focus" style="--sw:var(--c-foc)"><i></i>Focus <small>1</small></a>
     </div>
   </nav>
 
@@ -1554,6 +1556,41 @@ footer a:hover{color:var(--accent)}
           </ul>
         </aside>
       </article>
+    </div>
+  </section>
+  <section class="ch anim-ch" id="focus" aria-labelledby="foc-h">
+    <div class="wrap">
+      <div class="rv">
+        <p class="prompt" aria-hidden="true"><b>battlettt@portfolio</b>:~$ ls ./focus --verbose</p>
+        <h2 id="foc-h">Attention, kept <span>honestly.</span></h2>
+        <p class="thesis">A timer for deep work that reports what happened and nothing more: timed sessions, distraction notes, and a weekly review. No streaks, no grades, no pressure. A day with nothing in it is just a day with nothing in it.</p>
+      </div>
+
+      <article class="ai-card anim-rv" data-cat="focus">
+          <span class="idx">19 / python focus</span>
+          <h3><a href="https://github.com/battlettt/focus-session-tracker">Focus Session Tracker</a></h3>
+          <p class="meta">Timed focus sessions and a weekly review &middot; shipped v1</p>
+          <p class="desc">
+            Start a focus session, pause it when life interrupts, and stop it when you are done:
+            paused time never counts as focus. Log distractions with a timestamp and a short
+            note, look back over session history, and read a weekly review with per-day totals,
+            most common distractions, and time-of-day patterns. Data lives in a JSON file on
+            your machine: no network, no accounts, no sync. The review is deliberately neutral:
+            a day with nothing in it shows as a dash, and there are no streaks, grades, or
+            targets anywhere.
+          </p>
+          <ul class="ai-stats">
+            <li><b>45</b><span>tests passing</span></li>
+            <li><b>0</b><span>network requests or accounts needed</span></li>
+            <li><b>0</b><span>streaks, grades, or pressure mechanics</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>CLI</li><li>Static demo</li><li>Weekly review</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/focus-session-tracker">Source</a></li>
+            <li><a href="https://battlettt.github.io/focus-session-tracker/demo/">Live demo</a></li>
+            <li><a href="https://github.com/battlettt/focus-session-tracker/blob/main/README.md">README</a></li>
+          </ul>
+        </article>
     </div>
   </section>
   </div>
