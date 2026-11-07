@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: seventeen projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: twenty-five projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Seventeen projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Twenty-five projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
@@ -739,16 +739,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Seventeen projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Twenty-five projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>24</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
+        <div><dt>25</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
         <div><dt>13</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>1893</dt><dd>passing tests across nineteen of the repositories</dd></div>
+        <div><dt>1968</dt><dd>passing tests across twenty of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -758,7 +758,7 @@ footer a:hover{color:var(--accent)}
   <nav class="chapters" aria-label="Project chapters">
     <div class="wrap">
       <h2>Selected work</h2>
-      <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>4</small></a>
+      <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>6</small></a>
       <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>3</small></a>
       <a href="#applied-ai" style="--sw:var(--c-aai)"><i></i>Applied AI <small>4</small></a>
       <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
@@ -777,7 +777,7 @@ footer a:hover{color:var(--accent)}
       <header class="sec-open rv">
         <p class="prompt" aria-hidden="true"><b>battlettt@portfolio</b>:~$ ls ./security --verbose</p>
         <h2 id="sec-h" data-scramble>Security</h2>
-        <p class="thesis">Five tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
+        <p class="thesis">Six tools that scan, grade, and attack. <b>Each one is tested against its own claims</b> before it ships.</p>
       </header>
 
       <article class="sx rv" data-cat="security">
@@ -874,7 +874,7 @@ footer a:hover{color:var(--accent)}
       </article>
       <article class="sx rv" data-cat="security">
         <div>
-          <span class="sx__idx"><b>12</b> / auth log analysis</span>
+          <span class="sx__idx"><b>04</b> / auth log analysis</span>
           <h3><a href="https://github.com/battlettt/authlog-sentinel" data-scramble>AuthLog Sentinel</a></h3>
           <p class="sx__meta">Go &middot; shipped v1</p>
           <p class="desc">
@@ -907,7 +907,7 @@ footer a:hover{color:var(--accent)}
 
       <article class="sx rv" data-cat="security">
         <div>
-          <span class="sx__idx"><b>18</b> / email forensics</span>
+          <span class="sx__idx"><b>05</b> / email forensics</span>
           <h3><a href="https://github.com/battlettt/phishlens" data-scramble>PhishLens</a></h3>
           <p class="sx__meta">Python &middot; shipped v1</p>
           <p class="desc">
@@ -936,6 +936,38 @@ footer a:hover{color:var(--accent)}
           </ul>
         </div>
       </article>
+      <article class="sx rv" data-cat="security">
+        <div>
+          <span class="sx__idx"><b>06</b> / plugin supply chain</span>
+          <h3><a href="https://github.com/battlettt/plugin-warden" data-scramble>Plugin Warden</a></h3>
+          <p class="sx__meta">Python &middot; Claude Agent SDK &middot; shipped v0.1</p>
+          <p class="desc">
+            Audits a Claude Code plugin, skill pack, or MCP server before you install it. It clones
+            the repo without running anything, traces every hook, server, and monitor to the files
+            that run on their own, and runs 101 checks plus Gitleaks, OSV, and Semgrep. A read-only
+            Claude agent then reads the real code, confirms or dismisses each finding with a cited
+            line, and reports what the rules missed: on a 92-plugin marketplace it found a governance
+            hook that <em>a single ./.review-approved file skips</em>. A troubleshooting chat says
+            where each problem lives and which settings contain it.
+          </p>
+          <ul class="tags"><li>Python</li><li>Claude Agent SDK</li><li>Static analysis</li><li>Supply chain</li></ul>
+        </div>
+        <div>
+          <div class="report">
+            <p class="report__h">scan report: plugin-warden</p>
+            <ul>
+              <li><span class="k">tests passing</span><span class="lead"></span><span class="v">75</span></li>
+              <li><span class="k">findings triaged by the agent</span><span class="lead"></span><span class="v">131</span></li>
+              <li><span class="k">agent cost, 4 real repos</span><span class="lead"></span><span class="v">$2.11</span></li>
+            </ul>
+          </div>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/plugin-warden">source</a></li>
+            <li><a href="https://github.com/battlettt/plugin-warden#results-on-real-plugins">real-runs</a></li>
+            <li><a href="https://github.com/battlettt/plugin-warden/blob/main/src/plugin_warden/agent/guard.py">path-guard</a></li>
+          </ul>
+        </div>
+      </article>
     </div>
   </section>
 
@@ -948,7 +980,7 @@ footer a:hover{color:var(--accent)}
         <p class="thesis">So the tooling has to be loud. Three projects: one that catches a model going stale before anyone notices, one that puts a trained detector in your browser, and one that researches LLMs and recommends the right model for a task.</p>
 
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">04 / python mlops</span>
+          <span class="idx">07 / python mlops</span>
           <h3><a href="https://github.com/battlettt/driftwatch">Driftwatch</a></h3>
           <p class="meta">Drift detection &middot; shipped v0.2</p>
           <p class="desc">
@@ -970,7 +1002,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">13 / typescript ml</span>
+          <span class="idx">08 / typescript ml</span>
           <h3><a href="https://github.com/battlettt/smishield">Smishield</a></h3>
           <p class="meta">SMS smishing detection &middot; shipped v1</p>
           <p class="desc">
@@ -995,7 +1027,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">23 / javascript model research</span>
+          <span class="idx">09 / javascript model research</span>
           <h3><a href="https://github.com/battlettt/model-scout">Model Scout</a></h3>
           <p class="meta">Model research &amp; recommendation &middot; shipped v1</p>
           <p class="desc">
@@ -1071,7 +1103,7 @@ footer a:hover{color:var(--accent)}
         </svg>
 
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">14 / python applied ai</span>
+          <span class="idx">10 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/course-compass">Course Compass</a></h3>
           <p class="meta">Grounded study companion &middot; shipped v1</p>
           <p class="desc">
@@ -1096,7 +1128,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">20 / python applied ai</span>
+          <span class="idx">11 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/senior-scam-shield">Senior Scam Shield</a></h3>
           <p class="meta">Multi-channel scam detector &middot; shipped v1</p>
           <p class="desc">
@@ -1113,7 +1145,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">21 / python applied ai</span>
+          <span class="idx">12 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/codebase-atlas">Codebase Atlas</a></h3>
           <p class="meta">Codebase onboarding intelligence &middot; shipped v1</p>
           <p class="desc">
@@ -1130,7 +1162,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">22 / python applied ai</span>
+          <span class="idx">13 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/marketplace-trust">Marketplace Trust</a></h3>
           <p class="meta">Secondhand trust toolkit &middot; shipped v1</p>
           <p class="desc">
@@ -1235,7 +1267,7 @@ footer a:hover{color:var(--accent)}
         </div>
 
         <article class="ai-card anim-rv" data-cat="music">
-          <span class="idx">15 / python music</span>
+          <span class="idx">14 / python music</span>
           <h3><a href="https://github.com/battlettt/playlist-analyzer">Playlist Analyzer</a></h3>
           <p class="meta">Playlist analysis &amp; harmonic mixing &middot; shipped v1</p>
           <p class="desc">
@@ -1308,7 +1340,7 @@ footer a:hover{color:var(--accent)}
         </div>
 
         <article class="ai-card anim-rv" data-cat="entrepreneurship">
-          <span class="idx">16 / python entrepreneurship</span>
+          <span class="idx">15 / python entrepreneurship</span>
           <h3><a href="https://github.com/battlettt/startup-cost-calculator">Startup Cost Calculator</a></h3>
           <p class="meta">Startup cost estimation &middot; shipped v1</p>
           <p class="desc">
@@ -1382,7 +1414,7 @@ footer a:hover{color:var(--accent)}
         </div>
 
         <article class="ai-card anim-rv" data-cat="money">
-          <span class="idx">17 / python money tools</span>
+          <span class="idx">16 / python money tools</span>
           <h3><a href="https://github.com/battlettt/coop-offer-comparator">Co-op Offer Comparator</a></h3>
           <p class="meta">Co-op offer comparison by take-home pay &middot; shipped v1</p>
           <p class="desc">
@@ -1419,7 +1451,7 @@ footer a:hover{color:var(--accent)}
         <p class="thesis">One CLI that catches a breaking change before it becomes a release-note apology.</p>
 
         <article class="ai-card anim-rv" data-cat="engineering">
-          <span class="idx">10 / typescript devtools</span>
+          <span class="idx">17 / typescript devtools</span>
           <h3><a href="https://github.com/battlettt/semver-guard">Semver Guard</a></h3>
           <p class="meta">Breaking-change detection &middot; shipped v6</p>
           <p class="desc">
@@ -1449,7 +1481,7 @@ footer a:hover{color:var(--accent)}
         <p class="thesis">A small pipeline that turns public schedule and realtime feeds into an auditable reliability report.</p>
 
         <article class="ai-card anim-rv" data-cat="engineering">
-          <span class="idx">11 / python data pipeline</span>
+          <span class="idx">18 / python data pipeline</span>
           <h3><a href="https://github.com/battlettt/transit-pulse">Transit Pulse</a></h3>
           <p class="meta">GTFS reliability analytics &middot; shipped v3</p>
           <p class="desc">
@@ -1473,7 +1505,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="engineering">
-          <span class="idx">24 / python automation</span>
+          <span class="idx">19 / python automation</span>
           <h3><a href="https://github.com/battlettt/pagepilot">PagePilot</a></h3>
           <p class="meta">Browser automation agent &middot; shipped v1</p>
           <p class="desc">
@@ -1504,7 +1536,7 @@ footer a:hover{color:var(--accent)}
 
       <div class="bento">
         <article class="bx b-1 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">05</span><span class="badge live">Live beta</span></div>
+          <div class="bx__top"><span class="bx__idx">20</span><span class="badge live">Live beta</span></div>
           <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
           <p class="meta">B2B SaaS on Next.js, Postgres, Stripe</p>
           <p class="desc">
@@ -1528,7 +1560,7 @@ footer a:hover{color:var(--accent)}
         </article>
 
         <article class="bx b-2 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">06</span><span class="badge live">Live</span></div>
+          <div class="bx__top"><span class="bx__idx">21</span><span class="badge live">Live</span></div>
           <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
           <p class="meta">React Native, Expo, Supabase</p>
           <p class="desc">
@@ -1551,7 +1583,7 @@ footer a:hover{color:var(--accent)}
         </article>
 
         <article class="bx b-3 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">07</span><span class="badge">In delivery</span></div>
+          <div class="bx__top"><span class="bx__idx">22</span><span class="badge">In delivery</span></div>
           <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
           <p class="meta">Python knowledge extraction</p>
           <p class="desc">
@@ -1572,7 +1604,7 @@ footer a:hover{color:var(--accent)}
         </article>
 
         <article class="bx b-4 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">08</span><span class="badge">Prototype</span></div>
+          <div class="bx__top"><span class="bx__idx">23</span><span class="badge">Prototype</span></div>
           <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
           <p class="meta">PostGIS, Expo geofencing</p>
           <p class="desc">
@@ -1602,7 +1634,7 @@ footer a:hover{color:var(--accent)}
 
       <article class="np rv" data-cat="research">
         <div>
-          <p class="kind">09 &middot; Escheatment &middot; Validating</p>
+          <p class="kind">24 &middot; Escheatment &middot; Validating</p>
           <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
           <p class="deck">Research toward an AI-native service for US state unclaimed property compliance, wedged on Delaware VDA response.</p>
           <div class="body">
@@ -1654,7 +1686,7 @@ footer a:hover{color:var(--accent)}
       </div>
 
       <article class="ai-card anim-rv" data-cat="focus">
-          <span class="idx">19 / python focus</span>
+          <span class="idx">25 / python focus</span>
           <h3><a href="https://github.com/battlettt/focus-session-tracker">Focus Session Tracker</a></h3>
           <p class="meta">Timed focus sessions and a weekly review &middot; shipped v1</p>
           <p class="desc">
