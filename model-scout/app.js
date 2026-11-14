@@ -630,6 +630,43 @@
       saves: topCost - best.cost, gap: round(top.total - best.r.total, 1) };
   }
 
+  // ---------- split traffic: the top pick plus a cheaper ranked model ----------
+  /** Ranked models that cost less than the top pick at the volume, in rank order. Empty when there is nothing to price. */
+  function routeOptions(ranked, p) {
+    if (!ranked || ranked.length < 2 || p.localOnly) return [];
+    var topCost = monthlyCost(ranked[0].model, p.inputTokens, p.outputTokens, p);
+    if (topCost === null || topCost <= 0) return [];
+    var out = [];
+    ranked.slice(1).forEach(function (r) {
+      var c = monthlyCost(r.model, p.inputTokens, p.outputTokens, p);
+      if (c !== null && topCost - c >= 0.01) out.push({ id: r.model.id, model: r.model, total: r.total, rank: r.rank, cost: c });
+    });
+    return out;
+  }
+
+  /** Monthly cost when share (0..0.95) of requests goes to the cheaper model and the rest to the top pick.
+   *  Requests are assumed alike in size, so cost splits in proportion. Returns null when the split cannot be priced. */
+  function routeSplit(ranked, p, cheapId, share) {
+    var opts = routeOptions(ranked, p);
+    if (!opts.length) return null;
+    var cheap = opts.filter(function (o) { return o.id === cheapId; })[0] || opts[0];
+    var f = clamp(isNum(share) ? share : 0, 0, 0.95);
+    var topCost = monthlyCost(ranked[0].model, p.inputTokens, p.outputTokens, p);
+    var cost = f * cheap.cost + (1 - f) * topCost;
+    return { top: ranked[0].model, topTotal: ranked[0].total, topCost: topCost, cheap: cheap.model, cheapTotal: cheap.total, cheapCost: cheap.cost,
+      share: f, cost: cost, saves: topCost - cost, savesPct: topCost > 0 ? (topCost - cost) / topCost : 0, gap: round(ranked[0].total - cheap.total, 1) };
+  }
+
+  /** One plain sentence for a split from routeSplit. */
+  function routeText(sp) {
+    if (!sp) return "";
+    if (sp.share <= 0) return "At 0%, every request goes to " + sp.top.model + ": about " + fmtMoney(sp.topCost) + " a month.";
+    var pct = Math.round(sp.share * 100) + "%";
+    return "Sending " + pct + " of requests to " + sp.cheap.model + " and the rest to " + sp.top.model + " costs about " + fmtMoney(sp.cost) +
+      " a month instead of " + fmtMoney(sp.topCost) + ", saving " + fmtMoney(sp.saves) + " (" + Math.round(sp.savesPct * 100) + "%). " +
+      sp.cheap.model + " scores " + sp.cheapTotal + " against " + sp.topTotal + " on your profile" + (sp.gap > 0 ? ", " + sp.gap + " points lower." : ", the same score.");
+  }
+
   /**
    * SVG for the value map. points: [{ id, name, cost, score, top }]. Cost uses a log scale; points with no cost
    * are left out and counted. Pure string output, so it can be tested without a browser.
@@ -811,6 +848,11 @@
         L.push("| " + r.rank + " | " + mdCell(r.model.model + " (" + r.model.provider + ")") + " | " + r.total + " | " +
           fmtMoney(monthlyCost(r.model, p.inputTokens, p.outputTokens, p)) + " | " + fmtPrice(r.model.input_price_per_mtok) + " / " + fmtPrice(r.model.output_price_per_mtok) + " | " + fmtTokens(r.model.context_window) + " |");
       });
+    }
+    if (ctx.route && ctx.route.share > 0) {
+      L.push("");
+      L.push("## Split traffic");
+      L.push(routeText(ctx.route) + " This prices the split only: test the cheaper model on your own examples before routing real traffic.");
     }
     if (ctx.whatIf && ctx.whatIf.levers.length) {
       L.push("");
@@ -1506,7 +1548,7 @@
     effectivePrices: effectivePrices, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
-    frontier: frontier, cheaperAlternative: cheaperAlternative, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
+    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
     FACTORS: FACTORS, normalizeWeights: normalizeWeights, weightsAt: weightsAt, sharesToPercents: sharesToPercents,
     tippingPoints: tippingPoints, tipWeights: tipWeights, tipSentence: tipSentence, shareLabel: shareLabel,
     marketWatch: marketWatch, pctChange: pctChange, leverOptions: leverOptions, whatIfs: whatIfs,
@@ -1525,7 +1567,8 @@
   var CARD_LIMIT = 6;
   var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, liveIds: null, now: new Date(), lastOrder: null,
     touched: false, showAllCards: false, linkNote: "", compare: [], lastRes: null, lastProfile: null,
-    customWeights: null, editWeights: false, mwOpen: { fresh: false, retire: false } };
+    customWeights: null, editWeights: false, mwOpen: { fresh: false, retire: false },
+    routeId: "", routeShare: 0.5, routeTouched: false };
   var COMPARE_MAX = 3;
   var TIP_ROWS = 4;
 
@@ -1904,6 +1947,7 @@
     renderSwitch();
     renderMarket(res, p);
     renderWhatIf();
+    renderRoute(res, p);
     syncUrl();
   }
 
@@ -2092,6 +2136,7 @@
     return decisionMemo({
       res: res, p: p, description: $("task-desc").value, rb: robustness(res), alt: cheaperAlternative(res.ranked, p), tips: tippingPoints(res),
       whatIf: whatIfs(candidates(), readSettings(), state.now),
+      route: state.routeTouched ? routeSplit(res.ranked, p, state.routeId, state.routeShare) : null,
       now: new Date(), catalogDate: state.catalog && state.catalog.catalog_date,
       liveAt: state.live && state.live.ok ? state.live.fetchedAt.toLocaleString() : null, link: shareUrl()
     });
@@ -2254,6 +2299,49 @@
     }).join("");
     sel.dataset.n = String(list.length);
     sel.value = prev;
+  }
+
+  // ----- split traffic -----
+  function routeBar(label, cost, max, split) {
+    var w = max > 0 ? Math.max(1, Math.round(1000 * cost / max) / 10) : 0;
+    return '<span class="rb-label">' + label + '</span><span class="rb-track"><span class="rb-fill' + (split ? " is-split" : "") +
+      '" style="width:' + w + '%"></span></span><span class="rb-cost">' + esc(fmtMoney(cost)) + "</span>";
+  }
+
+  function renderRoute(res, p) {
+    var sel = $("route-model"), range = $("route-share"), opts = routeOptions(res.ranked, p);
+    $("route-share-out").textContent = Math.round(state.routeShare * 100) + "%";
+    if (!opts.length) {
+      sel.innerHTML = '<option value="">No cheaper model</option>';
+      sel.dataset.key = "";
+      sel.disabled = true; range.disabled = true;
+      $("route-bars").innerHTML = "";
+      $("route-readout").textContent = !res.ranked.length ? "No model to split with: every candidate failed a hard constraint." :
+        p.localOnly ? "Local only: the cost is your hardware, so there is no per-token split to price." :
+        p.inputTokens + p.outputTokens <= 0 ? "Set a monthly volume above zero to price a split." :
+        "No ranked model costs less than " + res.ranked[0].model.model + " at your volume.";
+      return;
+    }
+    if (!opts.some(function (o) { return o.id === state.routeId; })) state.routeId = opts[0].id;
+    var key = opts.map(function (o) { return o.id + ":" + o.cost + ":" + o.total; }).join("|");
+    if (sel.dataset.key !== key) {
+      sel.innerHTML = opts.map(function (o) {
+        return '<option value="' + esc(o.id) + '">' + esc(o.model.model) + " (" + esc(fmtMoney(o.cost)) + ", score " + o.total + ")</option>";
+      }).join("");
+      sel.dataset.key = key;
+    }
+    sel.value = state.routeId;
+    sel.disabled = false; range.disabled = false;
+    var sp = routeSplit(res.ranked, p, state.routeId, state.routeShare);
+    $("route-bars").innerHTML = routeBar("Top pick alone", sp.topCost, sp.topCost, false) + routeBar("With the split", sp.cost, sp.topCost, true);
+    $("route-readout").textContent = routeText(sp);
+  }
+
+  function routeEdited() {
+    state.routeId = $("route-model").value;
+    state.routeShare = (parseInt($("route-share").value, 10) || 0) / 100;
+    state.routeTouched = true;
+    if (state.lastRes && state.lastProfile) renderRoute(state.lastRes, state.lastProfile);
   }
 
   // ----- what if -----
@@ -2884,6 +2972,8 @@
     });
     $("req-apply").addEventListener("click", applyHelper);
     $("sample-apply").addEventListener("click", applySample);
+    $("route-model").addEventListener("change", routeEdited);
+    $("route-share").addEventListener("input", routeEdited);
     $("share-link").addEventListener("click", copyShareLink);
     $("cards-toggle").addEventListener("click", function () {
       state.showAllCards = !state.showAllCards;

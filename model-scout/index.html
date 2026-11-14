@@ -273,6 +273,25 @@
       </div>
 
       <div class="sub-head">
+        <h3 id="route-h">Split traffic with a cheaper model</h3>
+        <p class="muted">Send the easy share of requests to a cheaper ranked model and keep the top pick for the rest. This prices the split only. How well the mix works depends on how you sort easy requests from hard ones (a rule, a classifier, or the cheaper model's own confidence), and that sorting has its own cost, so test the cheaper model on your own examples first.</p>
+      </div>
+      <div id="route" class="route panel" aria-labelledby="route-h">
+        <div class="route-controls">
+          <div class="field">
+            <label for="route-model">Cheaper model (monthly cost, score)</label>
+            <select id="route-model" disabled><option value="">Waiting for the ranking</option></select>
+          </div>
+          <div class="field">
+            <label for="route-share">Requests sent to it: <output id="route-share-out" for="route-share">50%</output></label>
+            <input id="route-share" type="range" min="0" max="95" step="5" value="50" disabled>
+          </div>
+        </div>
+        <div id="route-bars" class="route-bars" aria-hidden="true"></div>
+        <p id="route-readout" class="readout route-readout" aria-live="polite">The split appears once the ranking loads.</p>
+      </div>
+
+      <div class="sub-head">
         <h3>Value map</h3>
         <p class="muted">Every ranked model by score and monthly cost at your volume. The line joins the models that nothing else beats on both, so anything under it costs more for a lower score. Point at a dot to name it; select one to open its card. With a keyboard, focus the map, step with the arrow keys (left and right by cost, up and down by score), and press Enter to open the card.</p>
       </div>
@@ -540,6 +559,7 @@
         <li>The confidence check on the top pick reruns the ranking 300 times with every factor's weight scaled at random between half and double. It shows how much the pick depends on the exact weights, not how good the model is.</li>
         <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
         <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
+        <li>Split traffic prices sending a share of requests to a cheaper ranked model and the rest to the top pick, assuming requests of similar size. It gives no score for the mix, because that depends on how well easy requests are sorted from hard ones, which this page cannot know.</li>
         <li>The monthly spend limit is a hard limit: a model whose monthly cost at your volume (with the cache and batch options you chose) is over it is left out, and the excluded list says how much it would cost. Models with no listed price are kept and flagged. In local-only mode it is not applied, because self-hosted cost is hardware, not tokens.</li>
         <li>The sample counter in the volume helper estimates tokens from text you paste: about 4 characters per token for English and code, about 1 per Chinese, Japanese or Korean character, with runs of spaces counted once. It is a rough count, not a tokenizer. It suggests a cache share only when the repeated opening is at least 1,024 tokens, since providers do not cache short prefixes. The text never leaves the page.</li>
         <li>What if one constraint changed reruns the ranking once per lever (cache share, batch prices, quality bar, speed target, each required capability, budget, local only, input length) and shows only the changes that move the pick or save 5% or more. It quotes no saving when either side is self-hosted, because that cost is hardware, not tokens. With batch prices and the prompt cache both on, the cost uses whichever is cheaper for your token mix, never both.</li>

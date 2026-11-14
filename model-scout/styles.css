@@ -659,6 +659,21 @@ footer.site p { margin: 0; }
 .conf-text { margin: var(--s2) 0 0; font-size: 0.9375rem; }
 
 /* ---------- what if ---------- */
+.route { margin-bottom: var(--s5); padding: var(--s3); }
+@media (min-width: 40em) { .route { padding: var(--s4) var(--s5); } }
+.route-controls { display: grid; grid-template-columns: 1fr; gap: 0 var(--s4); }
+@media (min-width: 40em) { .route-controls { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: end; } }
+.route-controls .field { margin: 0 0 var(--s3); }
+.route-controls .field > label { font-size: 0.875rem; font-weight: 600; }
+.route-controls output { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.route-controls input[type="range"] { width: 100%; accent-color: var(--accent); }
+.route-bars { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: var(--s1) var(--s2); align-items: center; margin: var(--s2) 0 var(--s3); font-size: 0.875rem; }
+.route-bars .rb-label { color: var(--muted); }
+.route-bars .rb-track { height: 0.75rem; background: var(--line); border-radius: 2px; overflow: hidden; }
+.route-bars .rb-fill { display: block; height: 100%; background: var(--muted); }
+.route-bars .rb-fill.is-split { background: var(--accent); }
+.route-bars .rb-cost { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+.route-readout { margin: 0; }
 .whatif { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--s3); }
 @media (min-width: 48em) { .whatif { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 72em) { .whatif { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
