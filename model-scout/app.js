@@ -55,13 +55,21 @@
    * not modelled.
    */
   function effectivePrices(model, opts) {
+    var o = opts || {}, z = zdrPrices(model, o);
     var pin = model.input_price_per_mtok, pout = model.output_price_per_mtok;
     if (!isNum(pin) || !isNum(pout)) return null;
-    var o = opts || {}, r = { input: pin, output: pout, batch: false, cache: false };
-    var bi = model.batch_input_price_per_mtok, bo = model.batch_output_price_per_mtok;
+    // Requiring ZDR narrows the providers, so it can raise the estimate but never lowers it below the listed price.
+    var zRaised = !!z && (z.input_price_per_mtok > pin || z.output_price_per_mtok > pout);
+    if (z) { pin = Math.max(pin, z.input_price_per_mtok); pout = Math.max(pout, z.output_price_per_mtok); }
+    var r = { input: pin, output: pout, batch: false, cache: false };
+    if (z) { r.zdr = true; r.zdrRaised = zRaised; }
+    // The ZDR list covers standard endpoints only, so batch prices are set aside when zero data retention is required.
+    var bi = z ? null : model.batch_input_price_per_mtok, bo = z ? null : model.batch_output_price_per_mtok;
     var batchOk = !!o.useBatch && isNum(bi) && isNum(bo) && bi <= pin && bo <= pout;
     var share = isNum(o.cacheShare) ? clamp(o.cacheShare, 0, MAX_CACHE_SHARE) : 0;
-    var cr = model.cache_read_price_per_mtok;
+    var cr = !z ? model.cache_read_price_per_mtok : !isNum(z.cache_read_price_per_mtok) ? null :
+      isNum(model.cache_read_price_per_mtok) ? Math.max(model.cache_read_price_per_mtok, z.cache_read_price_per_mtok) : z.cache_read_price_per_mtok;
+    if (z) r.cacheRead = cr;
     var cacheOk = share > 0 && isNum(cr) && cr < pin, cacheIn = cacheOk ? (1 - share) * pin + share * cr : pin;
     if (batchOk && cacheOk) {
       var tin = isNum(o.inputTokens) && o.inputTokens > 0 ? o.inputTokens : 3, tout = isNum(o.outputTokens) && o.outputTokens >= 0 ? o.outputTokens : 1;
@@ -72,6 +80,36 @@
     if (batchOk) { r.input = bi; r.output = bo; r.batch = true; }
     else if (cacheOk) { r.input = cacheIn; r.cache = true; }
     return r;
+  }
+
+  /** The model's cheapest zero-data-retention endpoint when the profile requires ZDR on hosted models, else null. */
+  function zdrPrices(model, o) {
+    var z = model && model.zdr;
+    if (!o || !o.zdr || o.localOnly || !z || !(z.endpoints > 0)) return null;
+    return isNum(z.input_price_per_mtok) && isNum(z.output_price_per_mtok) ? z : null;
+  }
+
+  /** Zero-data-retention facts for one OpenRouter id from OpenRouter's ZDR endpoint list (exact id only).
+   *  The cheapest endpoint for a 3:1 input:output mix sets the prices. */
+  function zdrFacts(orId, list) {
+    var out = { endpoints: 0, providers: [], cheapest: null, input_price_per_mtok: null, output_price_per_mtok: null, cache_read_price_per_mtok: null };
+    var best = null;
+    (list || []).forEach(function (e) {
+      if (!e || e.model_id !== orId || !e.pricing) return;
+      var pin = perMillion(e.pricing.prompt), pout = perMillion(e.pricing.completion);
+      if (pin === null || pout === null || pin < 0 || pout < 0) return;
+      out.endpoints++;
+      if (e.provider_name && out.providers.indexOf(e.provider_name) < 0) out.providers.push(e.provider_name);
+      if (!best || 3 * pin + pout < best.blend) best = { blend: 3 * pin + pout, e: e, pin: pin, pout: pout };
+    });
+    if (best) {
+      var cr = perMillion(best.e.pricing.input_cache_read);
+      out.cheapest = best.e.provider_name || null;
+      out.input_price_per_mtok = best.pin; out.output_price_per_mtok = best.pout;
+      out.cache_read_price_per_mtok = cr !== null && cr >= 0 ? cr : null;
+    }
+    out.providers.sort();
+    return out;
   }
 
   /** Monthly cost in USD. Prices are per million tokens. Returns null if a price is unknown. opts as in effectivePrices. */
@@ -171,6 +209,13 @@
       else CAPABILITIES.forEach(function (k) { if (typeof e.capabilities[k] !== "boolean") errs.push("capabilities." + k + " must be true or false"); });
     }
     if (e.retires_on != null && parseDate(e.retires_on) === null) errs.push("retires_on must be a YYYY-MM-DD date or null");
+    if (e.zdr != null) {
+      var z = e.zdr;
+      if (typeof z !== "object" || Array.isArray(z) || !isNum(z.endpoints) || z.endpoints < 0 || z.endpoints !== Math.round(z.endpoints) || !Array.isArray(z.providers))
+        errs.push("zdr must be null or an object with a whole endpoints count and a providers list");
+      else if (z.endpoints > 0 && (!isNum(z.input_price_per_mtok) || !isNum(z.output_price_per_mtok) || z.input_price_per_mtok < 0 || z.output_price_per_mtok < 0 || typeof z.cheapest !== "string"))
+        errs.push("zdr with endpoints needs the cheapest provider and its input and output prices");
+    }
     return errs;
   }
 
@@ -272,6 +317,10 @@
         if (!m.capabilities) r.flags.push(label.charAt(0).toUpperCase() + label.slice(1) + " not confirmed: no capability data for this model.");
       }
     }
+    if (p.zdr && !p.localOnly) {
+      if (!m.zdr) r.flags.push("Zero data retention not confirmed: no data for this model in the snapshot.");
+      else if (!(m.zdr.endpoints > 0)) return excl(r, "No zero-data-retention endpoint in OpenRouter's list, and your profile requires one.");
+    }
     if (isNum(p.monthlyCap) && p.monthlyCap > 0 && !p.localOnly) {
       var capCost = monthlyCost(m, p.inputTokens || 0, p.outputTokens || 0, p);
       if (capCost === null) r.flags.push("Price unknown, so it could not be checked against your monthly limit.");
@@ -343,13 +392,18 @@
   function costNotes(r, m, p) {
     var e = effectivePrices(m, p);
     if (!e) return;
-    if (p.useBatch) {
+    if (e.zdr) r.notes.push(e.zdrRaised ?
+      "Zero data retention: its cheapest ZDR endpoint (" + m.zdr.cheapest + ") lists " + fmtPrice(m.zdr.input_price_per_mtok) + " in / " +
+        fmtPrice(m.zdr.output_price_per_mtok) + " out per 1M tokens, above the standard price, so the higher price is used." :
+      "Zero data retention required: the standard price is kept, because its cheapest ZDR endpoint costs no more.");
+    if (p.useBatch && e.zdr) r.notes.push("Batch prices are not used: the zero-data-retention list covers standard endpoints only.");
+    else if (p.useBatch) {
       r.notes.push(e.batch ? "Batch price used: " + fmtPrice(e.input) + " in / " + fmtPrice(e.output) + " out per 1M tokens, for work that can wait for a batch run." :
         e.batchSkipped ? "A lower batch price is listed, but the prompt cache costs less for your mix, so cached pricing is used instead." :
         "No lower batch price is listed for this model, so the standard price is used.");
     }
     if (isNum(p.cacheShare) && p.cacheShare > 0 && !e.batch) {
-      r.notes.push(e.cache ? "Cached input billed at " + fmtPrice(m.cache_read_price_per_mtok) + " per 1M for " + Math.round(clamp(p.cacheShare, 0, MAX_CACHE_SHARE) * 100) + "% of input tokens. Cache write fees are not included." :
+      r.notes.push(e.cache ? "Cached input billed at " + fmtPrice(e.zdr ? e.cacheRead : m.cache_read_price_per_mtok) + " per 1M for " + Math.round(clamp(p.cacheShare, 0, MAX_CACHE_SHARE) * 100) + "% of input tokens. Cache write fees are not included." :
         "No cache read price is listed, so all input is billed at the full input price.");
     }
   }
@@ -799,7 +853,7 @@
       "Longest input: " + fmtTokens(p.contextNeed) + " tokens",
       "Budget: " + (isNum(p.budget) ? "$" + p.budget + " per million tokens, blended" : "no limit"),
       "Monthly spend limit: " + (isNum(p.monthlyCap) ? fmtLimit(p.monthlyCap) + " at this volume" + (p.localOnly ? " (not applied to self-hosted models)" : "") : "none"),
-      "Privacy: " + (p.localOnly ? "local only, open weights on our own hardware" : "hosted providers allowed"),
+      "Privacy: " + (p.localOnly ? "local only, open weights on our own hardware" : p.zdr ? "hosted, zero-data-retention endpoints only" : "hosted providers allowed"),
       "Must support: " + (needs.length ? needs.join(", ") : "nothing beyond text generation"),
       "Weights: " + (p.weights ? "set by hand, " + FACTORS.map(function (k) { return COMPONENT_LABELS[k] + " " + Math.round(p.weights[k] * 100) + "%"; }).join(", ") : "from the profile"),
       "Volume: " + fmtVolume(p.inputTokens) + " input and " + fmtVolume(p.outputTokens) + " output tokens a month" +
@@ -1041,7 +1095,8 @@
     else if (has(/\b(chat|support|assistant|write|writing|summar|classif|email)\b/)) { s.taskType = "chat"; why.push("mentions chat, writing, or classification"); }
     if (has(/\b(audio|voice|speech|podcast|call recording)\b/)) { s.modality = "audio"; why.push("mentions audio"); }
     if (has(/\b(video)\b/)) { s.modality = "video"; why.push("mentions video"); }
-    if (has(/\b(private|confidential|on-prem|on prem|offline|local|hipaa|gdpr|air-gapped|air gapped)\b/)) { s.localOnly = true; why.push("mentions privacy or local use"); }
+    if (has(/\b(zero data retention|zero-data-retention|zdr|no data retention|not retain|no retention)\b/)) { s.zdr = true; why.push("mentions zero data retention"); }
+    else if (has(/\b(private|confidential|on-prem|on prem|offline|local|hipaa|gdpr|air-gapped|air gapped)\b/)) { s.localOnly = true; why.push("mentions privacy or local use"); }
     var cap = t.match(/\$\s?(\d[\d,]*(?:\.\d+)?)\s?(k\b)?\s*(?:\/\s*|a |per |each )(?:mo\b|month)/);
     if (cap) {
       var capV = Number(cap[1].replace(/,/g, "")) * (cap[2] ? 1000 : 1);
@@ -1063,7 +1118,7 @@
   var DEFAULT_SETTINGS = {
     taskType: "chat", modality: "text", quality: "good", latency: "balanced", contextNeed: 32000, budget: null, monthlyCap: null,
     localOnly: false, inputM: 50, outputM: 10, cacheShare: 0, useBatch: false, tools: false, json: false, reasoning: false,
-    weights: null
+    zdr: false, weights: null
   };
   var SETTING_CHOICES = {
     taskType: ["chat", "code", "rag", "vision", "embeddings", "agentic"],
@@ -1073,11 +1128,11 @@
     contextNeed: [8000, 32000, 128000, 200000, 400000, 1000000, 2000000],
     cacheShare: [0, 0.25, 0.5, 0.75, 0.9]
   };
-  var BOOL_SETTINGS = ["localOnly", "useBatch", "tools", "json", "reasoning"];
+  var BOOL_SETTINGS = ["localOnly", "useBatch", "tools", "json", "reasoning", "zdr"];
   var URL_KEYS = {
     taskType: "task", modality: "input", quality: "quality", latency: "speed", contextNeed: "context", budget: "budget", monthlyCap: "cap",
     localOnly: "local", inputM: "in", outputM: "out", cacheShare: "cache", useBatch: "batch", tools: "tools", json: "json", reasoning: "reasoning",
-    weights: "w"
+    zdr: "zdr", weights: "w"
   };
   var PRESETS = [
     { id: "support", name: "Support bot", description: "Answer customer questions from our help center articles, quickly, at high volume",
@@ -1118,7 +1173,7 @@
       monthlyCap: isNum(f.monthlyCap) && f.monthlyCap > 0 ? f.monthlyCap : null,
       localOnly: !!f.localOnly, inputTokens: tok(f.inputM), outputTokens: tok(f.outputM),
       cacheShare: isNum(f.cacheShare) ? clamp(f.cacheShare, 0, MAX_CACHE_SHARE) : 0, useBatch: !!f.useBatch,
-      needs: { tools: !!f.tools, json: !!f.json, reasoning: !!f.reasoning },
+      needs: { tools: !!f.tools, json: !!f.json, reasoning: !!f.reasoning }, zdr: !!f.zdr,
       weights: normalizeWeights(f.weights)
     };
   }
@@ -1207,6 +1262,10 @@
     });
     if (isNum(f.budget) && f.budget > 0) lever("budget", "Remove the budget limit", { budget: null });
     if (isNum(f.monthlyCap) && f.monthlyCap > 0 && !f.localOnly) lever("cap", "Remove the " + fmtLimit(f.monthlyCap) + " monthly limit", { monthlyCap: null });
+    if (!f.localOnly) {
+      if (f.zdr) lever("drop-zdr", "Drop the zero-data-retention requirement", { zdr: false });
+      else lever("zdr", "Require a zero-data-retention endpoint", { zdr: true });
+    }
     if (f.localOnly) lever("hosted", "Allow hosted providers", { localOnly: false });
     else lever("local", "Keep the data on your own machines", { localOnly: true, useBatch: false, cacheShare: 0 });
     var ci = CONTEXT_STEPS.indexOf(f.contextNeed);
@@ -1545,7 +1604,7 @@
     switchCheck: switchCheck, mergeLive: mergeLive, suggestFromText: suggestFromText, costScoreFromPrice: costScoreFromPrice,
     fmtMoney: fmtMoney, fmtTokens: fmtTokens,
     CAPABILITIES: CAPABILITIES, DEFAULT_SETTINGS: DEFAULT_SETTINGS, PRESETS: PRESETS,
-    effectivePrices: effectivePrices, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
+    effectivePrices: effectivePrices, zdrFacts: zdrFacts, zdrText: zdrText, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
     frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
@@ -1580,7 +1639,7 @@
   }
   function safeUrl(u) { return /^https:\/\//.test(String(u || "")) ? u : "#"; }
 
-  var CHECK_IDS = { localOnly: "local-only", useBatch: "use-batch", tools: "need-tools", json: "need-json", reasoning: "need-reasoning" };
+  var CHECK_IDS = { localOnly: "local-only", useBatch: "use-batch", tools: "need-tools", json: "need-json", reasoning: "need-reasoning", zdr: "need-zdr" };
   var SELECT_IDS = { taskType: "task-type", modality: "modality", quality: "quality", latency: "latency", contextNeed: "context-need", cacheShare: "cache-share" };
 
   /** What the form shows, as settings (volumes in millions). */
@@ -1775,6 +1834,16 @@
     return t;
   }
 
+  /** Zero-data-retention endpoints from the snapshot, as one sentence for a card. */
+  function zdrText(m) {
+    var z = m.zdr;
+    if (!z) return "";
+    if (!(z.endpoints > 0)) return "Zero data retention: no endpoint in OpenRouter's list.";
+    var names = z.providers.slice(0, 3).join(", ") + (z.providers.length > 3 ? " and " + (z.providers.length - 3) + " more" : "");
+    return "Zero data retention: " + z.endpoints + (z.endpoints === 1 ? " endpoint" : " endpoints") + " (" + names + "), cheapest " + z.cheapest +
+      " at " + fmtPrice(z.input_price_per_mtok) + " / " + fmtPrice(z.output_price_per_mtok) + " per 1M.";
+  }
+
   /** Cache and batch prices, when listed. */
   function extraPricesText(m) {
     var bits = [];
@@ -1927,6 +1996,7 @@
         ". Open weights: " + (m.open_weights ? "yes" : "no") + ". Monthly: " + costCell(r, p) + ".</p>" +
         (capsText(m) ? '<p class="facts">' + esc(capsText(m)) + "</p>" : "") +
         (extraPricesText(m) ? '<p class="facts">' + esc(extraPricesText(m)) + "</p>" : "") +
+        (zdrText(m) ? '<p class="facts">' + esc(zdrText(m)) + "</p>" : "") +
         (m.strengths.length ? '<p class="facts"><strong>Strengths:</strong> ' + esc(m.strengths.join("; ")) + ".</p>" : "") +
         (m.limits.length ? '<p class="facts"><strong>Limits:</strong> ' + esc(m.limits.join("; ")) + ".</p>" : "") +
         flagList(flags) +
@@ -3058,6 +3128,7 @@
       state.catalog = cat;
       state.base = cat.models.slice();
       $("catalog-date").textContent = cat.catalog_date;
+      $("zdr-date").textContent = cat.zdr_snapshot || "not recorded";
       $("stale-days").textContent = String(cat.stale_after_days || STALE_AFTER_DAYS);
       renderStatus();
       render();
