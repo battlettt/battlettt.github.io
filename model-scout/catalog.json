@@ -68,6 +68,15 @@
         "input_price_per_mtok": 10,
         "output_price_per_mtok": 50,
         "cache_read_price_per_mtok": 1
+      },
+      "hosts": {
+        "endpoints": 8,
+        "providers": [
+          "Amazon Bedrock",
+          "Azure",
+          "OpenAI"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -130,6 +139,15 @@
         "input_price_per_mtok": 2,
         "output_price_per_mtok": 10,
         "cache_read_price_per_mtok": 0.1
+      },
+      "hosts": {
+        "endpoints": 9,
+        "providers": [
+          "Amazon Bedrock",
+          "Azure",
+          "OpenAI"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -192,6 +210,15 @@
         "input_price_per_mtok": 1,
         "output_price_per_mtok": 5,
         "cache_read_price_per_mtok": 0.05
+      },
+      "hosts": {
+        "endpoints": 7,
+        "providers": [
+          "Amazon Bedrock",
+          "Azure",
+          "OpenAI"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -254,6 +281,15 @@
         "input_price_per_mtok": 0.1,
         "output_price_per_mtok": 0.5,
         "cache_read_price_per_mtok": 0.01
+      },
+      "hosts": {
+        "endpoints": 8,
+        "providers": [
+          "Amazon Bedrock",
+          "Azure",
+          "OpenAI"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -335,6 +371,40 @@
         "input_price_per_mtok": 0.035,
         "output_price_per_mtok": 0.075,
         "cache_read_price_per_mtok": 0.031
+      },
+      "hosts": {
+        "endpoints": 26,
+        "providers": [
+          "AkashML",
+          "Amazon Bedrock",
+          "BaseTen",
+          "Cerebras",
+          "CoreWeave",
+          "Crusoe",
+          "DeepInfra",
+          "DekaLLM",
+          "DigitalOcean",
+          "Google",
+          "Groq",
+          "Io Net",
+          "Mancer 2",
+          "Near AI",
+          "Nebius",
+          "Parasail",
+          "PrimeIntellect",
+          "Sail Research",
+          "SambaNova",
+          "SiliconFlow",
+          "Together",
+          "Venice"
+        ],
+        "quantizations": [
+          "bf16",
+          "fp16",
+          "fp4",
+          "fp8",
+          "int4"
+        ]
       }
     },
     {
@@ -403,6 +473,26 @@
         "input_price_per_mtok": 0.03,
         "output_price_per_mtok": 0.044,
         "cache_read_price_per_mtok": 0.027
+      },
+      "hosts": {
+        "endpoints": 11,
+        "providers": [
+          "AkashML",
+          "Amazon Bedrock",
+          "CoreWeave",
+          "Darkbloom",
+          "DeepInfra",
+          "DekaLLM",
+          "Groq",
+          "Parasail",
+          "PrimeIntellect",
+          "SiliconFlow"
+        ],
+        "quantizations": [
+          "bf16",
+          "fp4",
+          "fp8"
+        ]
       }
     },
     {
@@ -463,6 +553,16 @@
         "input_price_per_mtok": null,
         "output_price_per_mtok": null,
         "cache_read_price_per_mtok": null
+      },
+      "hosts": {
+        "endpoints": 5,
+        "providers": [
+          "Amazon Bedrock",
+          "Anthropic",
+          "Azure",
+          "Google"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -526,6 +626,17 @@
         "input_price_per_mtok": 4,
         "output_price_per_mtok": 20,
         "cache_read_price_per_mtok": 0.2
+      },
+      "hosts": {
+        "endpoints": 11,
+        "providers": [
+          "Amazon Bedrock",
+          "Anthropic",
+          "Azure",
+          "Claude Platform on AWS",
+          "Google"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -589,6 +700,17 @@
         "input_price_per_mtok": 2,
         "output_price_per_mtok": 10,
         "cache_read_price_per_mtok": 0.1
+      },
+      "hosts": {
+        "endpoints": 10,
+        "providers": [
+          "Amazon Bedrock",
+          "Anthropic",
+          "Azure",
+          "Claude Platform on AWS",
+          "Google"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -652,6 +774,17 @@
         "input_price_per_mtok": 0.1,
         "output_price_per_mtok": 0.5,
         "cache_read_price_per_mtok": 0.01
+      },
+      "hosts": {
+        "endpoints": 10,
+        "providers": [
+          "Amazon Bedrock",
+          "Anthropic",
+          "Azure",
+          "Claude Platform on AWS",
+          "Google"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -716,6 +849,14 @@
         "input_price_per_mtok": 2,
         "output_price_per_mtok": 10,
         "cache_read_price_per_mtok": 0.1
+      },
+      "hosts": {
+        "endpoints": 6,
+        "providers": [
+          "Google",
+          "Google AI Studio"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -780,6 +921,14 @@
         "input_price_per_mtok": 0.375,
         "output_price_per_mtok": 1.875,
         "cache_read_price_per_mtok": 0.0375
+      },
+      "hosts": {
+        "endpoints": 7,
+        "providers": [
+          "Google",
+          "Google AI Studio"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -843,6 +992,14 @@
         "input_price_per_mtok": 0.15,
         "output_price_per_mtok": 1.25,
         "cache_read_price_per_mtok": 0.015
+      },
+      "hosts": {
+        "endpoints": 8,
+        "providers": [
+          "Google",
+          "Google AI Studio"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -916,6 +1073,31 @@
         "input_price_per_mtok": 0.1,
         "output_price_per_mtok": 0.34,
         "cache_read_price_per_mtok": 0.1
+      },
+      "hosts": {
+        "endpoints": 18,
+        "providers": [
+          "Chutes",
+          "CoreWeave",
+          "Crusoe",
+          "DeepInfra",
+          "DekaLLM",
+          "Friendli",
+          "KT",
+          "Modal",
+          "NextBit",
+          "Novita",
+          "Parasail",
+          "PrimeIntellect",
+          "SambaNova",
+          "SiliconFlow",
+          "Venice"
+        ],
+        "quantizations": [
+          "bf16",
+          "fp4",
+          "fp8"
+        ]
       }
     },
     {
@@ -991,6 +1173,31 @@
         "input_price_per_mtok": 0.032,
         "output_price_per_mtok": 0.095,
         "cache_read_price_per_mtok": 0.016
+      },
+      "hosts": {
+        "endpoints": 15,
+        "providers": [
+          "AkashML",
+          "Cloudflare",
+          "CoreWeave",
+          "Darkbloom",
+          "DeepInfra",
+          "DekaLLM",
+          "Google",
+          "Io Net",
+          "Makora",
+          "NextBit",
+          "Novita",
+          "Parasail",
+          "PrimeIntellect",
+          "SiliconFlow",
+          "Venice"
+        ],
+        "quantizations": [
+          "bf16",
+          "fp4",
+          "fp8"
+        ]
       }
     },
     {
@@ -1051,6 +1258,16 @@
         "input_price_per_mtok": 0.35,
         "output_price_per_mtok": 1,
         "cache_read_price_per_mtok": 0.17
+      },
+      "hosts": {
+        "endpoints": 2,
+        "providers": [
+          "Google",
+          "Parasail"
+        ],
+        "quantizations": [
+          "fp8"
+        ]
       }
     },
     {
@@ -1111,6 +1328,16 @@
         "input_price_per_mtok": 0.08,
         "output_price_per_mtok": 0.24,
         "cache_read_price_per_mtok": null
+      },
+      "hosts": {
+        "endpoints": 4,
+        "providers": [
+          "DeepInfra",
+          "Google"
+        ],
+        "quantizations": [
+          "fp8"
+        ]
       }
     },
     {
@@ -1176,6 +1403,23 @@
         "input_price_per_mtok": 0.1,
         "output_price_per_mtok": 0.32,
         "cache_read_price_per_mtok": null
+      },
+      "hosts": {
+        "endpoints": 9,
+        "providers": [
+          "AkashML",
+          "Cloudflare",
+          "CoreWeave",
+          "DeepInfra",
+          "Google",
+          "Groq",
+          "Parasail",
+          "SambaNova"
+        ],
+        "quantizations": [
+          "fp16",
+          "fp8"
+        ]
       }
     },
     {
@@ -1236,6 +1480,19 @@
         "input_price_per_mtok": 0.02,
         "output_price_per_mtok": 0.04,
         "cache_read_price_per_mtok": null
+      },
+      "hosts": {
+        "endpoints": 4,
+        "providers": [
+          "Cloudflare",
+          "CoreWeave",
+          "DeepInfra",
+          "Groq"
+        ],
+        "quantizations": [
+          "bf16",
+          "fp8"
+        ]
       }
     },
     {
@@ -1296,6 +1553,13 @@
         "input_price_per_mtok": 0.7,
         "output_price_per_mtok": 2.1,
         "cache_read_price_per_mtok": 0.07
+      },
+      "hosts": {
+        "endpoints": 2,
+        "providers": [
+          "Mistral"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -1356,6 +1620,13 @@
         "input_price_per_mtok": 0.15,
         "output_price_per_mtok": 0.6,
         "cache_read_price_per_mtok": 0.015
+      },
+      "hosts": {
+        "endpoints": 3,
+        "providers": [
+          "Mistral"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -1414,6 +1685,13 @@
         "input_price_per_mtok": 0.15,
         "output_price_per_mtok": 0.15,
         "cache_read_price_per_mtok": 0.015
+      },
+      "hosts": {
+        "endpoints": 2,
+        "providers": [
+          "Mistral"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -1473,6 +1751,13 @@
         "input_price_per_mtok": 0.4,
         "output_price_per_mtok": 2,
         "cache_read_price_per_mtok": 0.04
+      },
+      "hosts": {
+        "endpoints": 1,
+        "providers": [
+          "Mistral"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -1555,6 +1840,44 @@
         "input_price_per_mtok": 0.112,
         "output_price_per_mtok": 0.336,
         "cache_read_price_per_mtok": 0.0034
+      },
+      "hosts": {
+        "endpoints": 37,
+        "providers": [
+          "Alibaba",
+          "AtlasCloud",
+          "Baidu",
+          "BaseTen",
+          "Cohere",
+          "CoreWeave",
+          "Crusoe",
+          "DeepInfra",
+          "DigitalOcean",
+          "Fireworks",
+          "GMICloud",
+          "Google",
+          "InferenceNet",
+          "Makora",
+          "Mancer 2",
+          "Modal",
+          "Morph",
+          "Novita",
+          "OpenInference",
+          "Parasail",
+          "Reka",
+          "Relace",
+          "River",
+          "SiliconFlow",
+          "StreamLake",
+          "Together",
+          "Venice",
+          "Wafer"
+        ],
+        "quantizations": [
+          "fp4",
+          "fp8",
+          "mxfp4"
+        ]
       }
     },
     {
@@ -1620,6 +1943,27 @@
         "input_price_per_mtok": 0.9,
         "output_price_per_mtok": 1.5,
         "cache_read_price_per_mtok": 0.25
+      },
+      "hosts": {
+        "endpoints": 13,
+        "providers": [
+          "Alibaba",
+          "AtlasCloud",
+          "Azure",
+          "Baidu",
+          "DeepInfra",
+          "DigitalOcean",
+          "GMICloud",
+          "Novita",
+          "Relace",
+          "SiliconFlow",
+          "StreamLake",
+          "Venice"
+        ],
+        "quantizations": [
+          "fp4",
+          "fp8"
+        ]
       }
     },
     {
@@ -1682,6 +2026,14 @@
         "input_price_per_mtok": 2,
         "output_price_per_mtok": 6,
         "cache_read_price_per_mtok": 0.5
+      },
+      "hosts": {
+        "endpoints": 6,
+        "providers": [
+          "Amazon Bedrock",
+          "xAI"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -1744,6 +2096,13 @@
         "input_price_per_mtok": 1.25,
         "output_price_per_mtok": 2.5,
         "cache_read_price_per_mtok": 0.2
+      },
+      "hosts": {
+        "endpoints": 4,
+        "providers": [
+          "xAI"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -1812,6 +2171,25 @@
         "input_price_per_mtok": 0.011,
         "output_price_per_mtok": 0.101,
         "cache_read_price_per_mtok": 0.01
+      },
+      "hosts": {
+        "endpoints": 10,
+        "providers": [
+          "AkashML",
+          "AtlasCloud",
+          "CoreWeave",
+          "Darkbloom",
+          "DeepInfra",
+          "DekaLLM",
+          "Parasail",
+          "PrimeIntellect",
+          "SiliconFlow",
+          "Venice"
+        ],
+        "quantizations": [
+          "fp4",
+          "fp8"
+        ]
       }
     },
     {
@@ -1871,6 +2249,16 @@
         "input_price_per_mtok": 0.07,
         "output_price_per_mtok": 0.28,
         "cache_read_price_per_mtok": null
+      },
+      "hosts": {
+        "endpoints": 2,
+        "providers": [
+          "Amazon Bedrock",
+          "SiliconFlow"
+        ],
+        "quantizations": [
+          "fp8"
+        ]
       }
     },
     {
@@ -2041,6 +2429,16 @@
         "input_price_per_mtok": null,
         "output_price_per_mtok": null,
         "cache_read_price_per_mtok": null
+      },
+      "hosts": {
+        "endpoints": 5,
+        "providers": [
+          "Amazon Bedrock",
+          "Anthropic",
+          "Azure",
+          "Google"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -2105,6 +2503,14 @@
         "input_price_per_mtok": 2,
         "output_price_per_mtok": 10,
         "cache_read_price_per_mtok": 0.1
+      },
+      "hosts": {
+        "endpoints": 7,
+        "providers": [
+          "Google",
+          "Google AI Studio"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -2169,6 +2575,14 @@
         "input_price_per_mtok": 1.5,
         "output_price_per_mtok": 7.5,
         "cache_read_price_per_mtok": 0.075
+      },
+      "hosts": {
+        "endpoints": 7,
+        "providers": [
+          "Google",
+          "Google AI Studio"
+        ],
+        "quantizations": []
       }
     },
     {
@@ -2233,8 +2647,17 @@
         "input_price_per_mtok": 0.1,
         "output_price_per_mtok": 0.5,
         "cache_read_price_per_mtok": 0.004
+      },
+      "hosts": {
+        "endpoints": 2,
+        "providers": [
+          "Google",
+          "Meta"
+        ],
+        "quantizations": []
       }
     }
   ],
-  "zdr_snapshot": "2026-11-14"
+  "zdr_snapshot": "2026-11-14",
+  "hosts_snapshot": "2026-11-14"
 }
