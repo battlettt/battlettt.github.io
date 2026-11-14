@@ -102,10 +102,11 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .go a:hover::after{transform:translate(2px,-2px)}
 
 /* ════════════════════════════════════════════════════════════════════
-   FEATURED  ·  gallery wall: three framed exhibits hung on one centreline,
-   each lit by its own spotlight, with a wall label underneath.
+   FEATURED  ·  gallery wall: five framed exhibits in two rows, each row hung
+   on one centreline, each lit by its own spotlight, with a wall label underneath.
    These are copies of cards that also live in their chapters (Security,
-   Applied AI, Product). When those cards change, update the label here too.
+   Applied AI, Product, AI/ML, Money Tools). When those cards change, update
+   the label here too.
    ════════════════════════════════════════════════════════════════════ */
 #featured{
   --fx-wall:#cdc9c0; --fx-ink:#141413; --fx-ink-2:#3f3d38; --fx-acc:#9e2f17;
@@ -164,11 +165,14 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .fx-go a[href^="#"]::after{content:"\2193";content:"\2193" / ""}
 .fx-go a:hover{color:var(--fx-acc);text-decoration-color:currentColor}
 
-/* tablet: A spans the wall, B and C hang side by side */
+/* the wall is hung in two rows: three exhibits, then two on an offset row */
+.fx-wall + .fx-wall{margin-top:clamp(3.5rem,8vw,5.5rem)}
+
+/* tablet: A spans the wall, B and C hang side by side, then D and E */
 @media (min-width:40rem) and (max-width:61.99rem){
   .fx-wall{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .fx-ex:first-child{grid-column:1 / -1}
-  .fx-ex:first-child .fx-hang{max-width:44rem}
+  .fx-wall:not(.fx-wall--two) .fx-ex:first-child{grid-column:1 / -1}
+  .fx-wall:not(.fx-wall--two) .fx-ex:first-child .fx-hang{max-width:44rem}
 }
 /* desktop: three widths hung on one centreline; every line of the three
    labels (title, medium, note, figures, links) shares a row via subgrid */
@@ -178,6 +182,7 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
   .fx-hang{align-self:center}
   .fx-label{display:grid;grid-row:span 6;grid-template-rows:subgrid}
   .fx-figs{align-self:start}
+  .fx-wall.fx-wall--two{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);padding-inline:clamp(1rem,14vw,13rem) clamp(1rem,8vw,7rem)}
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -860,14 +865,15 @@ footer a:hover{color:var(--accent)}
   </section>
 
   <!-- ═════════ FEATURED ═════════
-       Three exhibits copied from their chapter cards (Plugin Warden from Security,
-       Course Compass from Applied AI, Fake Company in a Box from Product). The
-       originals stay in their chapters; keep the numbers here in step with them. -->
+       Five exhibits copied from their chapter cards (Plugin Warden from Security,
+       Course Compass from Applied AI, Fake Company in a Box from Product, Model
+       Scout from AI/ML, Co-op Offer Comparator from Money Tools). The originals
+       stay in their chapters; keep the numbers here in step with them. -->
   <section id="featured" aria-labelledby="fx-h">
     <div class="wrap">
       <header class="fx-head">
-        <h2 id="fx-h">Start with these three.</h2>
-        <p>Short on time? These show the range: a plugin security auditor, a study tool that cites its sources, and a live SaaS product.</p>
+        <h2 id="fx-h">Start with these five.</h2>
+        <p>Short on time? These five cover the range: security, applied AI, a live SaaS product, model research and personal finance.</p>
         <a href="#work">Or browse all 28 by chapter</a>
       </header>
 
@@ -937,6 +943,54 @@ footer a:hover{color:var(--accent)}
               <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
               <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
               <li><a href="#product">Filed in Product</a></li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <div class="fx-wall fx-wall--two">
+        <article class="fx-ex anim-rv" data-ex="d">
+          <div class="fx-hang">
+            <a class="fx-frame" href="https://battlettt.github.io/model-scout/">
+              <img src="featured/model-scout.webp" width="1200" height="750" decoding="async" alt="Model Scout results: the best pick for the current task profile, DeepSeek V4.1 Flash, scored 85.4 of 100 at an estimated 4.56 dollars a month, next to bars showing how the profile weights cost, quality, speed, context fit and privacy.">
+            </a>
+          </div>
+          <div class="fx-label">
+            <p class="fx-no">Exhibit <b>D</b></p>
+            <h3><a href="https://github.com/battlettt/model-scout">Model Scout</a></h3>
+            <p class="fx-med">JavaScript, live OpenRouter data</p>
+            <p class="fx-note">Describe a task and its limits, and it ranks LLMs with the reason for each pick, what you give up, and a monthly cost at your volume.</p>
+            <dl class="fx-figs">
+              <div><dt>93</dt><dd>tests passing</dd></div>
+              <div><dt>32</dt><dd>reviewed models, each sourced and dated</dd></div>
+            </dl>
+            <ul class="fx-go">
+              <li><a href="https://battlettt.github.io/model-scout/">Live app</a></li>
+              <li><a href="https://github.com/battlettt/model-scout">Source</a></li>
+              <li><a href="#ai">Filed in AI/ML</a></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="fx-ex anim-rv" data-ex="e">
+          <div class="fx-hang">
+            <a class="fx-frame" href="https://battlettt.github.io/coop-offer-comparator/">
+              <img src="featured/coop-offer-comparator.webp" width="1280" height="800" decoding="async" alt="Co-op Offer Comparator ranking two synthetic offers by monthly take-home: Waterloo QA developer at 1,640.89 dollars ahead of Toronto data analyst at 677.93 dollars, with a bar chart and a line-by-line tax breakdown below.">
+            </a>
+          </div>
+          <div class="fx-label">
+            <p class="fx-no">Exhibit <b>E</b></p>
+            <h3><a href="https://github.com/battlettt/coop-offer-comparator">Co-op Offer Comparator</a></h3>
+            <p class="fx-med">Python, static browser demo</p>
+            <p class="fx-note">Ranks job offers by what you keep after estimated tax, CPP, EI, rent and commuting, so a higher hourly rate in a pricier city cannot hide.</p>
+            <dl class="fx-figs">
+              <div><dt>152</dt><dd>tests passing</dd></div>
+              <div><dt>$963</dt><dd>a month the higher rate hid, synthetic sample</dd></div>
+            </dl>
+            <ul class="fx-go">
+              <li><a href="https://battlettt.github.io/coop-offer-comparator/">Live demo</a></li>
+              <li><a href="https://github.com/battlettt/coop-offer-comparator">Source</a></li>
+              <li><a href="#money">Filed in Money Tools</a></li>
             </ul>
           </div>
         </article>
