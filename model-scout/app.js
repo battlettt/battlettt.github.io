@@ -97,6 +97,29 @@
     return { requests: requests, inputM: requests * n(inPerRequest) / 1e6, outputM: requests * n(outPerRequest) / 1e6 };
   }
 
+  // ---------- token estimate from a pasted sample ----------
+  // Rough on purpose: about 4 characters per token for English and code, about 1 per CJK character.
+  // Runs of spaces or tabs count once. A provider's tokenizer gives the real number.
+  var CJK_CHARS = /[぀-ヿ㐀-䶿一-鿿가-힯豈-﫿]/g;
+  var CACHE_MIN_TOKENS = 1024;
+
+  function estimateTokens(text) {
+    var t = typeof text === "string" ? text.replace(/[ \t]{2,}/g, " ").trim() : "";
+    if (!t) return { tokens: 0, chars: 0, cjk: 0 };
+    var cjk = (t.match(CJK_CHARS) || []).length;
+    return { tokens: Math.max(1, Math.ceil((t.length - cjk) / 4 + cjk)), chars: t.length, cjk: cjk };
+  }
+
+  /** Tokens per request from samples: fixed = text repeated on every request (instructions, shared documents),
+   *  variable = the part that changes, reply = a typical answer. cacheShare is the largest cache option at or
+   *  below the repeated share, and 0 when the repeated part is shorter than CACHE_MIN_TOKENS. */
+  function sampleEstimate(fixed, variable, reply) {
+    var f = estimateTokens(fixed).tokens, v = estimateTokens(variable).tokens, r = estimateTokens(reply).tokens;
+    var input = f + v, share = input > 0 ? f / input : 0, cache = 0, tooShort = f > 0 && f < CACHE_MIN_TOKENS;
+    if (!tooShort) SETTING_CHOICES.cacheShare.forEach(function (o) { if (o <= share + 1e-9) cache = o; });
+    return { fixed: f, variable: v, input: input, output: r, repeatedShare: share, cacheShare: cache, cacheTooShort: tooShort };
+  }
+
   // ---------- staleness ----------
   function parseDate(s) {
     if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(s)) return null;
@@ -1457,7 +1480,7 @@
     switchCheck: switchCheck, mergeLive: mergeLive, suggestFromText: suggestFromText, costScoreFromPrice: costScoreFromPrice,
     fmtMoney: fmtMoney, fmtTokens: fmtTokens,
     CAPABILITIES: CAPABILITIES, DEFAULT_SETTINGS: DEFAULT_SETTINGS, PRESETS: PRESETS,
-    effectivePrices: effectivePrices, volumeFromRequests: volumeFromRequests, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
+    effectivePrices: effectivePrices, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
     frontier: frontier, cheaperAlternative: cheaperAlternative, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
@@ -2158,6 +2181,44 @@
     render();
   }
 
+  function readSample() { return sampleEstimate($("sample-fixed").value, $("sample-var").value, $("sample-reply").value); }
+
+  function sampleText(e, applied) {
+    function n(x) { return x.toLocaleString("en-US"); }
+    if (e.input + e.output === 0) return "Paste a message or a reply to count its tokens.";
+    var t = "About " + n(e.input) + " input tokens per request" +
+      (e.fixed && e.variable ? " (" + n(e.fixed) + " repeated, " + n(e.variable) + " that change)" : "") +
+      " and " + n(e.output) + " output tokens.";
+    if (!e.fixed) return t;
+    var pct = Math.round(e.repeatedShare * 100) + "%";
+    if (e.cacheTooShort) return t + " The repeated part is under " + n(CACHE_MIN_TOKENS) + " tokens, below the minimum many providers cache, so the cache share is left as it is.";
+    if (!e.cacheShare) return t + " Only " + pct + " of the input repeats, so the cache share is left as it is.";
+    return t + " " + pct + " of the input repeats, so the cache share " + (applied ? "is now " : "will be set to ") + Math.round(e.cacheShare * 100) + "%. Caching needs the repeated part at the start of the prompt.";
+  }
+
+  function renderSample() {
+    var e = readSample();
+    $("sample-apply").disabled = e.input + e.output === 0;
+    $("sample-readout").textContent = sampleText(e);
+  }
+
+  function applySample() {
+    var e = readSample();
+    if (e.input + e.output === 0) return;
+    $("req-in").value = String(e.input);
+    $("req-out").value = String(e.output);
+    if (e.cacheShare && parseFloat($("cache-share").value) !== e.cacheShare) {
+      applySettings({ cacheShare: e.cacheShare });
+      markPreset("");
+      state.touched = true;
+      dropLeverUndo();
+      render();
+    }
+    renderHelper();
+    $("sample-readout").textContent = sampleText(e, true) + " Copied into the request fields below.";
+    if (!$("req-day").value) $("req-day").focus();
+  }
+
   function renderSwitchOptions() {
     var sel = $("current-model"), prev = sel.value;
     var list = candidates().slice().sort(function (a, b) { return a.model.localeCompare(b.model); });
@@ -2776,6 +2837,7 @@
     function edited(e) {
       var id = e && e.target && e.target.id;
       if (id && /^req-/.test(id)) { renderHelper(); return; } // the volume helper only fills the fields when asked
+      if (id && /^sample-/.test(id)) { renderSample(); return; } // so does the sample counter
       state.touched = true;
       if (id !== "task-desc") dropLeverUndo();
       if (e && e.type === "input" && id !== "task-desc") markPreset("");
@@ -2795,6 +2857,7 @@
       if (b) usePreset(b.getAttribute("data-preset"));
     });
     $("req-apply").addEventListener("click", applyHelper);
+    $("sample-apply").addEventListener("click", applySample);
     $("share-link").addEventListener("click", copyShareLink);
     $("cards-toggle").addEventListener("click", function () {
       state.showAllCards = !state.showAllCards;

@@ -626,6 +626,12 @@ footer.site p { margin: 0; }
 .group .helper-grid .field, .helper-grid .field { margin: 0 0 var(--s3); }
 .helper-grid .field > label { font-size: 0.875rem; font-weight: 600; }
 .helper-readout { margin: 0 0 var(--s3); color: var(--muted); }
+.sample-helper { margin: var(--s2) 0 var(--s3); }
+.group .sample-helper .field { margin: var(--s2) 0 0; }
+.sample-helper .field > label { font-size: 0.875rem; font-weight: 600; }
+.sample-helper textarea { min-height: 4.5rem; }
+.sample-helper .helper-readout { margin: var(--s2) 0; }
+.sample-helper .btn { margin-bottom: var(--s1); }
 
 .share-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s3); }
 #share-status { flex: 1 1 16rem; font-size: 0.9375rem; overflow-wrap: anywhere; }

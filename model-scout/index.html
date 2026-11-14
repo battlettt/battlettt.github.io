@@ -172,6 +172,24 @@
             </div>
             <details id="volume-helper" class="disclose">
               <summary>Work out volume from requests</summary>
+              <details id="sample-helper" class="disclose sample-helper">
+                <summary>Not sure of the token counts? Paste a sample</summary>
+                <p class="muted" id="sample-help">A rough count: about 4 characters per token for English and code, about 1 per Chinese, Japanese or Korean character. Your provider's tokenizer gives the real number. Pasted text stays in this page: it is not saved, sent anywhere, or put in the share link.</p>
+                <div class="field">
+                  <label for="sample-fixed">Repeated on every request (instructions, shared documents)</label>
+                  <textarea id="sample-fixed" rows="3" aria-describedby="sample-help"></textarea>
+                </div>
+                <div class="field">
+                  <label for="sample-var">A typical message or input that changes each time</label>
+                  <textarea id="sample-var" rows="3" aria-describedby="sample-help"></textarea>
+                </div>
+                <div class="field">
+                  <label for="sample-reply">A typical reply</label>
+                  <textarea id="sample-reply" rows="3" aria-describedby="sample-help"></textarea>
+                </div>
+                <p id="sample-readout" class="readout helper-readout" aria-live="polite">Paste a message or a reply to count its tokens.</p>
+                <button type="button" id="sample-apply" class="btn" disabled>Use these counts</button>
+              </details>
               <div class="helper-grid">
                 <div class="field">
                   <label for="req-day">Requests per day</label>
@@ -513,6 +531,7 @@
         <li>The confidence check on the top pick reruns the ranking 300 times with every factor's weight scaled at random between half and double. It shows how much the pick depends on the exact weights, not how good the model is.</li>
         <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
         <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
+        <li>The sample counter in the volume helper estimates tokens from text you paste: about 4 characters per token for English and code, about 1 per Chinese, Japanese or Korean character, with runs of spaces counted once. It is a rough count, not a tokenizer. It suggests a cache share only when the repeated opening is at least 1,024 tokens, since providers do not cache short prefixes. The text never leaves the page.</li>
         <li>What if one constraint changed reruns the ranking once per lever (cache share, batch prices, quality bar, speed target, each required capability, budget, local only, input length) and shows only the changes that move the pick or save 5% or more. It quotes no saving when either side is self-hosted, because that cost is hardware, not tokens. With batch prices and the prompt cache both on, the cost uses whichever is cheaper for your token mix, never both.</li>
         <li>The ranking runs entirely in your browser. It does not call any model, and Model Scout has no accounts, no server, and no tracking. Your task description never leaves the page. Copy link puts your settings in the page address, never your description.</li>
         <li>The Ask a model panel is the only part that calls a model, and only when you press Send. With OpenRouter it sends your messages and your own key straight from your browser to openrouter.ai, and OpenRouter and the model provider handle them under their own policies. With Local Ollama it sends them to Ollama on your computer. Your key stays in this browser's local storage; conversations are not saved anywhere and are gone when you reload.</li>
