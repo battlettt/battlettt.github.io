@@ -135,6 +135,15 @@
               <small id="budget-help">Blended for your input and output mix. Leave empty for no limit. At $1 or less, cost weighs heavily.</small>
               <p id="budget-error" class="field-error" aria-live="polite"></p>
             </div>
+            <div class="field">
+              <label for="monthly-cap">Monthly spend limit (USD)</label>
+              <div class="affix">
+                <span class="affix-mark" aria-hidden="true">$</span>
+                <input id="monthly-cap" type="number" min="0" step="1" inputmode="decimal" placeholder="No limit" aria-describedby="monthly-cap-help monthly-cap-error">
+              </div>
+              <small id="monthly-cap-help">A hard limit at the volume in D: models that would cost more a month are left out. Self-hosted models are not checked, since their cost is hardware.</small>
+              <p id="monthly-cap-error" class="field-error" aria-live="polite"></p>
+            </div>
             <div class="field check">
               <input id="use-batch" type="checkbox" aria-describedby="use-batch-help">
               <label for="use-batch">Use batch prices where offered</label>
@@ -531,6 +540,7 @@
         <li>The confidence check on the top pick reruns the ranking 300 times with every factor's weight scaled at random between half and double. It shows how much the pick depends on the exact weights, not how good the model is.</li>
         <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
         <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
+        <li>The monthly spend limit is a hard limit: a model whose monthly cost at your volume (with the cache and batch options you chose) is over it is left out, and the excluded list says how much it would cost. Models with no listed price are kept and flagged. In local-only mode it is not applied, because self-hosted cost is hardware, not tokens.</li>
         <li>The sample counter in the volume helper estimates tokens from text you paste: about 4 characters per token for English and code, about 1 per Chinese, Japanese or Korean character, with runs of spaces counted once. It is a rough count, not a tokenizer. It suggests a cache share only when the repeated opening is at least 1,024 tokens, since providers do not cache short prefixes. The text never leaves the page.</li>
         <li>What if one constraint changed reruns the ranking once per lever (cache share, batch prices, quality bar, speed target, each required capability, budget, local only, input length) and shows only the changes that move the pick or save 5% or more. It quotes no saving when either side is self-hosted, because that cost is hardware, not tokens. With batch prices and the prompt cache both on, the cost uses whichever is cheaper for your token mix, never both.</li>
         <li>The ranking runs entirely in your browser. It does not call any model, and Model Scout has no accounts, no server, and no tracking. Your task description never leaves the page. Copy link puts your settings in the page address, never your description.</li>

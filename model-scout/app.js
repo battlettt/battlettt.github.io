@@ -272,6 +272,11 @@
         if (!m.capabilities) r.flags.push(label.charAt(0).toUpperCase() + label.slice(1) + " not confirmed: no capability data for this model.");
       }
     }
+    if (isNum(p.monthlyCap) && p.monthlyCap > 0 && !p.localOnly) {
+      var capCost = monthlyCost(m, p.inputTokens || 0, p.outputTokens || 0, p);
+      if (capCost === null) r.flags.push("Price unknown, so it could not be checked against your monthly limit.");
+      else if (capCost > p.monthlyCap) return excl(r, "About " + fmtMoney(capCost) + " a month at your volume, over your " + fmtLimit(p.monthlyCap) + " monthly limit.");
+    }
 
     var c = r.components;
     // cost
@@ -756,6 +761,7 @@
       "Speed target: " + (LATENCY_LABELS[p.latency] || p.latency),
       "Longest input: " + fmtTokens(p.contextNeed) + " tokens",
       "Budget: " + (isNum(p.budget) ? "$" + p.budget + " per million tokens, blended" : "no limit"),
+      "Monthly spend limit: " + (isNum(p.monthlyCap) ? fmtLimit(p.monthlyCap) + " at this volume" + (p.localOnly ? " (not applied to self-hosted models)" : "") : "none"),
       "Privacy: " + (p.localOnly ? "local only, open weights on our own hardware" : "hosted providers allowed"),
       "Must support: " + (needs.length ? needs.join(", ") : "nothing beyond text generation"),
       "Weights: " + (p.weights ? "set by hand, " + FACTORS.map(function (k) { return COMPONENT_LABELS[k] + " " + Math.round(p.weights[k] * 100) + "%"; }).join(", ") : "from the profile"),
@@ -857,6 +863,11 @@
         json: sp.indexOf("structured_outputs") >= 0 || sp.indexOf("response_format") >= 0,
         reasoning: sp.indexOf("reasoning") >= 0 || sp.indexOf("include_reasoning") >= 0 };
     }
+    var mods = m.architecture && m.architecture.input_modalities;
+    if (Array.isArray(mods)) {
+      var known = SETTING_CHOICES.modality.filter(function (x) { return mods.indexOf(x) >= 0; }).sort(); // the catalog keeps them in A to Z order
+      if (known.length) f.input_modalities = known; // left out when unknown, so a refresh keeps the reviewed value
+    }
     var cr = perMillion(m.pricing && m.pricing.input_cache_read);
     if (cr !== null && cr >= 0) f.cache_read_price_per_mtok = cr;
     var b = byId && byId[m.id + ":batch"];
@@ -892,6 +903,8 @@
       copy.output_price_per_mtok = pout;
       if (isNum(live.context_length)) copy.context_window = live.context_length;
       var facts = liveFacts(live, byId);
+      if (facts.input_modalities && String(facts.input_modalities) !== String((e.input_modalities || ["text"]).slice().sort()))
+        diffs.push("inputs " + (e.input_modalities || ["text"]).join(", ") + " to " + facts.input_modalities.join(", "));
       Object.keys(facts).forEach(function (k) { copy[k] = facts[k]; });
       copy.price_status = "live";
       copy.last_verified = stamp;
@@ -987,7 +1000,12 @@
     if (has(/\b(audio|voice|speech|podcast|call recording)\b/)) { s.modality = "audio"; why.push("mentions audio"); }
     if (has(/\b(video)\b/)) { s.modality = "video"; why.push("mentions video"); }
     if (has(/\b(private|confidential|on-prem|on prem|offline|local|hipaa|gdpr|air-gapped|air gapped)\b/)) { s.localOnly = true; why.push("mentions privacy or local use"); }
-    if (has(/\b(cheap|budget|low cost|inexpensive|millions of|high volume|classifier)\b/)) { s.budget = 1; why.push("mentions cost or high volume"); }
+    var cap = t.match(/\$\s?(\d[\d,]*(?:\.\d+)?)\s?(k\b)?\s*(?:\/\s*|a |per |each )(?:mo\b|month)/);
+    if (cap) {
+      var capV = Number(cap[1].replace(/,/g, "")) * (cap[2] ? 1000 : 1);
+      if (capV > 0 && capV <= 1e7) { s.monthlyCap = capV; why.push("names a monthly limit of " + fmtLimit(capV)); }
+    }
+    if (!s.monthlyCap && has(/\b(cheap|budget|low cost|inexpensive|millions of|high volume|classifier)\b/)) { s.budget = 1; why.push("mentions cost or high volume"); }
     if (has(/\b(real-time|realtime|fast|instant|latency|live chat)\b/)) { s.latency = "fast"; why.push("mentions speed"); }
     if (has(/\b(hardest|frontier|best possible|research|complex reasoning|math proof|critical)\b/)) { s.quality = "frontier"; why.push("mentions top quality"); }
     if (has(/\b(long document|long documents|entire codebase|whole codebase|books?|contracts|transcripts|hundreds of pages)\b/)) { s.contextNeed = 400000; why.push("mentions long inputs"); }
@@ -1001,7 +1019,7 @@
   // Settings are what the form shows (volumes in millions, cache share as a fraction). profileFromSettings
   // turns them into the profile the engine scores against.
   var DEFAULT_SETTINGS = {
-    taskType: "chat", modality: "text", quality: "good", latency: "balanced", contextNeed: 32000, budget: null,
+    taskType: "chat", modality: "text", quality: "good", latency: "balanced", contextNeed: 32000, budget: null, monthlyCap: null,
     localOnly: false, inputM: 50, outputM: 10, cacheShare: 0, useBatch: false, tools: false, json: false, reasoning: false,
     weights: null
   };
@@ -1015,7 +1033,7 @@
   };
   var BOOL_SETTINGS = ["localOnly", "useBatch", "tools", "json", "reasoning"];
   var URL_KEYS = {
-    taskType: "task", modality: "input", quality: "quality", latency: "speed", contextNeed: "context", budget: "budget",
+    taskType: "task", modality: "input", quality: "quality", latency: "speed", contextNeed: "context", budget: "budget", monthlyCap: "cap",
     localOnly: "local", inputM: "in", outputM: "out", cacheShare: "cache", useBatch: "batch", tools: "tools", json: "json", reasoning: "reasoning",
     weights: "w"
   };
@@ -1055,6 +1073,7 @@
     return {
       taskType: f.taskType, modality: f.modality, quality: f.quality, latency: f.latency,
       contextNeed: isNum(f.contextNeed) ? f.contextNeed : 0, budget: isNum(f.budget) && f.budget > 0 ? f.budget : null,
+      monthlyCap: isNum(f.monthlyCap) && f.monthlyCap > 0 ? f.monthlyCap : null,
       localOnly: !!f.localOnly, inputTokens: tok(f.inputM), outputTokens: tok(f.outputM),
       cacheShare: isNum(f.cacheShare) ? clamp(f.cacheShare, 0, MAX_CACHE_SHARE) : 0, useBatch: !!f.useBatch,
       needs: { tools: !!f.tools, json: !!f.json, reasoning: !!f.reasoning },
@@ -1096,6 +1115,7 @@
     if (raw === "" || !/^\d*\.?\d+$/.test(raw)) return undefined;
     x = Number(raw);
     if (k === "budget") return x > 0 && x <= 1000 ? x : undefined;
+    if (k === "monthlyCap") return x > 0 && x <= 1e7 ? x : undefined;
     if (k === "inputM" || k === "outputM") return x >= 0 && x <= 1e6 ? x : undefined;
     return undefined;
   }
@@ -1144,6 +1164,7 @@
       if (f[k]) { var c = {}; c[k] = false; lever("drop-" + k, "Drop the " + CAPABILITY_LABELS[k] + " requirement", c); }
     });
     if (isNum(f.budget) && f.budget > 0) lever("budget", "Remove the budget limit", { budget: null });
+    if (isNum(f.monthlyCap) && f.monthlyCap > 0 && !f.localOnly) lever("cap", "Remove the " + fmtLimit(f.monthlyCap) + " monthly limit", { monthlyCap: null });
     if (f.localOnly) lever("hosted", "Allow hosted providers", { localOnly: false });
     else lever("local", "Keep the data on your own machines", { localOnly: true, useBatch: false, cacheShare: 0 });
     var ci = CONTEXT_STEPS.indexOf(f.contextNeed);
@@ -1191,6 +1212,8 @@
     if (v < 100) return "$" + v.toFixed(2);
     return "$" + Math.round(v).toLocaleString("en-US");
   }
+  /** A limit the user typed: whole dollars stay whole ($40, not $40.00). */
+  function fmtLimit(v) { return isNum(v) && v === Math.round(v) ? "$" + v.toLocaleString("en-US") : fmtMoney(v); }
   function fmtPrice(v) { return isNum(v) ? "$" + (v < 0.1 ? String(round(v, 4)) : v.toFixed(2)) : "unknown"; }
   function fmtTokens(n) {
     if (!isNum(n)) return "unknown";
@@ -1525,6 +1548,7 @@
     var s = {
       taskType: $("task-type").value, modality: $("modality").value, quality: $("quality").value, latency: $("latency").value,
       contextNeed: parseInt($("context-need").value, 10) || 0, budget: isFinite(budget) && budget > 0 ? budget : null,
+      monthlyCap: (function () { var c = parseFloat($("monthly-cap").value); return isFinite(c) && c > 0 ? c : null; })(),
       inputM: num("vol-in"), outputM: num("vol-out"), cacheShare: parseFloat($("cache-share").value) || 0
     };
     Object.keys(CHECK_IDS).forEach(function (k) { s[k] = $(CHECK_IDS[k]).checked; });
@@ -1539,6 +1563,7 @@
     Object.keys(SELECT_IDS).forEach(function (k) { if (k in s) $(SELECT_IDS[k]).value = String(s[k]); });
     Object.keys(CHECK_IDS).forEach(function (k) { if (k in s) $(CHECK_IDS[k]).checked = !!s[k]; });
     if ("budget" in s) $("budget").value = s.budget == null ? "" : String(s.budget);
+    if ("monthlyCap" in s) $("monthly-cap").value = s.monthlyCap == null ? "" : String(s.monthlyCap);
     if ("inputM" in s) $("vol-in").value = String(s.inputM);
     if ("outputM" in s) $("vol-out").value = String(s.outputM);
     if ("weights" in s) {
@@ -1762,6 +1787,7 @@
   /** Inline errors next to the number fields. Values are still read the same way by readProfile. */
   function validateFields() {
     [["budget", "Enter a price of 0 or more, or leave it empty for no limit. Until then there is no budget limit."],
+     ["monthly-cap", "Enter an amount of 0 or more, or leave it empty for no limit. Until then there is no monthly limit."],
      ["vol-in", "Enter 0 or more million tokens. Until then input volume counts as 0."],
      ["vol-out", "Enter 0 or more million tokens. Until then output volume counts as 0."]].forEach(function (f) {
       var el = $(f[0]), msg = $(f[0] + "-error");
