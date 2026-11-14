@@ -302,29 +302,29 @@
     var r = { model: m, excluded: false, excludeReason: "", components: {}, total: 0, flags: [], notes: [] };
     var task = p.taskType || "chat";
     var isEmbedTask = task === "embeddings";
-    if (isEmbedTask && m.kind !== "embedding") return excl(r, "Not an embedding model, and your task is embeddings.");
-    if (!isEmbedTask && m.kind === "embedding") return excl(r, "Embedding model: it makes search vectors and cannot generate text.");
+    if (isEmbedTask && m.kind !== "embedding") return excl(r, "Not an embedding model, and your task is embeddings.", "kind");
+    if (!isEmbedTask && m.kind === "embedding") return excl(r, "Embedding model: it makes search vectors and cannot generate text.", "kind");
     var mods = m.input_modalities || ["text"];
     var needMod = p.modality || "text";
     if (task === "vision" && needMod === "text") needMod = "image";
-    if (mods.indexOf(needMod) < 0) return excl(r, "Does not accept " + needMod + " input.");
-    if (p.localOnly && !m.open_weights) return excl(r, "Hosted only: no downloadable weights, and your profile is local-only.");
+    if (mods.indexOf(needMod) < 0) return excl(r, "Does not accept " + needMod + " input.", "input");
+    if (p.localOnly && !m.open_weights) return excl(r, "Hosted only: no downloadable weights, and your profile is local-only.", "local");
     if (!isEmbedTask) {
       for (var ci = 0; ci < CAPABILITIES.length; ci++) {
         var ck = CAPABILITIES[ci], label = CAPABILITY_LABELS[ck];
         if (!(p.needs && p.needs[ck])) continue;
-        if (m.capabilities && m.capabilities[ck] === false) return excl(r, "Does not support " + label + " (OpenRouter's model list), and your profile requires it.");
+        if (m.capabilities && m.capabilities[ck] === false) return excl(r, "Does not support " + label + " (OpenRouter's model list), and your profile requires it.", "capability");
         if (!m.capabilities) r.flags.push(label.charAt(0).toUpperCase() + label.slice(1) + " not confirmed: no capability data for this model.");
       }
     }
     if (p.zdr && !p.localOnly) {
       if (!m.zdr) r.flags.push("Zero data retention not confirmed: no data for this model in the snapshot.");
-      else if (!(m.zdr.endpoints > 0)) return excl(r, "No zero-data-retention endpoint in OpenRouter's list, and your profile requires one.");
+      else if (!(m.zdr.endpoints > 0)) return excl(r, "No zero-data-retention endpoint in OpenRouter's list, and your profile requires one.", "zdr");
     }
     if (isNum(p.monthlyCap) && p.monthlyCap > 0 && !p.localOnly) {
       var capCost = monthlyCost(m, p.inputTokens || 0, p.outputTokens || 0, p);
       if (capCost === null) r.flags.push("Price unknown, so it could not be checked against your monthly limit.");
-      else if (capCost > p.monthlyCap) return excl(r, "About " + fmtMoney(capCost) + " a month at your volume, over your " + fmtLimit(p.monthlyCap) + " monthly limit.");
+      else if (capCost > p.monthlyCap) return excl(r, "About " + fmtMoney(capCost) + " a month at your volume, over your " + fmtLimit(p.monthlyCap) + " monthly limit.", "cap");
     }
 
     var c = r.components;
@@ -386,7 +386,39 @@
     return r;
   }
 
-  function excl(r, reason) { r.excluded = true; r.excludeReason = reason; return r; }
+  function excl(r, reason, kind) { r.excluded = true; r.excludeReason = reason; r.excludeKind = kind || "other"; return r; }
+
+  var EXCLUDE_LABELS = { kind: "of the wrong kind for the task", input: "unable to read your input type", local: "hosted only",
+    capability: "missing a required capability", zdr: "without a zero-data-retention endpoint", cap: "over your monthly limit", other: "for other reasons" };
+
+  /** One line counting the excluded models by reason, most common first. Empty when nothing was excluded. */
+  function exclusionSummary(excluded) {
+    if (!excluded || !excluded.length) return "";
+    var n = {}, keys = [];
+    excluded.forEach(function (r) { var k = r.excludeKind || "other"; if (!n[k]) { n[k] = 0; keys.push(k); } n[k]++; });
+    keys.sort(function (a, b) { return n[b] - n[a] || keys.indexOf(a) - keys.indexOf(b); });
+    return excluded.length + " left out: " + keys.map(function (k) { return n[k] + " " + EXCLUDE_LABELS[k]; }).join(", ") + ".";
+  }
+
+  /** The ranking as CSV for a spreadsheet. Cells that could start a formula get a leading apostrophe. */
+  function tableCsv(res, p) {
+    function cell(v) {
+      var t = v === null || v === undefined ? "" : String(v);
+      if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+      return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+    }
+    var head = ["rank", "model", "provider", "score", "cost", "quality", "speed", "context_fit", "privacy", "monthly_cost_usd",
+      "list_input_per_1m", "list_output_per_1m", "context_tokens", "price_status", "last_verified", "source_url"];
+    var lines = [head.join(",")];
+    (res.ranked || []).forEach(function (r) {
+      var m = r.model, c = r.components, mc = p.localOnly ? null : monthlyCost(m, p.inputTokens, p.outputTokens, p);
+      function f(k) { return isNum(c[k]) ? Math.round(c[k] * 100) : null; }
+      lines.push([r.rank, m.model, m.provider, r.total, f("cost"), f("quality"), f("latency"), f("context"), f("privacy"),
+        mc === null ? null : round(mc, 2), m.input_price_per_mtok, m.output_price_per_mtok, m.context_window, m.price_status,
+        String(m.last_verified || "").slice(0, 10), m.source && m.source.url].map(cell).join(","));
+    });
+    return lines.join("\r\n") + "\r\n";
+  }
 
   /** Notes on how the batch and cache options changed this model's price. */
   function costNotes(r, m, p) {
@@ -1739,7 +1771,7 @@
     effectivePrices: effectivePrices, zdrFacts: zdrFacts, zdrText: zdrText, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
-    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
+    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, exclusionSummary: exclusionSummary, tableCsv: tableCsv, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
     FACTORS: FACTORS, normalizeWeights: normalizeWeights, weightsAt: weightsAt, sharesToPercents: sharesToPercents,
     tippingPoints: tippingPoints, tipWeights: tipWeights, tipSentence: tipSentence, shareLabel: shareLabel,
     marketWatch: marketWatch, pctChange: pctChange, leverOptions: leverOptions, whatIfs: whatIfs,
@@ -2139,6 +2171,7 @@
     applyCardLimit();
 
     // excluded
+    $("excluded-summary").textContent = exclusionSummary(res.excluded);
     $("excluded").innerHTML = res.excluded.length ? res.excluded.map(function (r) {
       return "<li><strong>" + esc(r.model.model) + "</strong> (" + esc(r.model.provider) + "): " + esc(r.excludeReason) + "</li>";
     }).join("") : "<li>None. Every model passed the hard constraints.</li>";
@@ -2352,6 +2385,21 @@
         out.textContent = "Decision memo copied as Markdown. It includes your description, so check it before you share it.";
       }, function () { out.textContent = "This browser blocked the clipboard. Use Download memo instead."; });
     } else out.textContent = "This browser blocked the clipboard. Use Download memo instead.";
+  }
+
+  function downloadCsv() {
+    var out = $("share-status"), p = readProfile(), res = rankModels(candidates(), p, state.now);
+    try {
+      var url = URL.createObjectURL(new Blob([tableCsv(res, p)], { type: "text/csv" }));
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "model-ranking-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      out.textContent = "Table saved as " + a.download + " (" + res.ranked.length + " models). Factor columns are 0 to 100 before weighting; monthly cost uses your cache, batch and privacy options, list prices do not.";
+    } catch (e) { out.textContent = "This browser could not save the file."; }
   }
 
   function downloadMemo() {
@@ -3306,6 +3354,7 @@
     });
     $("memo-copy").addEventListener("click", copyMemo);
     $("memo-download").addEventListener("click", downloadMemo);
+    $("table-csv").addEventListener("click", downloadCsv);
     renderPresets();
     renderHelper();
     settingsFromUrl();
