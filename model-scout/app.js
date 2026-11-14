@@ -1,7 +1,9 @@
-/* Model Scout v1: client-side ranking engine and UI.
+/* Model Scout v2: client-side ranking engine and UI.
    The engine functions are pure and exported for node tests (tests/run_tests.js).
-   The UI code only runs in a browser. No model APIs are called; the only network
-   requests are catalog.json (same folder) and the public OpenRouter model list. */
+   The UI code only runs in a browser. The ranker calls no model: it fetches catalog.json
+   (same folder) and the public OpenRouter model list. Only the "Ask a model" panel calls a
+   model, when the user presses Send: OpenRouter chat with the user's own key (kept in
+   localStorage, never in this repo), or Ollama on localhost with no key. */
 (function (root) {
   "use strict";
 
@@ -29,6 +31,12 @@
   var COST_LOG_LO = 0.05; // $/M blended price that scores 1.0
   var COST_LOG_HI = 30;   // $/M blended price that scores 0.0
   var SWITCH_MARGIN = 5;  // points a challenger must win by before switching is worth it
+  var CAPABILITIES = ["tools", "json", "reasoning"];
+  var CAPABILITY_LABELS = { tools: "tool calling", json: "JSON output", reasoning: "reasoning mode" };
+  var MAX_CACHE_SHARE = 0.95;
+  var ROBUST_SAMPLES = 300;
+  var ROBUST_SPREAD = Math.log(2); // each weight is scaled by a factor between 1/2 and 2
+  var DAYS_PER_MONTH = 365 / 12;
 
   // ---------- small helpers ----------
   function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
@@ -36,20 +44,50 @@
   function round(x, d) { var p = Math.pow(10, d || 0); return Math.round(x * p) / p; }
 
   // ---------- cost math ----------
-  /** Monthly cost in USD. Prices are per million tokens. Returns null if a price is unknown. */
-  function monthlyCost(model, inputTokens, outputTokens) {
+  /**
+   * Prices per million tokens after the profile's batch and cache options. Null when a list price is unknown.
+   * opts: { useBatch, cacheShare }. A batch price is used only when it is listed and not higher than the
+   * standard price. Cached input is billed at the cache read price for cacheShare of the input tokens.
+   * The cache discount is not combined with a batch price, and cache write fees are not modelled.
+   */
+  function effectivePrices(model, opts) {
     var pin = model.input_price_per_mtok, pout = model.output_price_per_mtok;
     if (!isNum(pin) || !isNum(pout)) return null;
-    return (inputTokens / 1e6) * pin + (outputTokens / 1e6) * pout;
+    var o = opts || {}, r = { input: pin, output: pout, batch: false, cache: false };
+    var bi = model.batch_input_price_per_mtok, bo = model.batch_output_price_per_mtok;
+    if (o.useBatch && isNum(bi) && isNum(bo) && bi <= pin && bo <= pout) {
+      r.input = bi; r.output = bo; r.batch = true;
+    }
+    var share = isNum(o.cacheShare) ? clamp(o.cacheShare, 0, MAX_CACHE_SHARE) : 0;
+    var cr = model.cache_read_price_per_mtok;
+    if (!r.batch && share > 0 && isNum(cr) && cr < r.input) {
+      r.input = (1 - share) * r.input + share * cr;
+      r.cache = true;
+    }
+    return r;
+  }
+
+  /** Monthly cost in USD. Prices are per million tokens. Returns null if a price is unknown. opts as in effectivePrices. */
+  function monthlyCost(model, inputTokens, outputTokens, opts) {
+    var e = effectivePrices(model, opts);
+    if (!e) return null;
+    return (inputTokens / 1e6) * e.input + (outputTokens / 1e6) * e.output;
   }
 
   /** Blended $/M for the user's input/output mix. Defaults to a 3:1 input:output mix. */
-  function blendedPrice(model, inputTokens, outputTokens) {
-    var pin = model.input_price_per_mtok, pout = model.output_price_per_mtok;
-    if (!isNum(pin) || !isNum(pout)) return null;
+  function blendedPrice(model, inputTokens, outputTokens, opts) {
+    var e = effectivePrices(model, opts);
+    if (!e) return null;
     var i = inputTokens > 0 ? inputTokens : 0, o = outputTokens > 0 ? outputTokens : 0;
     if (i + o === 0) { i = 3; o = 1; }
-    return (i * pin + o * pout) / (i + o);
+    return (i * e.input + o * e.output) / (i + o);
+  }
+
+  /** Monthly volume in millions of tokens from requests per day and tokens per request. A month is 365/12 days. */
+  function volumeFromRequests(perDay, inPerRequest, outPerRequest) {
+    function n(x) { return isNum(x) && x > 0 ? x : 0; }
+    var requests = n(perDay) * DAYS_PER_MONTH;
+    return { requests: requests, inputM: requests * n(inPerRequest) / 1e6, outputM: requests * n(outPerRequest) / 1e6 };
   }
 
   // ---------- staleness ----------
@@ -93,7 +131,27 @@
     if (parseDate(e.last_verified) === null && e.price_status !== "unverified") {
       errs.push("no valid last_verified date and not flagged unverified");
     }
+    // optional fields, filled from OpenRouter's model list when the model is listed there
+    ["cache_read_price_per_mtok", "batch_input_price_per_mtok", "batch_output_price_per_mtok", "max_output_tokens"].forEach(function (f) {
+      if (e[f] != null && (!isNum(e[f]) || e[f] < 0)) errs.push(f + " must be a non-negative number or null");
+    });
+    if ((e.batch_input_price_per_mtok == null) !== (e.batch_output_price_per_mtok == null)) errs.push("batch prices must be both set or both null");
+    if (e.capabilities != null) {
+      if (typeof e.capabilities !== "object" || Array.isArray(e.capabilities)) errs.push("capabilities must be an object or null");
+      else CAPABILITIES.forEach(function (k) { if (typeof e.capabilities[k] !== "boolean") errs.push("capabilities." + k + " must be true or false"); });
+    }
+    if (e.retires_on != null && parseDate(e.retires_on) === null) errs.push("retires_on must be a YYYY-MM-DD date or null");
     return errs;
+  }
+
+  /** Scheduled retirement from the listed expiration date, or null when none is listed. */
+  function retirement(e, now) {
+    var t = parseDate(e && e.retires_on);
+    if (t === null) return null;
+    var nowMs = now instanceof Date ? now.getTime() : (isNum(now) ? now : Date.now());
+    var days = Math.ceil((t - nowMs) / DAY_MS), d = String(e.retires_on).slice(0, 10);
+    if (days < 0) return { days: days, past: true, text: "Retired on " + d + ", the expiration date OpenRouter lists. Move off it." };
+    return { days: days, past: false, text: "Scheduled to retire on " + d + (days === 0 ? " (today)" : " (in " + days + " day" + (days === 1 ? "" : "s") + ")") + ": plan the move now." };
   }
 
   /** Every flag the UI should show for an entry's data quality. */
@@ -101,6 +159,8 @@
     var flags = [];
     var st = staleStatus(e, now);
     if (st.stale) flags.push({ level: "warn", text: "Stale: " + st.reason });
+    var ret = retirement(e, now);
+    if (ret) flags.push({ level: "warn", text: ret.text });
     if (e.price_status === "unverified") flags.push({ level: "warn", text: "Price not verified: the figure shown is not confirmed by a current source." });
     if (e.unverified_fields && e.unverified_fields.length) {
       flags.push({ level: "warn", text: "Not verified: " + e.unverified_fields.join(", ").replace(/_/g, " ") + "." });
@@ -156,6 +216,14 @@
     if (task === "vision" && needMod === "text") needMod = "image";
     if (mods.indexOf(needMod) < 0) return excl(r, "Does not accept " + needMod + " input.");
     if (p.localOnly && !m.open_weights) return excl(r, "Hosted only: no downloadable weights, and your profile is local-only.");
+    if (!isEmbedTask) {
+      for (var ci = 0; ci < CAPABILITIES.length; ci++) {
+        var ck = CAPABILITIES[ci], label = CAPABILITY_LABELS[ck];
+        if (!(p.needs && p.needs[ck])) continue;
+        if (m.capabilities && m.capabilities[ck] === false) return excl(r, "Does not support " + label + " (OpenRouter's model list), and your profile requires it.");
+        if (!m.capabilities) r.flags.push(label.charAt(0).toUpperCase() + label.slice(1) + " not confirmed: no capability data for this model.");
+      }
+    }
 
     var c = r.components;
     // cost
@@ -164,7 +232,7 @@
       c.cost = HARDWARE_SCORE[hw] != null ? HARDWARE_SCORE[hw] : HARDWARE_SCORE.unknown;
       r.notes.push("Self-hosted: needs " + (HARDWARE_LABEL[hw] || HARDWARE_LABEL.unknown) + ". Cost score reflects hardware size, not a per-token price.");
     } else {
-      var b = blendedPrice(m, p.inputTokens, p.outputTokens);
+      var b = blendedPrice(m, p.inputTokens, p.outputTokens, p);
       if (b === null) { c.cost = 0.5; r.flags.push("Price unknown, so cost was scored as average."); }
       else {
         c.cost = costScoreFromPrice(b);
@@ -172,6 +240,7 @@
           c.cost *= 0.25;
           r.flags.push("Over budget: about $" + round(b, 3) + " per million tokens for your mix, above your $" + p.budget + " limit.");
         }
+        costNotes(r, m, p);
       }
     }
     // quality
@@ -217,6 +286,20 @@
 
   function excl(r, reason) { r.excluded = true; r.excludeReason = reason; return r; }
 
+  /** Notes on how the batch and cache options changed this model's price. */
+  function costNotes(r, m, p) {
+    var e = effectivePrices(m, p);
+    if (!e) return;
+    if (p.useBatch) {
+      r.notes.push(e.batch ? "Batch price used: " + fmtPrice(e.input) + " in / " + fmtPrice(e.output) + " out per 1M tokens, for work that can wait for a batch run." :
+        "No lower batch price is listed for this model, so the standard price is used.");
+    }
+    if (isNum(p.cacheShare) && p.cacheShare > 0 && !e.batch) {
+      r.notes.push(e.cache ? "Cached input billed at " + fmtPrice(m.cache_read_price_per_mtok) + " per 1M for " + Math.round(clamp(p.cacheShare, 0, MAX_CACHE_SHARE) * 100) + "% of input tokens. Cache write fees are not included." :
+        "No cache read price is listed, so all input is billed at the full input price.");
+    }
+  }
+
   /** Rank all models. Ties are broken by lower monthly cost, then by name. */
   function rankModels(models, p, now) {
     var w = computeWeights(p);
@@ -224,7 +307,7 @@
     var ranked = all.filter(function (r) { return !r.excluded; });
     ranked.sort(function (a, b) {
       if (b.total !== a.total) return b.total - a.total;
-      var ca = monthlyCost(a.model, p.inputTokens, p.outputTokens), cb = monthlyCost(b.model, p.inputTokens, p.outputTokens);
+      var ca = monthlyCost(a.model, p.inputTokens, p.outputTokens, p), cb = monthlyCost(b.model, p.inputTokens, p.outputTokens, p);
       if (ca !== cb) return (ca === null ? Infinity : ca) - (cb === null ? Infinity : cb);
       return a.model.model.localeCompare(b.model.model);
     });
@@ -256,7 +339,7 @@
     if (bads.length) trade.push("You accept " + bads.slice(0, 2).join(" and ") + ".");
     var other = r === top ? second : top;
     if (other) {
-      var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens), oc = monthlyCost(other.model, p.inputTokens, p.outputTokens);
+      var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens, p), oc = monthlyCost(other.model, p.inputTokens, p.outputTokens, p);
       var name = other.model.model;
       if (!p.localOnly && mc !== null && oc !== null && (p.inputTokens + p.outputTokens) > 0 && Math.abs(mc - oc) >= 0.01) {
         trade.push(mc > oc ? "Costs " + fmtMoney(mc - oc) + " more per month than " + name + "." :
@@ -288,12 +371,326 @@
     return {
       found: true, excluded: false, current: cur, better: better,
       worthSwitching: better.length > 0 && better[0].margin >= SWITCH_MARGIN,
-      stale: staleStatus(cur.model, now)
+      stale: staleStatus(cur.model, now), retirement: retirement(cur.model, now)
     };
+  }
+
+  // ---------- robustness of the top pick ----------
+  /** Small seeded random number generator (mulberry32), so the same profile always gives the same answer. */
+  function seededRandom(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /**
+   * How often does each model come first when the weights are nudged at random? Each sample scales every
+   * weight by a factor between 1/2 and 2, renormalises, and rescores every ranked model with the same
+   * factor scores. Ties go to the higher-ranked model. Returns null when nothing is ranked.
+   * runnerUp says whether the second model ties the top pick on every factor (no weighting can separate
+   * them) or is matched or beaten on every factor (no weighting can put it first).
+   */
+  function robustness(res, opts) {
+    opts = opts || {};
+    var ranked = res && res.ranked;
+    if (!ranked || !ranked.length) return null;
+    var n = opts.samples || ROBUST_SAMPLES, spread = isNum(opts.spread) ? opts.spread : ROBUST_SPREAD;
+    var w = res.weights, keys = Object.keys(w), rnd = seededRandom(opts.seed || 20261113);
+    var wins = ranked.map(function () { return 0; });
+    for (var s = 0; s < n; s++) {
+      var ws = {}, sum = 0;
+      keys.forEach(function (k) { ws[k] = w[k] * Math.exp(spread * (2 * rnd() - 1)); sum += ws[k]; });
+      var best = 0, bestV = -Infinity;
+      for (var i = 0; i < ranked.length; i++) {
+        var r = ranked[i], v = 0;
+        for (var j = 0; j < keys.length; j++) v += (ws[keys[j]] / sum) * r.components[keys[j]];
+        v *= r.fit;
+        if (v > bestV + 1e-12) { bestV = v; best = i; }
+      }
+      wins[best]++;
+    }
+    var shares = ranked.map(function (r, i) { return { model: r.model, rank: r.rank, share: wins[i] / n }; })
+      .filter(function (x) { return x.share > 0; })
+      .sort(function (a, b) { return b.share - a.share || a.rank - b.rank; });
+    var topShare = wins[0] / n, runnerUp = null;
+    if (ranked[1]) {
+      var a = ranked[0], b = ranked[1], ge = true, eq = true;
+      keys.forEach(function (k) {
+        var x = a.components[k] * a.fit, y = b.components[k] * b.fit;
+        if (x < y - 1e-9) ge = false;
+        if (Math.abs(x - y) > 1e-9) eq = false;
+      });
+      runnerUp = { model: b.model, twin: eq, dominated: ge && !eq };
+    }
+    return {
+      samples: n, topShare: topShare, shares: shares, runnerUp: runnerUp,
+      verdict: runnerUp && runnerUp.twin ? "tie" : topShare >= 0.8 ? "stable" : topShare >= 0.5 ? "likely" : "close"
+    };
+  }
+
+  // ---------- value map: score against monthly cost ----------
+  /** Pareto frontier for "higher score, lower cost": ids of points that no other point beats on both, in cost order. */
+  function frontier(points) {
+    var best = -Infinity, out = [];
+    (points || []).filter(function (q) { return q && isNum(q.cost) && isNum(q.score); }).slice()
+      .sort(function (a, b) { return a.cost - b.cost || b.score - a.score; })
+      .forEach(function (q) { if (q.score > best) { out.push(q.id); best = q.score; } });
+    return out;
+  }
+
+  /** The cheapest ranked model within `gap` points (default 5) of the top pick that costs less per month, or null. */
+  function cheaperAlternative(ranked, p, gap) {
+    if (!ranked || ranked.length < 2 || p.localOnly) return null;
+    var g = isNum(gap) ? gap : SWITCH_MARGIN, top = ranked[0];
+    var topCost = monthlyCost(top.model, p.inputTokens, p.outputTokens, p);
+    if (topCost === null || topCost <= 0) return null;
+    var best = null;
+    ranked.slice(1).forEach(function (r) {
+      if (top.total - r.total > g) return;
+      var c = monthlyCost(r.model, p.inputTokens, p.outputTokens, p);
+      if (c === null || topCost - c < 0.01) return;
+      if (!best || c < best.cost || (c === best.cost && r.total > best.r.total)) best = { r: r, cost: c };
+    });
+    if (!best) return null;
+    return { model: best.r.model, total: best.r.total, rank: best.r.rank, cost: best.cost, topCost: topCost,
+      saves: topCost - best.cost, gap: round(top.total - best.r.total, 1) };
+  }
+
+  /**
+   * SVG for the value map. points: [{ id, name, cost, score, top }]. Cost uses a log scale; points with no cost
+   * are left out and counted. Pure string output, so it can be tested without a browser.
+   */
+  function valueMapSvg(points, opts) {
+    opts = opts || {};
+    // Drawn at the container's own width so 12px text stays 12px on a phone; 720 wide when the width is unknown.
+    var W = isNum(opts.width) && opts.width > 0 ? Math.round(clamp(opts.width, 300, 1100)) : 720;
+    var H = W < 560 ? Math.round(W * 0.8) : Math.round(clamp(W * 0.48, 300, 400)), L = 56, R = 20, T = 18, B = 52;
+    var pts = (points || []).filter(function (q) { return isNum(q.cost) && isNum(q.score); });
+    if (!pts.length) return { svg: "", plotted: 0, skipped: (points || []).length, frontier: [] };
+    var pos = pts.map(function (q) { return q.cost; }).filter(function (c) { return c > 0; });
+    var minPos = pos.length ? Math.min.apply(null, pos) : 1;
+    var floor = minPos / 2;
+    var lo = Math.log10(Math.max(floor, 1e-6)), hi = Math.log10(Math.max(Math.max.apply(null, pts.map(function (q) { return q.cost; })), minPos));
+    lo = Math.floor(lo * 2) / 2; hi = Math.ceil(hi * 2) / 2;
+    if (hi - lo < 1) { lo -= 0.5; hi += 0.5; }
+    var sMin = Math.min.apply(null, pts.map(function (q) { return q.score; }));
+    var yLo = Math.max(0, Math.floor((sMin - 5) / 10) * 10), yHi = 100;
+    function x(c) { return L + (Math.log10(Math.max(c, floor)) - lo) / (hi - lo) * (W - L - R); }
+    function y(s) { return T + (yHi - s) / (yHi - yLo) * (H - T - B); }
+    function f1(v) { return Math.round(v * 10) / 10; }
+    var front = frontier(pts), onFront = {};
+    front.forEach(function (id) { onFront[id] = true; });
+    var out = [];
+    // grid and axes
+    for (var g = yLo; g <= yHi; g += 10) {
+      out.push('<line class="vm-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + f1(y(g)) + '" y2="' + f1(y(g)) + '"/>');
+      out.push('<text class="vm-tick" x="' + (L - 8) + '" y="' + f1(y(g) + 4) + '" text-anchor="end">' + g + "</text>");
+    }
+    for (var d = Math.ceil(lo); d <= Math.floor(hi); d++) {
+      var xv = f1(x(Math.pow(10, d)));
+      out.push('<line class="vm-grid" x1="' + xv + '" x2="' + xv + '" y1="' + T + '" y2="' + (H - B) + '"/>');
+      var tv = Math.pow(10, d);
+      out.push('<text class="vm-tick" x="' + xv + '" y="' + (H - B + 18) + '" text-anchor="middle">' + (tv >= 1000 ? "$" + (tv / 1000) + "K" : "$" + String(round(tv, 4))) + "</text>");
+    }
+    out.push('<text class="vm-axis" x="' + ((L + W - R) / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + escapeHtml(opts.xLabel || "Monthly cost at your volume (log scale)") + "</text>");
+    out.push('<text class="vm-axis" x="14" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 14 ' + ((T + H - B) / 2) + ')">Score</text>');
+    // frontier staircase
+    var fp = front.map(function (id) { return pts.filter(function (q) { return q.id === id; })[0]; });
+    if (fp.length > 1) {
+      var dPath = "M" + f1(x(fp[0].cost)) + " " + f1(y(fp[0].score));
+      for (var i = 1; i < fp.length; i++) dPath += " H" + f1(x(fp[i].cost)) + " V" + f1(y(fp[i].score));
+      out.push('<path class="vm-front" d="' + dPath + '"/>');
+    }
+    // points: others first, then the frontier, then the top pick on top
+    var order = pts.slice().sort(function (a, b) { return (onFront[a.id] ? 1 : 0) - (onFront[b.id] ? 1 : 0) || (a.top ? 1 : 0) - (b.top ? 1 : 0); });
+    order.forEach(function (q) {
+      var cls = "vm-pt" + (onFront[q.id] ? " is-front" : "") + (q.top ? " is-top" : "");
+      out.push('<circle class="' + cls + '" data-id="' + escapeHtml(q.id) + '" cx="' + f1(x(q.cost)) + '" cy="' + f1(y(q.score)) + '" r="' + (q.top ? 7 : onFront[q.id] ? 5.5 : 4.5) + '"><title>' +
+        escapeHtml(q.name + ": score " + q.score + ", " + fmtMoney(q.cost) + " a month") + "</title></circle>");
+    });
+    // labels for frontier points and the top pick, skipped where they would collide
+    var boxes = [];
+    function free(bx) { return boxes.every(function (o) { return bx.x2 < o.x1 || bx.x1 > o.x2 || bx.y2 < o.y1 || bx.y1 > o.y2; }); }
+    pts.filter(function (q) { return onFront[q.id] || q.top; }).sort(function (a, b) { return (b.top ? 1 : 0) - (a.top ? 1 : 0); }).forEach(function (q) {
+      var px = x(q.cost), py = y(q.score), w = q.name.length * 6.6 + 4, tries = [[10, -8, "start"], [-10, -8, "end"], [10, 16, "start"], [-10, 16, "end"]];
+      for (var k = 0; k < tries.length; k++) {
+        var t = tries[k], lx = px + t[0], ly = py + t[1];
+        var bx = t[2] === "start" ? { x1: lx, x2: lx + w } : { x1: lx - w, x2: lx };
+        bx.y1 = ly - 11; bx.y2 = ly + 3;
+        if (bx.x1 < L || bx.x2 > W - 4 || bx.y1 < 0 || bx.y2 > H - B) continue;
+        if (!free(bx)) continue;
+        boxes.push(bx);
+        out.push('<text class="vm-label' + (q.top ? " is-top" : "") + '" x="' + f1(lx) + '" y="' + f1(ly) + '" text-anchor="' + t[2] + '">' + escapeHtml(q.name) + "</text>");
+        break;
+      }
+    });
+    var title = opts.title || "Value map: score against monthly cost";
+    var desc = pts.length + " models plotted. The frontier, from cheapest up: " +
+      fp.map(function (q) { return q.name + " (score " + q.score + ", " + fmtMoney(q.cost) + ")"; }).join("; ") + ".";
+    var svg = '<svg class="vm-svg" viewBox="0 0 ' + W + " " + H + '" role="img" aria-labelledby="vm-title vm-desc">' +
+      '<title id="vm-title">' + escapeHtml(title) + '</title><desc id="vm-desc">' + escapeHtml(desc) + "</desc>" + out.join("") + "</svg>";
+    return { svg: svg, plotted: pts.length, skipped: (points || []).length - pts.length, frontier: front };
+  }
+
+  // ---------- head to head ----------
+  /** Rows for comparing a few ranked results side by side. best lists the column indexes with the best figure. */
+  function headToHead(results, p) {
+    var cols = results || [];
+    function numRow(label, better, get, fmt) {
+      var vals = cols.map(get), cells = vals.map(function (v) { return v === null || v === undefined || (typeof v === "number" && !isFinite(v)) ? "unknown" : fmt(v); });
+      var known = vals.filter(isNum), best = [];
+      if (known.length > 1 && Math.max.apply(null, known) !== Math.min.apply(null, known)) {
+        var target = better === "low" ? Math.min.apply(null, known) : Math.max.apply(null, known);
+        vals.forEach(function (v, i) { if (v === target) best.push(i); });
+      }
+      return { label: label, cells: cells, best: best };
+    }
+    function textRow(label, get) { return { label: label, cells: cols.map(get), best: [] }; }
+    var rows = [
+      numRow("Score", "high", function (r) { return r.total; }, String),
+      numRow("Monthly cost", "low", function (r) { return monthlyCost(r.model, p.inputTokens, p.outputTokens, p); }, fmtMoney)
+    ];
+    ["cost", "quality", "latency", "context", "privacy"].forEach(function (k) {
+      rows.push(numRow(COMPONENT_LABELS[k].charAt(0).toUpperCase() + COMPONENT_LABELS[k].slice(1) + " score", "high", function (r) { return Math.round(r.components[k] * 100); }, String));
+    });
+    rows.push(numRow("Input price per 1M", "low", function (r) { return r.model.input_price_per_mtok; }, fmtPrice));
+    rows.push(numRow("Output price per 1M", "low", function (r) { return r.model.output_price_per_mtok; }, fmtPrice));
+    rows.push(numRow("Context window", "high", function (r) { return r.model.context_window; }, function (v) { return fmtTokens(v) + " tokens"; }));
+    rows.push(numRow("Longest answer", "high", function (r) { return r.model.max_output_tokens; }, function (v) { return fmtTokens(v) + " tokens"; }));
+    rows.push(numRow("Quality tier (editorial)", "high", function (r) { return r.model.quality_tier; }, function (v) { return v + " of 5"; }));
+    rows.push(textRow("Speed class (editorial)", function (r) { return r.model.latency_class || "not rated"; }));
+    CAPABILITIES.forEach(function (k) {
+      rows.push(textRow(CAPABILITY_LABELS[k].charAt(0).toUpperCase() + CAPABILITY_LABELS[k].slice(1), function (r) {
+        var c = r.model.capabilities;
+        return r.model.kind === "embedding" ? "not applicable" : !c ? "no data" : c[k] ? "yes" : "no";
+      }));
+    });
+    rows.push(textRow("Open weights", function (r) { return r.model.open_weights ? "yes" : "no"; }));
+    return { columns: cols.map(function (r) { return r.model.model; }), rows: rows };
+  }
+
+  // ---------- decision memo ----------
+  var MODALITY_LABELS = { text: "text only", image: "images", file: "files (PDF and similar)", audio: "audio", video: "video" };
+  var QUALITY_LABELS = { basic: "basic", good: "good (most production work)", frontier: "frontier (hardest work)" };
+  var LATENCY_LABELS = { balanced: "balanced", fast: "fast (real time)", any: "does not matter (batch jobs)" };
+
+  function mdCell(s) { return String(s == null ? "" : s).replace(/\|/g, "/").replace(/\s+/g, " ").trim(); }
+  function fmtVolume(t) { var m = t / 1e6; return (m >= 100 ? Math.round(m) : round(m, 2)) + " million"; }
+
+  /** The profile in plain words, one item per requirement. */
+  function requirementLines(p) {
+    var needs = CAPABILITIES.filter(function (k) { return p.needs && p.needs[k]; }).map(function (k) { return CAPABILITY_LABELS[k]; });
+    return [
+      "Task: " + (TASK_LABELS[p.taskType] || p.taskType),
+      "Input: " + (MODALITY_LABELS[p.modality] || p.modality),
+      "Quality bar: " + (QUALITY_LABELS[p.quality] || p.quality),
+      "Speed target: " + (LATENCY_LABELS[p.latency] || p.latency),
+      "Longest input: " + fmtTokens(p.contextNeed) + " tokens",
+      "Budget: " + (isNum(p.budget) ? "$" + p.budget + " per million tokens, blended" : "no limit"),
+      "Privacy: " + (p.localOnly ? "local only, open weights on our own hardware" : "hosted providers allowed"),
+      "Must support: " + (needs.length ? needs.join(", ") : "nothing beyond text generation"),
+      "Volume: " + fmtVolume(p.inputTokens) + " input and " + fmtVolume(p.outputTokens) + " output tokens a month" +
+        (p.cacheShare > 0 ? ", " + Math.round(p.cacheShare * 100) + "% of input from the prompt cache" : "") + (p.useBatch ? ", batch prices where offered" : "")
+    ];
+  }
+
+  /**
+   * A Markdown memo for the decision: requirements, the pick and why, confidence, a cheaper option, runners-up,
+   * exclusions, caveats, and when to revisit. ctx: { res, p, description, rb, alt, now, catalogDate, liveAt, link }.
+   */
+  function decisionMemo(ctx) {
+    var res = ctx.res, p = ctx.p, top = res.ranked[0], L = [];
+    var day = (ctx.now instanceof Date ? ctx.now : new Date()).toISOString().slice(0, 10);
+    var task = String(ctx.description || "").trim();
+    L.push("# Model choice: " + (task ? mdCell(task) : (TASK_LABELS[p.taskType] || p.taskType)));
+    L.push("");
+    L.push("Prepared " + day + " with Model Scout. Data: catalog snapshot " + (ctx.catalogDate || "unknown") +
+      (ctx.liveAt ? ", with live OpenRouter prices fetched " + ctx.liveAt : ", bundled prices only (live data was not loaded)") + ".");
+    L.push("");
+    L.push("## Requirements");
+    requirementLines(p).forEach(function (x) { L.push("- " + x); });
+    L.push("");
+    if (!top) {
+      L.push("## Recommendation");
+      L.push("No model meets every hard constraint. Loosen one (local only, input type, or a required capability) and run it again.");
+    } else {
+      var mc = monthlyCost(top.model, p.inputTokens, p.outputTokens, p);
+      L.push("## Recommendation: " + mdCell(top.model.model) + " (" + mdCell(top.model.provider) + ")");
+      L.push("- Score " + top.total + " of 100" + (p.localOnly ? ", self-hosted (hosted reference " + fmtMoney(mc) + " a month)." : ", about " + fmtMoney(mc) + " a month at this volume."));
+      L.push("- Why: " + top.explain.why);
+      L.push("- Trade-offs: " + top.explain.tradeoffs);
+      if (ctx.rb) {
+        L.push("- Confidence: " + (ctx.rb.verdict === "tie" ? "tied on every factor with " + ctx.rb.runnerUp.model.model + "; either works." :
+          { stable: "stable", likely: "likely", close: "close call" }[ctx.rb.verdict] + ", first in " + Math.round(ctx.rb.topShare * 100) + "% of " + ctx.rb.samples + " reruns with each weight between half and double."));
+      }
+      if (ctx.alt) L.push("- Cheaper option within " + SWITCH_MARGIN + " points: " + ctx.alt.model.model + " scores " + ctx.alt.total + " for " + fmtMoney(ctx.alt.cost) + " a month, saving " + fmtMoney(ctx.alt.saves) + ".");
+      var flags = dataFlags(top.model, ctx.now).map(function (f) { return f.text; }).concat(top.flags);
+      flags.forEach(function (f) { L.push("- Check: " + f); });
+      L.push("");
+      L.push("## Shortlist");
+      L.push("| Rank | Model | Score | Monthly cost | Price in / out per 1M | Context |");
+      L.push("| --- | --- | --- | --- | --- | --- |");
+      res.ranked.slice(0, 5).forEach(function (r) {
+        L.push("| " + r.rank + " | " + mdCell(r.model.model + " (" + r.model.provider + ")") + " | " + r.total + " | " +
+          fmtMoney(monthlyCost(r.model, p.inputTokens, p.outputTokens, p)) + " | " + fmtPrice(r.model.input_price_per_mtok) + " / " + fmtPrice(r.model.output_price_per_mtok) + " | " + fmtTokens(r.model.context_window) + " |");
+      });
+    }
+    L.push("");
+    L.push("## Ruled out");
+    if (!res.excluded.length) L.push("- Nothing: every model passed the hard constraints.");
+    else {
+      res.excluded.slice(0, 6).forEach(function (r) { L.push("- " + mdCell(r.model.model) + ": " + r.excludeReason); });
+      if (res.excluded.length > 6) L.push("- And " + (res.excluded.length - 6) + " more.");
+    }
+    L.push("");
+    L.push("## Caveats");
+    L.push("- Quality tiers and speed classes are editorial, from each provider's own positioning. They are not benchmark scores.");
+    L.push("- Prices are OpenRouter's listed figures. Buying direct can differ. Cache write fees are not included.");
+    L.push("- Run the shortlist on 50 or more of your own examples before you commit.");
+    L.push("");
+    L.push("## Revisit when");
+    L.push("- A challenger beats this pick by " + SWITCH_MARGIN + " points or more on the same profile.");
+    L.push("- Prices change, the spec is older than " + STALE_AFTER_DAYS + " days, or the provider announces a retirement date.");
+    L.push("- Inputs get longer, a new input type or capability is needed, or volume grows tenfold.");
+    if (ctx.link) { L.push(""); L.push("Settings: " + ctx.link); }
+    return L.join("\n") + "\n";
   }
 
   // ---------- live data (OpenRouter) ----------
   function perMillion(x) { var v = parseFloat(x); return isFinite(v) ? round(v * 1e6, 4) : null; }
+
+  /**
+   * Facts beyond price from one OpenRouter list entry: capabilities (from supported_parameters), cache read
+   * price, batch prices (from the ":batch" variant), output limit, retirement date, and listing date.
+   * Every key is present; null means OpenRouter does not list it.
+   */
+  function liveFacts(m, byId) {
+    var f = { capabilities: null, cache_read_price_per_mtok: null, batch_input_price_per_mtok: null,
+      batch_output_price_per_mtok: null, max_output_tokens: null, retires_on: null, listed_on: null };
+    if (!m) return f;
+    var sp = Array.isArray(m.supported_parameters) ? m.supported_parameters : null;
+    if (sp) {
+      f.capabilities = { tools: sp.indexOf("tools") >= 0,
+        json: sp.indexOf("structured_outputs") >= 0 || sp.indexOf("response_format") >= 0,
+        reasoning: sp.indexOf("reasoning") >= 0 || sp.indexOf("include_reasoning") >= 0 };
+    }
+    var cr = perMillion(m.pricing && m.pricing.input_cache_read);
+    if (cr !== null && cr >= 0) f.cache_read_price_per_mtok = cr;
+    var b = byId && byId[m.id + ":batch"];
+    if (b && b.pricing) {
+      var bi = perMillion(b.pricing.prompt), bo = perMillion(b.pricing.completion);
+      if (bi !== null && bo !== null && bi >= 0 && bo >= 0) { f.batch_input_price_per_mtok = bi; f.batch_output_price_per_mtok = bo; }
+    }
+    var tp = m.top_provider || {};
+    if (isNum(tp.max_completion_tokens) && tp.max_completion_tokens > 0) f.max_output_tokens = tp.max_completion_tokens;
+    if (typeof m.expiration_date === "string" && parseDate(m.expiration_date) !== null) f.retires_on = m.expiration_date.slice(0, 10);
+    if (isNum(m.created) && m.created > 0) f.listed_on = new Date(m.created * 1000).toISOString().slice(0, 10);
+    return f;
+  }
 
   /** Merge OpenRouter data into the catalog. Returns { models, matched, changed, liveOnly }. */
   function mergeLive(catalogModels, orData, fetchedAt) {
@@ -315,6 +712,8 @@
       copy.input_price_per_mtok = pin;
       copy.output_price_per_mtok = pout;
       if (isNum(live.context_length)) copy.context_window = live.context_length;
+      var facts = liveFacts(live, byId);
+      Object.keys(facts).forEach(function (k) { copy[k] = facts[k]; });
       copy.price_status = "live";
       copy.last_verified = stamp;
       copy.live = { fetchedAt: stamp, changes: diffs };
@@ -333,7 +732,7 @@
       var pin = perMillion(m.pricing && m.pricing.prompt), pout = perMillion(m.pricing && m.pricing.completion);
       if (pin === null || pout === null || pin < 0 || pout < 0) return;
       var provider = id.split("/")[0];
-      liveOnly.push({
+      var entry = {
         id: "live:" + id, model: String(m.name || id).split(": ").pop(), provider: provider, kind: "generation",
         openrouter_id: id, context_window: isNum(m.context_length) ? m.context_length : null,
         input_price_per_mtok: pin, output_price_per_mtok: pout, price_status: "live", unverified_fields: [],
@@ -343,7 +742,10 @@
         strengths: ["Listed live on OpenRouter"], limits: ["Not reviewed by Model Scout: quality and speed are not rated"],
         source: { name: "OpenRouter live model list, fetched " + stamp, url: "https://openrouter.ai/" + id },
         last_verified: stamp, live: { fetchedAt: stamp, changes: [] }, liveOnly: true
-      });
+      };
+      var lf = liveFacts(m, byId);
+      Object.keys(lf).forEach(function (k) { entry[k] = lf[k]; });
+      liveOnly.push(entry);
     });
     return { models: merged, matched: matched, changed: changed, liveOnly: liveOnly };
   }
@@ -366,7 +768,118 @@
     if (has(/\b(real-time|realtime|fast|instant|latency|live chat)\b/)) { s.latency = "fast"; why.push("mentions speed"); }
     if (has(/\b(hardest|frontier|best possible|research|complex reasoning|math proof|critical)\b/)) { s.quality = "frontier"; why.push("mentions top quality"); }
     if (has(/\b(long document|long documents|entire codebase|whole codebase|books?|contracts|transcripts|hundreds of pages)\b/)) { s.contextNeed = 400000; why.push("mentions long inputs"); }
+    if (s.taskType === "agentic" || has(/\b(function calling|tool calls?|call (our|an|the) api)\b/)) { s.tools = true; why.push("needs tool calling"); }
+    if (has(/\b(json|structured output|schema|extract fields)\b/)) { s.json = true; why.push("mentions JSON or structured output"); }
+    if (has(/\b(overnight|nightly|batch|backfill)\b/)) { s.useBatch = true; s.latency = "any"; why.push("mentions batch or overnight work"); }
     return { settings: s, why: why };
+  }
+
+  // ---------- profile settings: presets and shareable links ----------
+  // Settings are what the form shows (volumes in millions, cache share as a fraction). profileFromSettings
+  // turns them into the profile the engine scores against.
+  var DEFAULT_SETTINGS = {
+    taskType: "chat", modality: "text", quality: "good", latency: "balanced", contextNeed: 32000, budget: null,
+    localOnly: false, inputM: 50, outputM: 10, cacheShare: 0, useBatch: false, tools: false, json: false, reasoning: false
+  };
+  var SETTING_CHOICES = {
+    taskType: ["chat", "code", "rag", "vision", "embeddings", "agentic"],
+    modality: ["text", "image", "file", "audio", "video"],
+    quality: ["basic", "good", "frontier"],
+    latency: ["balanced", "fast", "any"],
+    contextNeed: [8000, 32000, 128000, 200000, 400000, 1000000, 2000000],
+    cacheShare: [0, 0.25, 0.5, 0.75, 0.9]
+  };
+  var BOOL_SETTINGS = ["localOnly", "useBatch", "tools", "json", "reasoning"];
+  var URL_KEYS = {
+    taskType: "task", modality: "input", quality: "quality", latency: "speed", contextNeed: "context", budget: "budget",
+    localOnly: "local", inputM: "in", outputM: "out", cacheShare: "cache", useBatch: "batch", tools: "tools", json: "json", reasoning: "reasoning"
+  };
+  var PRESETS = [
+    { id: "support", name: "Support bot", description: "Answer customer questions from our help center articles, quickly, at high volume",
+      settings: { taskType: "rag", latency: "fast", budget: 1, inputM: 300, outputM: 30, cacheShare: 0.5 } },
+    { id: "coding-agent", name: "Coding agent", description: "An agent that reads a repository, calls tools, runs the tests, and opens pull requests",
+      settings: { taskType: "agentic", quality: "frontier", contextNeed: 200000, inputM: 200, outputM: 10, cacheShare: 0.75, tools: true } },
+    { id: "bulk", name: "Bulk tagging", description: "Tag a million product reviews a month by topic and sentiment, returned as JSON, overnight",
+      settings: { quality: "basic", latency: "any", contextNeed: 8000, budget: 0.5, inputM: 400, outputM: 20, useBatch: true, json: true } },
+    { id: "contracts", name: "Contract review", description: "Read whole contracts and flag unusual clauses for a lawyer to check",
+      settings: { taskType: "rag", quality: "frontier", latency: "any", contextNeed: 400000, inputM: 60, outputM: 3 } },
+    { id: "private", name: "On our own servers", description: "Summarise confidential internal documents without the data leaving our machines",
+      settings: { localOnly: true, inputM: 20, outputM: 4 } },
+    { id: "screens", name: "Read scans", description: "Pull fields out of scanned invoices and screenshots as JSON",
+      settings: { taskType: "vision", modality: "image", inputM: 40, outputM: 4, json: true } },
+    { id: "search", name: "Semantic search", description: "Embed our document library so people can search it by meaning",
+      settings: { taskType: "embeddings", contextNeed: 8000, inputM: 500, outputM: 0 } }
+  ];
+
+  function withDefaults(s) {
+    var out = {};
+    Object.keys(DEFAULT_SETTINGS).forEach(function (k) { out[k] = s && s[k] !== undefined ? s[k] : DEFAULT_SETTINGS[k]; });
+    return out;
+  }
+
+  /** Full settings for a preset id, or null for an unknown id. */
+  function presetSettings(id) {
+    for (var i = 0; i < PRESETS.length; i++) if (PRESETS[i].id === id) return withDefaults(PRESETS[i].settings);
+    return null;
+  }
+
+  /** The engine's profile from form settings. */
+  function profileFromSettings(s) {
+    var f = withDefaults(s);
+    function tok(m) { return isNum(m) && m > 0 ? m * 1e6 : 0; }
+    return {
+      taskType: f.taskType, modality: f.modality, quality: f.quality, latency: f.latency,
+      contextNeed: isNum(f.contextNeed) ? f.contextNeed : 0, budget: isNum(f.budget) && f.budget > 0 ? f.budget : null,
+      localOnly: !!f.localOnly, inputTokens: tok(f.inputM), outputTokens: tok(f.outputM),
+      cacheShare: isNum(f.cacheShare) ? clamp(f.cacheShare, 0, MAX_CACHE_SHARE) : 0, useBatch: !!f.useBatch,
+      needs: { tools: !!f.tools, json: !!f.json, reasoning: !!f.reasoning }
+    };
+  }
+
+  /** Settings as a query string, so a ranking can be shared as a link. Defaults are left out. The task description is never included. */
+  function encodeSettings(s) {
+    var f = withDefaults(s), parts = [];
+    Object.keys(URL_KEYS).forEach(function (k) {
+      var v = f[k];
+      if (v === DEFAULT_SETTINGS[k] || v === null || v === undefined) return;
+      if (k === "cacheShare") v = Math.round(v * 100);
+      if (v === true) v = 1;
+      if (v === false) v = 0;
+      parts.push(URL_KEYS[k] + "=" + encodeURIComponent(String(v)));
+    });
+    return parts.join("&");
+  }
+
+  function parseSetting(k, raw) {
+    var x;
+    if (k === "contextNeed") { x = Number(raw); return SETTING_CHOICES.contextNeed.indexOf(x) >= 0 ? x : undefined; }
+    if (k === "cacheShare") { x = Number(raw) / 100; return SETTING_CHOICES.cacheShare.indexOf(x) >= 0 ? x : undefined; }
+    if (SETTING_CHOICES[k]) return SETTING_CHOICES[k].indexOf(raw) >= 0 ? raw : undefined;
+    if (BOOL_SETTINGS.indexOf(k) >= 0) return raw === "1" ? true : raw === "0" ? false : undefined;
+    if (raw === "" || !/^\d*\.?\d+$/.test(raw)) return undefined;
+    x = Number(raw);
+    if (k === "budget") return x > 0 && x <= 1000 ? x : undefined;
+    if (k === "inputM" || k === "outputM") return x >= 0 && x <= 1e6 ? x : undefined;
+    return undefined;
+  }
+
+  /** Settings from a query string. Unknown keys and invalid values are skipped and listed in ignored. */
+  function decodeSettings(qs) {
+    var settings = {}, ignored = [], rev = {};
+    Object.keys(URL_KEYS).forEach(function (k) { rev[URL_KEYS[k]] = k; });
+    String(qs || "").replace(/^\?/, "").split("&").forEach(function (pair) {
+      if (!pair) return;
+      var i = pair.indexOf("="), key, raw;
+      try {
+        key = decodeURIComponent(i < 0 ? pair : pair.slice(0, i));
+        raw = i < 0 ? "" : decodeURIComponent(pair.slice(i + 1).replace(/\+/g, " "));
+      } catch (e) { ignored.push(pair); return; }
+      var k = rev[key];
+      if (!k) { ignored.push(key); return; }
+      var v = parseSetting(k, raw);
+      if (v === undefined) ignored.push(key); else settings[k] = v;
+    });
+    return { settings: settings, ignored: ignored };
   }
 
   // ---------- formatting ----------
@@ -385,12 +898,296 @@
     return String(n);
   }
 
+  // ---------- chat: OpenRouter (your key) or local Ollama (no key) ----------
+  // Pure helpers: they build requests and read answers, and take fetch and storage as
+  // arguments, so node tests can drive them with stubs. No key is ever stored in code.
+  var OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
+  var OLLAMA_CHAT_URL = "http://localhost:11434/api/chat";
+  var LOCAL_MODEL = "dolphin3";
+  var LOCAL_LABEL = "dolphin3 (local Ollama)";
+  var DEFAULT_CHAT_MODEL = "cognitivecomputations/dolphin-mistral-24b-venice-edition";
+  var FEATURED_CHAT_MODELS = [
+    { id: DEFAULT_CHAT_MODEL, name: "Venice Uncensored" },
+    { id: "nousresearch/hermes-3-llama-3.1-70b", name: "Nous Hermes 3 70B" }
+  ];
+  var KEY_STORAGE = "model-scout.openrouter-key";
+  var CHAT_TIMEOUT_MS = 120000; // no answer (or no new streamed text) for this long stops the request
+  var SIDE_STATUS = {
+    idle: { cls: "idle", text: "Ready" }, sending: { cls: "live", text: "Sending" },
+    done: { cls: "ok", text: "Done" }, error: { cls: "warn", text: "Error" }
+  };
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+  }
+
+  /** Request for one chat call. OpenRouter needs a key (sent as a Bearer header); local Ollama always uses dolphin3 and no key. */
+  function buildChatRequest(provider, model, messages, key, stream) {
+    var msgs = (messages || []).map(function (m) { return { role: m.role, content: String(m.content) }; });
+    if (provider === "local") {
+      return {
+        ok: true, provider: "local", model: LOCAL_MODEL, stream: !!stream, url: OLLAMA_CHAT_URL,
+        init: { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: LOCAL_MODEL, messages: msgs, stream: !!stream }) }
+      };
+    }
+    var k = String(key || "").trim();
+    if (!k) return { ok: false, code: "no-key", error: "No OpenRouter key saved. Paste your key in the key box and press Save key." };
+    if (!model) return { ok: false, code: "no-model", error: "Choose a model first." };
+    var body = { model: model, messages: msgs };
+    if (stream) body.stream = true;
+    return {
+      ok: true, provider: "openrouter", model: model, stream: !!stream, url: OPENROUTER_CHAT_URL,
+      init: { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + k }, body: JSON.stringify(body) }
+    };
+  }
+
+  /** The error message inside an OpenRouter ({ error: { message } }) or Ollama ({ error: "..." }) body. */
+  function chatErrorDetail(j) {
+    if (!j || !j.error) return "";
+    var e = j.error, msg = typeof e === "string" ? e : (e.message || "");
+    return String(msg).slice(0, 300);
+  }
+
+  /** The answer text in a non-streamed response, or null when the shape is not recognised. */
+  function chatText(provider, j) {
+    if (!j || typeof j !== "object") return null;
+    if (provider === "local") return j.message && typeof j.message.content === "string" ? j.message.content : null;
+    var c = j.choices && j.choices[0];
+    return c && c.message && typeof c.message.content === "string" ? c.message.content : null;
+  }
+
+  function httpErrorText(provider, status, detail) {
+    var who = provider === "local" ? "Ollama" : "OpenRouter";
+    var said = detail ? " " + who + " said: " + detail : "";
+    if (provider !== "local") {
+      if (status === 401) return "OpenRouter rejected the key (HTTP 401). Check or replace the key in the key box." + said;
+      if (status === 402) return "Your OpenRouter account does not have enough credits for this model (HTTP 402)." + said;
+      if (status === 403) return "OpenRouter refused this request (HTTP 403), for example a moderation block." + said;
+      if (status === 404) return "OpenRouter does not serve this model right now (HTTP 404). Pick another model." + said;
+      if (status === 429) return "OpenRouter is rate limiting this key or model (HTTP 429). Wait a moment and try again." + said;
+    } else if (status === 404) {
+      return "Ollama does not have the dolphin3 model (HTTP 404). Run: ollama pull dolphin3." + said;
+    }
+    return who + " returned HTTP " + status + "." + said;
+  }
+
+  /** Can this page reach Ollama? Only when served over plain http from this computer. */
+  function localModeCheck(href) {
+    var u;
+    try { u = new URL(String(href)); } catch (e) { return { ok: false, text: "Could not tell where this page is served from." }; }
+    var host = u.hostname.replace(/^\[|\]$/g, "");
+    var isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1" || /\.localhost$/.test(host);
+    if (u.protocol === "http:" && isLocal) return { ok: true, text: "This page is served from " + u.host + ", so it can reach Ollama on this computer." };
+    if (u.protocol === "file:") return { ok: false, text: "This page is open as a file. Serve the folder from localhost (python3 -m http.server 8000) so it can reach Ollama." };
+    return { ok: false, text: "This page is served from " + u.host + " over " + u.protocol.replace(":", "") + ", so the browser will block calls to Ollama. Serve Model Scout from localhost to use local mode." };
+  }
+
+  function networkErrorText(provider, err, pageUrl, timeoutMs) {
+    if (err && err.name === "AbortError") return "No answer for " + Math.round(timeoutMs / 1000) + " seconds, so the request was stopped. Try again or pick a faster model.";
+    var why = err && err.message ? err.message : "unknown error";
+    if (provider === "local") {
+      var where = localModeCheck(pageUrl);
+      return "Could not reach Ollama on localhost port 11434 (" + why + "). Check that Ollama is running and has dolphin3." + (where.ok ? "" : " " + where.text);
+    }
+    return "Could not reach OpenRouter (" + why + "). Check your connection, or whether an extension blocks openrouter.ai.";
+  }
+
+  /** Split a growing stream buffer into whole lines plus the unfinished tail. */
+  function takeLines(buf) {
+    var parts = String(buf).split(/\r?\n/);
+    return { lines: parts.slice(0, -1), rest: parts[parts.length - 1] };
+  }
+
+  /** One streamed line: OpenRouter sends server-sent events ("data: {...}", ": comment", "data: [DONE]"), Ollama sends JSON lines. */
+  function streamDelta(provider, line) {
+    var s = String(line || "").trim();
+    if (!s) return {};
+    if (provider !== "local") {
+      if (s.indexOf("data:") !== 0) return {}; // comments such as ": OPENROUTER PROCESSING", and event or id lines
+      s = s.slice(5).trim();
+      if (s === "[DONE]") return { done: true };
+    }
+    var j;
+    try { j = JSON.parse(s); } catch (e) { return {}; }
+    if (j && j.error) return { error: chatErrorDetail(j) || "The stream reported an error." };
+    if (provider === "local") return { text: (j.message && typeof j.message.content === "string") ? j.message.content : "", done: !!j.done };
+    var c = j.choices && j.choices[0];
+    return { text: c && c.delta && typeof c.delta.content === "string" ? c.delta.content : "" };
+  }
+
+  /**
+   * Send one chat request. Never rejects: resolves { ok, text, error, status }.
+   * opts.onDelta(textSoFar) runs as streamed text arrives. A partial streamed answer is kept on error.
+   */
+  function sendChat(fetchFn, req, opts) {
+    opts = opts || {};
+    if (!req || !req.ok) return Promise.resolve({ ok: false, text: "", error: (req && req.error) || "Nothing to send." });
+    if (typeof fetchFn !== "function") return Promise.resolve({ ok: false, text: "", error: "This browser cannot send requests (no fetch)." });
+    var timeoutMs = opts.timeoutMs || CHAT_TIMEOUT_MS;
+    var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    var timer = null;
+    function arm() { clearTimeout(timer); timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, timeoutMs); }
+    var init = {};
+    Object.keys(req.init).forEach(function (k) { init[k] = req.init[k]; });
+    if (ctrl) init.signal = ctrl.signal;
+    var acc = { text: "" };
+    function delta(d) {
+      if (d.text) { acc.text += d.text; if (opts.onDelta) opts.onDelta(acc.text); }
+    }
+    arm();
+    var p;
+    try { p = Promise.resolve(fetchFn(req.url, init)); } catch (e) { p = Promise.reject(e); }
+    return p.then(function (res) {
+      if (!res.ok) {
+        var body = typeof res.json === "function" ? res.json().catch(function () { return null; }) : Promise.resolve(null);
+        return body.then(function (j) { return { ok: false, status: res.status, text: "", error: httpErrorText(req.provider, res.status, chatErrorDetail(j)) }; });
+      }
+      if (req.stream) return readStream(res, req, delta, arm, acc);
+      return res.json().then(function (j) {
+        var detail = chatErrorDetail(j);
+        if (detail) return { ok: false, status: res.status, text: "", error: (req.provider === "local" ? "Ollama" : "OpenRouter") + " reported an error: " + detail };
+        var t = chatText(req.provider, j);
+        if (t === null) return { ok: false, status: res.status, text: "", error: "The response did not contain an answer Model Scout can read." };
+        if (!t.trim()) return { ok: false, status: res.status, text: "", error: "The model returned an empty answer." };
+        return { ok: true, status: res.status, text: t, error: "" };
+      }, function () {
+        return { ok: false, status: res.status, text: "", error: "The response was not valid JSON." };
+      });
+    }).catch(function (e) {
+      return { ok: false, text: acc.text, error: networkErrorText(req.provider, e, opts.pageUrl, timeoutMs) };
+    }).then(function (r) { clearTimeout(timer); return r; });
+  }
+
+  /** Read a streamed body chunk by chunk. Falls back to reading it whole when the browser has no stream reader. */
+  function readStream(res, req, delta, arm, acc) {
+    var failed = "";
+    function handle(lines) {
+      for (var i = 0; i < lines.length && !failed; i++) {
+        var d = streamDelta(req.provider, lines[i]);
+        if (d.error) failed = d.error;
+        else delta(d);
+      }
+    }
+    function finish() {
+      if (failed) return { ok: false, status: res.status, text: acc.text, error: "The model stopped with an error: " + failed };
+      if (!acc.text.trim()) return { ok: false, status: res.status, text: "", error: "The model returned an empty answer." };
+      return { ok: true, status: res.status, text: acc.text, error: "" };
+    }
+    var reader = res.body && typeof res.body.getReader === "function" && typeof TextDecoder === "function" ? res.body.getReader() : null;
+    if (!reader) {
+      return res.text().then(function (all) { handle(String(all).split(/\r?\n/)); return finish(); });
+    }
+    var dec = new TextDecoder(), buf = "";
+    function pump() {
+      return reader.read().then(function (r) {
+        arm(); // each chunk restarts the idle timer
+        if (r.done) { buf += dec.decode(); handle([buf]); return finish(); }
+        var split = takeLines(buf + dec.decode(r.value, { stream: true }));
+        buf = split.rest;
+        handle(split.lines);
+        if (failed) { try { reader.cancel(); } catch (e) { /* already closed */ } return finish(); }
+        return pump();
+      });
+    }
+    return pump();
+  }
+
+  /**
+   * Side by side: fire every column at once. Each column settles on its own, so a failure (or a render
+   * problem) in one never blocks the other. cols: [{ model, label, req }]. onUpdate(index, column) runs
+   * on every status change. Resolves with the final columns.
+   */
+  function runCompare(fetchFn, cols, onUpdate, opts) {
+    opts = opts || {};
+    return Promise.all(cols.map(function (col, i) {
+      var st = { model: col.model || "", label: col.label || "", status: "sending", text: "", error: "" };
+      function update() { try { if (onUpdate) onUpdate(i, st); } catch (e) { /* keep the other column going */ } }
+      if (!col.req || !col.req.ok) {
+        st.status = "error";
+        st.error = (col.req && col.req.error) || "No model chosen for this column.";
+        update();
+        return Promise.resolve(st);
+      }
+      update();
+      return sendChat(fetchFn, col.req, { pageUrl: opts.pageUrl, timeoutMs: opts.timeoutMs, onDelta: function (t) { st.text = t; update(); } })
+        .then(function (r) {
+          st.status = r.ok ? "done" : "error";
+          st.text = r.text || st.text;
+          st.error = r.ok ? "" : r.error;
+          update();
+          return st;
+        }, function (e) {
+          st.status = "error";
+          st.error = "Unexpected error: " + (e && e.message ? e.message : "unknown");
+          update();
+          return st;
+        });
+    }));
+  }
+
+  /** One side-by-side column: which side, the model name, its status, then the answer or the error. */
+  function sideColumnHtml(side, col) {
+    col = col || {};
+    var st = SIDE_STATUS[col.status] || SIDE_STATUS.idle;
+    var body;
+    if (col.status === "error") {
+      body = (col.text ? '<div class="msg-text">' + escapeHtml(col.text) + "</div>" : "") + '<p class="verdict warn">' + escapeHtml(col.error) + "</p>";
+    } else if (col.text) {
+      body = '<div class="msg-text">' + escapeHtml(col.text) + "</div>";
+    } else if (col.status === "sending") {
+      body = '<p class="loading-line"><span class="spinner" aria-hidden="true"></span>Waiting for ' + escapeHtml(col.label || "the model") + "...</p>";
+    } else {
+      body = '<p class="muted">The answer appears here.</p>';
+    }
+    return '<header class="side-head"><p class="eyebrow">' + escapeHtml(side) + "</p>" +
+      '<h3 class="side-name">' + escapeHtml(col.label || "No model chosen") + "</h3>" +
+      '<span class="badge ' + st.cls + '">' + st.text + "</span>" +
+      (col.model ? '<p class="side-id">' + escapeHtml(col.model) + "</p>" : "") + "</header>" +
+      '<div class="side-body">' + body + "</div>";
+  }
+
+  /** Where "Ask this model" goes: the chat model in single mode; in side by side, the first empty slot, else the left one. */
+  function askTarget(mode, slots) {
+    if (mode !== "side") return { target: "single" };
+    var s = slots || [];
+    return { target: "slot", index: !s[0] ? 0 : (!s[1] ? 1 : 0) };
+  }
+
+  // The key lives in the browser's localStorage only. These take the storage object so tests can stub it.
+  function readKey(storage) {
+    try { return (storage && storage.getItem(KEY_STORAGE)) || ""; } catch (e) { return ""; }
+  }
+  function saveKey(storage, key) {
+    var k = String(key || "").trim();
+    if (!k) return { ok: false, error: "Paste a key first." };
+    if (/\s/.test(k)) return { ok: false, error: "That key contains spaces. Copy it again from openrouter.ai/keys." };
+    try { storage.setItem(KEY_STORAGE, k); return { ok: true }; } catch (e) {
+      return { ok: false, error: "This browser blocks local storage, so the key cannot be saved here. Allow site data for this page, or use Local Ollama." };
+    }
+  }
+  function forgetKey(storage) {
+    try { storage.removeItem(KEY_STORAGE); return true; } catch (e) { return false; }
+  }
+
   var api = {
     STALE_AFTER_DAYS: STALE_AFTER_DAYS, REQUIRED_FIELDS: REQUIRED_FIELDS, SWITCH_MARGIN: SWITCH_MARGIN,
     monthlyCost: monthlyCost, blendedPrice: blendedPrice, staleStatus: staleStatus, validateEntry: validateEntry,
     dataFlags: dataFlags, computeWeights: computeWeights, scoreModel: scoreModel, rankModels: rankModels,
     switchCheck: switchCheck, mergeLive: mergeLive, suggestFromText: suggestFromText, costScoreFromPrice: costScoreFromPrice,
-    fmtMoney: fmtMoney, fmtTokens: fmtTokens
+    fmtMoney: fmtMoney, fmtTokens: fmtTokens,
+    CAPABILITIES: CAPABILITIES, DEFAULT_SETTINGS: DEFAULT_SETTINGS, PRESETS: PRESETS,
+    effectivePrices: effectivePrices, volumeFromRequests: volumeFromRequests, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
+    robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
+    encodeSettings: encodeSettings, decodeSettings: decodeSettings,
+    frontier: frontier, cheaperAlternative: cheaperAlternative, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
+    OPENROUTER_CHAT_URL: OPENROUTER_CHAT_URL, OLLAMA_CHAT_URL: OLLAMA_CHAT_URL, LOCAL_MODEL: LOCAL_MODEL,
+    DEFAULT_CHAT_MODEL: DEFAULT_CHAT_MODEL, FEATURED_CHAT_MODELS: FEATURED_CHAT_MODELS, KEY_STORAGE: KEY_STORAGE,
+    buildChatRequest: buildChatRequest, chatText: chatText, httpErrorText: httpErrorText, localModeCheck: localModeCheck,
+    takeLines: takeLines, streamDelta: streamDelta, sendChat: sendChat, runCompare: runCompare,
+    sideColumnHtml: sideColumnHtml, askTarget: askTarget, readKey: readKey, saveKey: saveKey, forgetKey: forgetKey
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof document === "undefined") return;
@@ -398,7 +1195,10 @@
   // =====================================================================
   // Browser UI
   // =====================================================================
-  var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, now: new Date(), lastOrder: null };
+  var CARD_LIMIT = 6;
+  var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, liveIds: null, now: new Date(), lastOrder: null,
+    touched: false, showAllCards: false, linkNote: "", compare: [], lastRes: null, lastProfile: null };
+  var COMPARE_MAX = 3;
 
   function $(id) { return document.getElementById(id); }
   function esc(s) {
@@ -408,22 +1208,36 @@
   }
   function safeUrl(u) { return /^https:\/\//.test(String(u || "")) ? u : "#"; }
 
-  function readProfile() {
+  var CHECK_IDS = { localOnly: "local-only", useBatch: "use-batch", tools: "need-tools", json: "need-json", reasoning: "need-reasoning" };
+  var SELECT_IDS = { taskType: "task-type", modality: "modality", quality: "quality", latency: "latency", contextNeed: "context-need", cacheShare: "cache-share" };
+
+  /** What the form shows, as settings (volumes in millions). */
+  function readSettings() {
     var budgetRaw = $("budget").value.trim();
     var budget = budgetRaw === "" ? null : parseFloat(budgetRaw);
-    function tokens(id) { var v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v * 1e6 : 0; }
-    return {
-      description: $("task-desc").value,
-      taskType: $("task-type").value,
-      budget: isFinite(budget) && budget > 0 ? budget : null,
-      latency: $("latency").value,
-      quality: $("quality").value,
-      localOnly: $("local-only").checked,
-      contextNeed: parseInt($("context-need").value, 10) || 0,
-      modality: $("modality").value,
-      inputTokens: tokens("vol-in"),
-      outputTokens: tokens("vol-out")
+    function num(id) { var v = parseFloat($(id).value); return isFinite(v) && v > 0 ? v : 0; }
+    var s = {
+      taskType: $("task-type").value, modality: $("modality").value, quality: $("quality").value, latency: $("latency").value,
+      contextNeed: parseInt($("context-need").value, 10) || 0, budget: isFinite(budget) && budget > 0 ? budget : null,
+      inputM: num("vol-in"), outputM: num("vol-out"), cacheShare: parseFloat($("cache-share").value) || 0
     };
+    Object.keys(CHECK_IDS).forEach(function (k) { s[k] = $(CHECK_IDS[k]).checked; });
+    return s;
+  }
+
+  /** Put settings into the form. Only the keys present change. */
+  function applySettings(s) {
+    Object.keys(SELECT_IDS).forEach(function (k) { if (k in s) $(SELECT_IDS[k]).value = String(s[k]); });
+    Object.keys(CHECK_IDS).forEach(function (k) { if (k in s) $(CHECK_IDS[k]).checked = !!s[k]; });
+    if ("budget" in s) $("budget").value = s.budget == null ? "" : String(s.budget);
+    if ("inputM" in s) $("vol-in").value = String(s.inputM);
+    if ("outputM" in s) $("vol-out").value = String(s.outputM);
+  }
+
+  function readProfile() {
+    var p = profileFromSettings(readSettings());
+    p.description = $("task-desc").value;
+    return p;
   }
 
   function candidates() {
@@ -455,18 +1269,84 @@
   }
 
   function costCell(r, p) {
-    var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens);
+    var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens, p);
     if (p.localOnly) return "Self-hosted<br><small>hosted reference " + esc(fmtMoney(mc)) + "</small>";
     return esc(fmtMoney(mc));
   }
 
+  /** Which discounts the monthly figure includes, as a short note. */
+  function costBasis(m, p) {
+    var e = effectivePrices(m, p), bits = [];
+    if (!e) return "";
+    if (e.batch) bits.push("at batch prices");
+    if (e.cache) bits.push("with " + Math.round(p.cacheShare * 100) + "% of input cached");
+    return bits.length ? ", " + bits.join(", ") : "";
+  }
+
   /** Large monthly cost readout for the top pick and the model cards. */
   function costFigure(r, p) {
-    var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens);
+    var mc = monthlyCost(r.model, p.inputTokens, p.outputTokens, p);
     if (p.localOnly) {
       return '<span class="figure-value cost">Self-hosted<span class="unit">hosted reference ' + esc(fmtMoney(mc)) + " per month</span></span>";
     }
-    return '<span class="figure-value cost">' + esc(fmtMoney(mc)) + '<span class="unit">per month at your volume</span></span>';
+    return '<span class="figure-value cost">' + esc(fmtMoney(mc)) + '<span class="unit">per month at your volume' + esc(costBasis(r.model, p)) + "</span></span>";
+  }
+
+  /** Capabilities and limits from OpenRouter's list, as one sentence for a card. */
+  function capsText(m) {
+    if (m.kind === "embedding") return "";
+    if (!m.capabilities) return "Capabilities: no data (not listed on OpenRouter).";
+    var yes = CAPABILITIES.filter(function (k) { return m.capabilities[k]; }).map(function (k) { return CAPABILITY_LABELS[k]; });
+    var no = CAPABILITIES.filter(function (k) { return !m.capabilities[k]; }).map(function (k) { return CAPABILITY_LABELS[k]; });
+    var t = yes.length ? "Supports " + yes.join(", ") + "." : "Lists none of tool calling, JSON output, or reasoning mode.";
+    if (yes.length && no.length) t += " Not listed: " + no.join(", ") + ".";
+    if (isNum(m.max_output_tokens)) t += " Longest answer: " + fmtTokens(m.max_output_tokens) + " tokens.";
+    return t;
+  }
+
+  /** Cache and batch prices, when listed. */
+  function extraPricesText(m) {
+    var bits = [];
+    if (isNum(m.cache_read_price_per_mtok)) bits.push("cache read " + fmtPrice(m.cache_read_price_per_mtok) + " per 1M");
+    if (isNum(m.batch_input_price_per_mtok)) bits.push("batch " + fmtPrice(m.batch_input_price_per_mtok) + " in / " + fmtPrice(m.batch_output_price_per_mtok) + " out per 1M");
+    return bits.length ? "Other listed prices: " + bits.join("; ") + "." : "";
+  }
+
+  var CONFIDENCE_LABEL = { stable: "Stable pick", likely: "Likely pick", close: "Close call", tie: "Tie" };
+
+  /** A share of reruns as a percentage that never rounds a rare win down to 0% or a near sweep up to 100%. */
+  function fmtShare(x) {
+    if (x >= 1) return "100%";
+    if (x > 0.995) return "over 99%";
+    if (x > 0 && x < 0.005) return "under 1%";
+    return pct(x) + "%";
+  }
+
+  /** The robustness check under the top pick: a verdict, one sentence, and a bar of who wins how often. */
+  function confidenceHtml(rb, top) {
+    if (!rb) return "";
+    var ru = rb.runnerUp, n = rb.samples, text;
+    var rivals = rb.shares.filter(function (s) { return s.model.id !== top.model.id; });
+    if (rb.verdict === "tie") {
+      text = "Ties " + ru.model.model + " on every factor, so no weighting separates them. It is listed first only because it costs less per month, or sorts first by name.";
+    } else {
+      text = "Stays first in " + fmtShare(rb.topShare) + " of " + n + " reruns, with each factor's weight scaled at random between half and double.";
+      if (rivals.length) text += " Most frequent rival: " + rivals[0].model.model + " (" + fmtShare(rivals[0].share) + ").";
+      else text += " No rival comes first in any rerun.";
+      if (ru && ru.dominated) text += " It matches or beats " + ru.model.model + " on every factor.";
+    }
+    var segs = rb.shares.slice(0, 5).map(function (s) {
+      var me = s.model.id === top.model.id;
+      return '<span class="conf-seg' + (me ? " is-top" : "") + '" style="flex-grow:' + Math.max(s.share, 0.01).toFixed(3) + '" title="' + esc(s.model.model + ": " + fmtShare(s.share)) + '"></span>';
+    }).join("");
+    var legend = rb.shares.slice(0, 3).map(function (s) {
+      return "<li" + (s.model.id === top.model.id ? ' class="is-top"' : "") + "><span>" + esc(s.model.model) + "</span><span>" + fmtShare(s.share) + "</span></li>";
+    }).join("");
+    return '<div class="confidence" data-verdict="' + rb.verdict + '">' +
+      '<p class="conf-head"><span class="figure-label">Confidence</span><span class="conf-verdict">' + CONFIDENCE_LABEL[rb.verdict] + "</span></p>" +
+      (rb.verdict === "tie" ? "" : '<div class="conf-bar" aria-hidden="true">' + segs + "</div>" +
+        '<ul class="conf-legend" aria-label="Share of reruns each model wins">' + legend + "</ul>") +
+      '<p class="conf-text">' + esc(text) + "</p></div>";
   }
 
   var BEST_FLAG = '<span class="best-flag"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.5l1.9 4.1 4.5.5-3.4 3 1 4.4L8 11.3 4 13.5l1-4.4-3.4-3 4.5-.5z"/></svg>Best pick</span>';
@@ -496,6 +1376,8 @@
     var p = readProfile();
     var res = rankModels(candidates(), p, state.now);
     renderWeights(res.weights);
+    state.lastRes = res;
+    state.lastProfile = p;
     var top = res.ranked[0];
 
     // The reveal animation plays only when the ranking order changes, not on every keystroke.
@@ -522,6 +1404,8 @@
         "</div>" +
         '<p class="reason"><strong>Why:</strong> ' + esc(top.explain.why) + "</p>" +
         '<p class="reason"><strong>What you trade away:</strong> ' + esc(top.explain.tradeoffs) + "</p>" +
+        altHtml(cheaperAlternative(res.ranked, p)) +
+        confidenceHtml(robustness(res), top) +
         flagList(tf.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + "</li>"; })) +
         flagList(top.flags.map(function (f) { return '<li class="warn">' + esc(f) + "</li>"; }));
     }
@@ -568,20 +1452,285 @@
         ". Context: " + esc(fmtTokens(m.context_window)) + ". Speed: " + esc(m.latency_class || "not rated") +
         ". Quality tier: " + (m.quality_tier != null ? m.quality_tier + " of 5 (editorial)" : "not rated") +
         ". Open weights: " + (m.open_weights ? "yes" : "no") + ". Monthly: " + costCell(r, p) + ".</p>" +
+        (capsText(m) ? '<p class="facts">' + esc(capsText(m)) + "</p>" : "") +
+        (extraPricesText(m) ? '<p class="facts">' + esc(extraPricesText(m)) + "</p>" : "") +
         (m.strengths.length ? '<p class="facts"><strong>Strengths:</strong> ' + esc(m.strengths.join("; ")) + ".</p>" : "") +
         (m.limits.length ? '<p class="facts"><strong>Limits:</strong> ' + esc(m.limits.join("; ")) + ".</p>" : "") +
         flagList(flags) +
         '<p class="source">Source: <a href="' + esc(safeUrl(m.source.url)) + '" rel="noopener">' + esc(m.source.name) + "</a>. " + dataBadge(m) + "</p>" +
+        askButton(m) +
         "</article>";
     }).join("") : '<p class="cards-empty">No model cards to show: every candidate failed a hard constraint. Loosen one in the profile above.</p>';
+    applyCardLimit();
 
     // excluded
     $("excluded").innerHTML = res.excluded.length ? res.excluded.map(function (r) {
       return "<li><strong>" + esc(r.model.model) + "</strong> (" + esc(r.model.provider) + "): " + esc(r.excludeReason) + "</li>";
     }).join("") : "<li>None. Every model passed the hard constraints.</li>";
 
+    renderValueMap(res, p);
+    renderCompare(res, p);
     renderSwitchOptions();
     renderSwitch();
+    syncUrl();
+  }
+
+  /** "Cheaper option within 5 points" under the top pick. */
+  function altHtml(alt) {
+    if (!alt) return "";
+    return '<p class="alt-pick"><span class="figure-label">Cheaper option within ' + SWITCH_MARGIN + ' points</span>' +
+      '<a href="#card-' + esc(alt.model.id) + '">' + esc(alt.model.model) + "</a> scores " + alt.total + " (rank #" + alt.rank + ") for " +
+      esc(fmtMoney(alt.cost)) + " a month: " + esc(fmtMoney(alt.saves)) + " less than the top pick, " + alt.gap + " points behind.</p>";
+  }
+
+  // ----- value map -----
+  function mapPoints(res, p) {
+    return res.ranked.map(function (r) {
+      return { id: r.model.id, name: r.model.model, rank: r.rank, cost: monthlyCost(r.model, p.inputTokens, p.outputTokens, p), score: r.total, top: r.rank === 1 };
+    });
+  }
+
+  function renderValueMap(res, p) {
+    var box = $("value-map"), out = $("value-map-readout"), pts = mapPoints(res, p);
+    var priced = pts.filter(function (q) { return isNum(q.cost) && q.cost > 0; });
+    if (!priced.length) {
+      box.innerHTML = '<p class="muted vm-empty">' + (res.ranked.length ? "Set a monthly volume above zero to place the models on the cost axis." : "No model to plot: every candidate failed a hard constraint.") + "</p>";
+      out.textContent = "";
+      state.mapFront = [];
+      return;
+    }
+    var vm = valueMapSvg(pts, { xLabel: p.localOnly ? "Hosted reference cost per month (log scale)" : null, width: box.clientWidth });
+    state.mapWidth = box.clientWidth;
+    box.innerHTML = vm.svg;
+    state.mapFront = vm.frontier;
+    state.mapNote = vm.frontier.length + " of " + vm.plotted + " models sit on the frontier" + (vm.skipped ? ". " + vm.skipped + " with unknown prices are not shown" : "") + ".";
+    out.textContent = state.mapNote;
+  }
+
+  function mapReadout(id) {
+    var res = state.lastRes, out = $("value-map-readout");
+    if (!res) return;
+    if (!id) { out.textContent = state.mapNote || ""; return; }
+    var r = res.ranked.filter(function (x) { return x.model.id === id; })[0];
+    if (!r) return;
+    var p = state.lastProfile, mc = monthlyCost(r.model, p.inputTokens, p.outputTokens, p);
+    out.textContent = "#" + r.rank + " " + r.model.model + " (" + r.model.provider + "): score " + r.total + ", " + fmtMoney(mc) + " a month." +
+      ((state.mapFront || []).indexOf(id) >= 0 ? " On the frontier." : "");
+  }
+
+  /** Scroll to a model card, opening the folded cards first if needed. */
+  function openCard(id) {
+    var card = document.getElementById("card-" + id);
+    if (!card) return;
+    if (card.hidden) { state.showAllCards = true; applyCardLimit(); }
+    if (card.scrollIntoView) card.scrollIntoView({ block: "start" });
+    if (typeof card.focus === "function") { card.setAttribute("tabindex", "-1"); card.focus({ preventScroll: true }); }
+  }
+
+  // ----- compare tray and head to head -----
+  function toggleCompare(id) {
+    var i = state.compare.indexOf(id), note = "";
+    if (i >= 0) state.compare.splice(i, 1);
+    else {
+      if (state.compare.length >= COMPARE_MAX) {
+        var dropped = state.compare.shift(), r = state.lastRes && state.lastRes.ranked.filter(function (x) { return x.model.id === dropped; })[0];
+        note = " Compare holds " + COMPARE_MAX + " models, so " + (r ? r.model.model : "the oldest pick") + " was taken out.";
+      }
+      state.compare.push(id);
+    }
+    state.compareNote = note;
+    renderCompare(state.lastRes, state.lastProfile);
+  }
+
+  function renderCompare(res, p) {
+    if (!res) return;
+    var byId = {};
+    res.ranked.forEach(function (r) { byId[r.model.id] = r; });
+    var picked = state.compare.map(function (id) { return byId[id]; }).filter(Boolean);
+    var gone = state.compare.filter(function (id) { return !byId[id]; });
+    Array.prototype.forEach.call(document.querySelectorAll(".compare-btn"), function (b) {
+      var on = state.compare.indexOf(b.getAttribute("data-compare")) >= 0;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.firstChild.nodeValue = on ? "In comparison" : "Compare";
+    });
+    // tray
+    var tray = $("compare-tray");
+    tray.hidden = !state.compare.length;
+    document.body.classList.toggle("has-tray", !!state.compare.length);
+    var names = picked.map(function (r) { return r.model.model; });
+    $("compare-tray-text").textContent = !state.compare.length ? "" :
+      (picked.length < 2 ? "Comparing " + (names[0] || "nothing ranked") + ". Pick one or two more with Compare on the cards." :
+        "Comparing " + picked.length + ": " + names.join(", ") + ".") +
+      (gone.length ? " " + gone.length + " picked model" + (gone.length > 1 ? "s are" : " is") + " excluded by the current profile." : "") + (state.compareNote || "");
+    $("compare-tray-go").hidden = picked.length < 2;
+    // head to head
+    var sec = $("h2h");
+    sec.hidden = picked.length < 2;
+    if (picked.length < 2) return;
+    var h = headToHead(picked, p);
+    var head = '<thead><tr><th scope="col"><span class="visually-hidden">Figure</span></th>' + picked.map(function (r) {
+      return '<th scope="col"><span class="h2h-rank">#' + r.rank + "</span> " + esc(r.model.model) + "<small>" + esc(r.model.provider) + "</small>" +
+        '<button type="button" class="h2h-remove" data-compare="' + esc(r.model.id) + '">Remove<span class="visually-hidden"> ' + esc(r.model.model) + "</span></button></th>";
+    }).join("") + "</tr></thead>";
+    var body = "<tbody>" + h.rows.map(function (row) {
+      return '<tr><th scope="row">' + esc(row.label) + "</th>" + row.cells.map(function (c, i) {
+        var best = row.best.indexOf(i) >= 0;
+        return "<td" + (best ? ' class="is-best"' : "") + ">" + esc(c) + (best ? ' <span class="h2h-best">best</span>' : "") + "</td>";
+      }).join("") + "</tr>";
+    }).join("") + "</tbody>";
+    $("h2h-table").innerHTML = head + body;
+    var askable = picked.filter(function (r) { return r.model.openrouter_id && r.model.kind !== "embedding"; });
+    $("h2h-ask").disabled = askable.length < 2;
+    $("h2h-ask").textContent = askable.length < 2 ? "Side by side needs two models listed on OpenRouter" : "Ask " + askable[0].model.model + " and " + askable[1].model.model + " side by side";
+    $("h2h-lede").textContent = "The " + picked.length + " models you picked with Compare, under your current profile. The better figure in each row is marked; prices are list prices per million tokens.";
+  }
+
+  function askPairSideBySide() {
+    var res = state.lastRes, byId = {};
+    if (!res) return;
+    res.ranked.forEach(function (r) { byId[r.model.id] = r; });
+    var pair = state.compare.map(function (id) { return byId[id]; }).filter(function (r) { return r && r.model.openrouter_id && r.model.kind !== "embedding"; }).slice(0, 2);
+    if (pair.length < 2) return;
+    pair.forEach(function (r) {
+      var listed = Array.prototype.some.call($("side-model-a").options, function (o) { return o.value === r.model.openrouter_id; });
+      if (!listed) chat.extra.push({ openrouter_id: r.model.openrouter_id, model: r.model.model });
+    });
+    fillChatPickers();
+    var note = "";
+    if (chatProvider() === "local") {
+      $("chat-provider-openrouter").checked = true;
+      applyProvider();
+      note = " Switched the provider to OpenRouter, because local mode only runs dolphin3.";
+    }
+    $("chat-mode-side").checked = true;
+    applyMode();
+    $("side-model-a").value = pair[0].model.openrouter_id;
+    $("side-model-b").value = pair[1].model.openrouter_id;
+    chat.side = [null, null];
+    renderSideIdle();
+    chatNote("Left: " + pair[0].model.model + ". Right: " + pair[1].model.model + "." + note + " Type one question for both.", "ok");
+    var panel = $("chat-main");
+    if (panel.scrollIntoView) panel.scrollIntoView({ block: "start" });
+    $("side-input").focus();
+  }
+
+  // ----- decision memo -----
+  function memoText() {
+    var p = readProfile(), res = rankModels(candidates(), p, state.now);
+    return decisionMemo({
+      res: res, p: p, description: $("task-desc").value, rb: robustness(res), alt: cheaperAlternative(res.ranked, p),
+      now: new Date(), catalogDate: state.catalog && state.catalog.catalog_date,
+      liveAt: state.live && state.live.ok ? state.live.fetchedAt.toLocaleString() : null, link: shareUrl()
+    });
+  }
+
+  function copyMemo() {
+    var text = memoText(), out = $("share-status");
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(text).then(function () {
+        out.textContent = "Decision memo copied as Markdown. It includes your description, so check it before you share it.";
+      }, function () { out.textContent = "This browser blocked the clipboard. Use Download memo instead."; });
+    } else out.textContent = "This browser blocked the clipboard. Use Download memo instead.";
+  }
+
+  function downloadMemo() {
+    var text = memoText(), out = $("share-status");
+    try {
+      var url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "model-choice-" + new Date().toISOString().slice(0, 10) + ".md";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      out.textContent = "Memo saved as " + a.download + ". It includes your description, so check it before you share it.";
+    } catch (e) { out.textContent = "This browser could not save the file. Use Copy decision memo instead."; }
+  }
+
+  /** Only the first CARD_LIMIT cards show until the reader asks for all of them. */
+  function applyCardLimit() {
+    var list = $("cards").querySelectorAll(".card"), btn = $("cards-toggle"), extra = list.length - CARD_LIMIT;
+    Array.prototype.forEach.call(list, function (c, i) { c.hidden = !state.showAllCards && i >= CARD_LIMIT; });
+    btn.hidden = extra <= 0;
+    btn.setAttribute("aria-expanded", state.showAllCards ? "true" : "false");
+    btn.textContent = state.showAllCards ? "Show only the top " + CARD_LIMIT : "Show all " + list.length + " model cards";
+    $("cards-lede").textContent = extra > 0 && !state.showAllCards ?
+      "The top " + CARD_LIMIT + " of " + list.length + " ranked models, with their reasons, trade-offs, capabilities, source, and data status. Every model is in the table above." :
+      "Every ranked model, with its reasons, trade-offs, capabilities, source, and data status.";
+  }
+
+  /** Keep the page address in step with the settings once the reader has changed something, so it can be shared. */
+  function syncUrl() {
+    if (!state.touched || !window.history || typeof history.replaceState !== "function") return;
+    var qs = encodeSettings(readSettings());
+    try { history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash); } catch (e) { /* file:// in some browsers */ }
+  }
+
+  function shareUrl() {
+    var qs = encodeSettings(readSettings());
+    return location.href.split(/[?#]/)[0] + (qs ? "?" + qs : "") + "#results";
+  }
+
+  function copyShareLink() {
+    var url = shareUrl(), out = $("share-status");
+    function done(ok) {
+      out.textContent = ok ? "Link copied. It holds your settings, not your description." : "Copy this link by hand: " + url;
+    }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(false); });
+    } else done(false);
+  }
+
+  // ----- presets and the volume helper -----
+  function renderPresets() {
+    $("preset-list").innerHTML = PRESETS.map(function (pr) {
+      return '<button type="button" class="preset" data-preset="' + esc(pr.id) + '" aria-pressed="false">' + esc(pr.name) + "</button>";
+    }).join("");
+    $("presets").hidden = false;
+  }
+
+  function markPreset(id) {
+    Array.prototype.forEach.call($("preset-list").querySelectorAll(".preset"), function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-preset") === id ? "true" : "false");
+    });
+  }
+
+  function usePreset(id) {
+    var s = presetSettings(id), pr = PRESETS.filter(function (x) { return x.id === id; })[0];
+    if (!s || !pr) return;
+    applySettings(s);
+    $("task-desc").value = pr.description;
+    markPreset(id);
+    $("preset-result").textContent = "Loaded " + pr.name + ": every field below now matches that case. Volumes are examples, so set your own.";
+    $("suggest-result").textContent = "";
+    state.touched = true;
+    render();
+  }
+
+  function helperVolume() {
+    function v(id) { var x = parseFloat($(id).value); return isFinite(x) && x > 0 ? x : 0; }
+    var d = v("req-day"), i = v("req-in"), o = v("req-out");
+    return { ready: d > 0 && (i > 0 || o > 0), vol: volumeFromRequests(d, i, o) };
+  }
+
+  function fmtMillions(x) { return String(x >= 100 ? Math.round(x) : x >= 1 ? round(x, 2) : Math.max(round(x, 4), x > 0 ? 0.0001 : 0)); }
+
+  function renderHelper() {
+    var h = helperVolume(), out = $("req-readout");
+    $("req-apply").disabled = !h.ready;
+    out.textContent = !h.ready ? "Fill in the three numbers to see the monthly volume." :
+      "About " + Math.round(h.vol.requests).toLocaleString("en-US") + " requests a month: " + fmtMillions(h.vol.inputM) +
+      " million input and " + fmtMillions(h.vol.outputM) + " million output tokens.";
+  }
+
+  function applyHelper() {
+    var h = helperVolume();
+    if (!h.ready) return;
+    applySettings({ inputM: Number(fmtMillions(h.vol.inputM)), outputM: Number(fmtMillions(h.vol.outputM)) });
+    $("req-readout").textContent += " Copied into the volume fields.";
+    state.touched = true;
+    render();
   }
 
   function renderSwitchOptions() {
@@ -613,13 +1762,14 @@
       }).join("") + "</ol>";
     }
     if (r.stale && r.stale.stale) html += '<p class="verdict warn">Spec warning: ' + esc(r.stale.reason) + " Re-check its pricing page before trusting this comparison.</p>";
+    if (r.retirement) html += '<p class="verdict warn">' + esc(r.retirement.text) + "</p>";
     out.innerHTML = html;
   }
 
   function renderStatus() {
     var c = state.catalog, st = staleStatus({ last_verified: c.catalog_date }, state.now, c.stale_after_days);
     var html = '<p><strong>Bundled catalog dated ' + esc(c.catalog_date) + "</strong> (" + state.base.length + " models, " +
-      (st.ageDays != null ? st.ageDays + " days old" : "age unknown") + ", loaded from " + esc(state.catalogOrigin) + "). ";
+      (st.ageDays != null ? st.ageDays + (st.ageDays === 1 ? " day old" : " days old") : "age unknown") + ", loaded from " + esc(state.catalogOrigin) + "). ";
     if (st.stale) html += '<span class="badge stale">Stale</span> This catalog is older than ' + c.stale_after_days + " days. Treat prices as possibly out of date. ";
     html += "</p>";
     var L = state.live;
@@ -643,15 +1793,10 @@
     var s = suggestFromText($("task-desc").value);
     var out = $("suggest-result");
     if (!s.why.length) { out.textContent = "No keywords matched. Set the fields below by hand."; return; }
-    var st = s.settings;
-    if (st.taskType) $("task-type").value = st.taskType;
-    if (st.modality) $("modality").value = st.modality;
-    if (st.localOnly) $("local-only").checked = true;
-    if (st.budget) $("budget").value = st.budget;
-    if (st.latency) $("latency").value = st.latency;
-    if (st.quality) $("quality").value = st.quality;
-    if (st.contextNeed) $("context-need").value = String(st.contextNeed);
+    applySettings(s.settings);
+    markPreset("");
     out.textContent = "Updated settings because your description " + s.why.join(", ") + ". This is simple keyword matching: check the fields.";
+    state.touched = true;
     render();
   }
 
@@ -681,6 +1826,8 @@
     }).then(function (j) {
       if (!j || !Array.isArray(j.data)) throw new Error("unexpected response format");
       var at = new Date();
+      state.liveIds = {};
+      j.data.forEach(function (x) { if (x && x.id) state.liveIds[x.id] = true; });
       var m = mergeLive(state.catalog.models, j.data, at);
       state.base = m.models;
       state.liveOnly = m.liveOnly;
@@ -690,14 +1837,414 @@
     }).then(function () { clearTimeout(timer); });
   }
 
+  // ---------- Ask a model: chat panel, key box, side by side ----------
+  // chat.side holds the last state of each side-by-side column (null = follow the picker).
+  var chat = { entries: [], busy: false, sideBusy: false, extra: [], side: [null, null] };
+
+  function keyStorage() { try { return window.localStorage; } catch (e) { return null; } }
+  function chatFetch(url, init) { return fetch(url, init); }
+  function chatProvider() { return $("chat-provider-local").checked ? "local" : "openrouter"; }
+  function chatMode() { return $("chat-mode-side").checked ? "side" : "single"; }
+
+  /** The button at the foot of every model card. Models that cannot chat get a disabled button and the reason. */
+  function askButton(m) {
+    var on = state.compare.indexOf(m.id) >= 0;
+    var cmp = '<button type="button" class="btn compare-btn" data-compare="' + esc(m.id) + '" aria-pressed="' + on + '">' +
+      (on ? "In comparison" : "Compare") + '<span class="visually-hidden">: ' + esc(m.model) + "</span></button>";
+    if (m.kind === "embedding" || !m.openrouter_id) {
+      var nid = "ask-note-" + m.id;
+      return '<div class="card-actions"><div class="row">' + cmp + '<button type="button" class="btn ask-btn" disabled aria-describedby="' + esc(nid) + '">Ask this model</button></div>' +
+        '<small id="' + esc(nid) + '">' + (m.kind === "embedding" ? "Embedding models make search vectors and cannot chat." :
+          "Not listed on OpenRouter, so it cannot be asked from here.") + "</small></div>";
+    }
+    return '<div class="card-actions"><div class="row">' + cmp + '<button type="button" class="btn ask-btn" data-ask="' + esc(m.openrouter_id) + '" data-name="' + esc(m.model) + '">' +
+      'Ask this model<span class="visually-hidden">: ' + esc(m.model) + "</span></button></div></div>";
+  }
+
+  /** Every model the chat can name: featured, catalog (with live prices once loaded), live-only, and models added from cards. */
+  function chatPool() { return state.base.concat(state.liveOnly).concat(chat.extra); }
+
+  function chatModelLabel(id) {
+    if (!id) return "";
+    var i, pool = chatPool();
+    for (i = 0; i < FEATURED_CHAT_MODELS.length; i++) if (FEATURED_CHAT_MODELS[i].id === id) return FEATURED_CHAT_MODELS[i].name;
+    for (i = 0; i < pool.length; i++) if (pool[i].openrouter_id === id) return pool[i].model;
+    return id;
+  }
+
+  function chatOptionsHtml(withEmpty) {
+    var live = state.liveIds, seen = {};
+    function opt(id, label) {
+      seen[id] = true;
+      var missing = live && !live[id] ? " (not in OpenRouter's live list today)" : "";
+      return '<option value="' + esc(id) + '">' + esc(label + missing) + "</option>";
+    }
+    var html = withEmpty ? '<option value="">Choose a model</option>' : "";
+    html += '<optgroup label="Suggested for chat">' + FEATURED_CHAT_MODELS.map(function (f) { return opt(f.id, f.name); }).join("") + "</optgroup>";
+    var cat = state.base.filter(function (m) { return m.kind === "generation" && m.openrouter_id && !seen[m.openrouter_id]; })
+      .sort(function (a, b) { return a.model.localeCompare(b.model); });
+    if (cat.length) {
+      html += '<optgroup label="From the Model Scout catalog">' + cat.map(function (m) { return opt(m.openrouter_id, m.model + " (" + m.provider + ")"); }).join("") + "</optgroup>";
+    }
+    var extra = chat.extra.filter(function (m) { return !seen[m.openrouter_id]; });
+    if (extra.length) {
+      html += '<optgroup label="Added from model cards">' + extra.map(function (m) { return opt(m.openrouter_id, m.model); }).join("") + "</optgroup>";
+    }
+    return html;
+  }
+
+  function refill(sel, withEmpty, fallback) {
+    var prev = sel.value;
+    sel.innerHTML = chatOptionsHtml(withEmpty);
+    sel.value = prev;
+    if (sel.value !== prev) sel.value = fallback;
+  }
+
+  function fillChatPickers() {
+    refill($("chat-model"), false, DEFAULT_CHAT_MODEL);
+    refill($("side-model-a"), true, "");
+    refill($("side-model-b"), true, "");
+    renderModelNote();
+    renderSideIdle();
+  }
+
+  function renderModelNote() {
+    var note = $("chat-model-note");
+    if (chatProvider() === "local") { note.textContent = "Local mode always uses dolphin3 in Ollama. This picker applies to OpenRouter."; return; }
+    var id = $("chat-model").value, text = "OpenRouter model id: " + id + ".", pool = chatPool();
+    for (var i = 0; i < pool.length; i++) {
+      var m = pool[i];
+      if (m.openrouter_id === id && m.price_status === "live") {
+        text += " Live price: " + fmtPrice(m.input_price_per_mtok) + " in / " + fmtPrice(m.output_price_per_mtok) + " out per 1M tokens.";
+        break;
+      }
+    }
+    if (state.liveIds && !state.liveIds[id]) text += " Not in OpenRouter's live model list today, so the request may fail.";
+    note.textContent = text;
+  }
+
+  function chatNote(text, level) {
+    var el = $("chat-status");
+    el.textContent = text || "";
+    if (level) el.setAttribute("data-level", level); else el.removeAttribute("data-level");
+  }
+
+  // ----- provider and mode -----
+  function applyProvider() {
+    var local = chatProvider() === "local";
+    $("chat-key-box").hidden = local;
+    $("chat-local-note").hidden = !local;
+    $("chat-model").disabled = local;
+    $("side-model-a").disabled = local;
+    $("side-model-b").disabled = local;
+    var check = localModeCheck(location.href), lc = $("chat-local-check");
+    lc.textContent = check.text;
+    lc.className = "verdict " + (check.ok ? "ok" : "warn");
+    chat.side = chat.side.map(function (c) { return c && c.status === "idle" ? null : c; });
+    renderModelNote();
+    renderSideIdle();
+  }
+
+  function applyMode() {
+    var side = chatMode() === "side";
+    $("chat-single").hidden = side;
+    $("chat-side").hidden = !side;
+    chatNote("");
+  }
+
+  // ----- key box: localStorage only -----
+  function renderKeyStatus() {
+    var store = keyStorage(), k = readKey(store);
+    $("chat-key-status").textContent = !store ? "This browser blocks local storage, so a key cannot be saved here. Local Ollama still works." :
+      k ? "A key is saved in this browser, ending in " + k.slice(-4) + ". Paste a new key to replace it." : "No key saved yet.";
+    $("chat-key-forget").disabled = !k;
+  }
+
+  function keyError(text) {
+    $("chat-key-error").textContent = text || "";
+    if (text) $("chat-key").setAttribute("aria-invalid", "true"); else $("chat-key").removeAttribute("aria-invalid");
+  }
+
+  function promptForKey() {
+    keyError("Add your OpenRouter key to send: paste it here and press Save key. Or switch the provider to Local Ollama.");
+    chatNote("No OpenRouter key saved yet. Add one in the key box.", "warn");
+    $("chat-key").focus();
+  }
+
+  function saveKeyFromForm() {
+    var store = keyStorage();
+    var r = store ? saveKey(store, $("chat-key").value) : { ok: false, error: "This browser blocks local storage, so the key cannot be saved here." };
+    if (!r.ok) { keyError(r.error); return; }
+    $("chat-key").value = "";
+    keyError("");
+    renderKeyStatus();
+    chatNote("Key saved in this browser only.", "ok");
+  }
+
+  function forgetKeyClick() {
+    forgetKey(keyStorage());
+    $("chat-key").value = "";
+    keyError("");
+    renderKeyStatus();
+    chatNote("Key removed from this browser.", "ok");
+  }
+
+  // ----- single model chat -----
+  function renderChatLog() {
+    var log = $("chat-log");
+    if (!chat.entries.length) {
+      log.innerHTML = '<p class="chat-empty">No messages yet. Pick a model, type a question, and press Send. The conversation stays in this page and is gone when you reload.</p>';
+      return;
+    }
+    log.innerHTML = chat.entries.map(function (e) {
+      if (e.role === "user") return '<div class="msg msg-user"><p class="msg-who">You</p><div class="msg-text">' + esc(e.content) + "</div></div>";
+      var who = '<p class="msg-who">' + esc(e.label) + "</p>";
+      var text = e.content ? '<div class="msg-text">' + esc(e.content) + "</div>" : "";
+      if (e.role === "pending") return '<div class="msg msg-model">' + who + (text || '<p class="loading-line"><span class="spinner" aria-hidden="true"></span>Waiting for the answer...</p>') + "</div>";
+      if (e.role === "error") return '<div class="msg msg-model msg-error">' + who + text + '<p class="verdict warn">' + esc(e.error) + "</p></div>";
+      return '<div class="msg msg-model">' + who + text + "</div>";
+    }).join("");
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setChatBusy(b) {
+    chat.busy = b;
+    $("chat-send").disabled = b;
+    $("chat-send").textContent = b ? "Sending..." : "Send";
+    $("chat-clear").disabled = b;
+    $("chat-log").setAttribute("aria-busy", b ? "true" : "false");
+  }
+
+  /** What the API sees: user and assistant turns only, never error notes or pending placeholders. */
+  function chatHistory() {
+    return chat.entries.filter(function (e) { return e.role === "user" || e.role === "assistant"; })
+      .map(function (e) { return { role: e.role, content: e.content }; });
+  }
+
+  function chatSend() {
+    if (chat.busy) return;
+    var text = $("chat-input").value.trim();
+    if (!text) { chatNote("Type a message first.", "warn"); $("chat-input").focus(); return; }
+    var provider = chatProvider(), key = "";
+    if (provider === "openrouter") {
+      key = readKey(keyStorage());
+      if (!key) { promptForKey(); return; }
+    }
+    var model = provider === "local" ? LOCAL_MODEL : $("chat-model").value;
+    var label = provider === "local" ? LOCAL_LABEL : chatModelLabel(model);
+    chat.entries.push({ role: "user", content: text });
+    var req = buildChatRequest(provider, model, chatHistory(), key, $("chat-stream").checked);
+    var pending = { role: "pending", label: label, content: "", error: "" };
+    chat.entries.push(pending);
+    $("chat-input").value = "";
+    chatNote("Sending to " + label + "...");
+    setChatBusy(true);
+    renderChatLog();
+    sendChat(chatFetch, req, { pageUrl: location.href, onDelta: function (t) { pending.content = t; renderChatLog(); } }).then(function (r) {
+      pending.role = r.ok ? "assistant" : "error";
+      pending.content = r.text || "";
+      pending.error = r.ok ? "" : r.error;
+      setChatBusy(false);
+      renderChatLog();
+      chatNote(r.ok ? "Answer from " + label + "." : "The request failed: see the message in the conversation.", r.ok ? "" : "warn");
+    });
+  }
+
+  // ----- side by side -----
+  function sideColumnFor(i) {
+    if (chatProvider() === "local") return { model: LOCAL_MODEL, label: LOCAL_LABEL };
+    var id = i ? $("side-model-b").value : $("side-model-a").value;
+    return { model: id, label: chatModelLabel(id) };
+  }
+
+  function renderSideCol(i, st) {
+    var el = i ? $("side-col-b") : $("side-col-a");
+    chat.side[i] = st;
+    el.setAttribute("data-status", st.status || "idle");
+    el.setAttribute("aria-busy", st.status === "sending" ? "true" : "false");
+    el.innerHTML = sideColumnHtml(i ? "Right" : "Left", st);
+  }
+
+  /** Columns that are not showing an answer follow their picker. */
+  function renderSideIdle() {
+    [0, 1].forEach(function (i) {
+      var cur = chat.side[i];
+      if (cur && cur.status !== "idle") return;
+      var c = sideColumnFor(i);
+      renderSideCol(i, { status: "idle", model: c.model, label: c.label, text: "", error: "" });
+    });
+  }
+
+  function setSideBusy(b) {
+    chat.sideBusy = b;
+    $("side-send").disabled = b;
+    $("side-send").textContent = b ? "Sending..." : "Send to both";
+  }
+
+  function sideSend() {
+    if (chat.sideBusy) return;
+    var q = $("side-input").value.trim();
+    if (!q) { chatNote("Type a question first.", "warn"); $("side-input").focus(); return; }
+    var provider = chatProvider(), key = "";
+    var ids = [$("side-model-a").value, $("side-model-b").value];
+    if (provider === "openrouter") {
+      if (!ids[0] && !ids[1]) { chatNote("Choose a model for at least one column.", "warn"); $("side-model-a").focus(); return; }
+      key = readKey(keyStorage());
+      if (!key) { promptForKey(); return; }
+    }
+    var msgs = [{ role: "user", content: q }], stream = $("chat-stream").checked;
+    var cols = [0, 1].map(function (i) {
+      var c = sideColumnFor(i);
+      if (!c.model) return { model: "", label: "", req: null };
+      return { model: c.model, label: c.label, req: buildChatRequest(provider, c.model, msgs, key, stream) };
+    });
+    setSideBusy(true);
+    chatNote("Sending to both columns...");
+    runCompare(chatFetch, cols, renderSideCol, { pageUrl: location.href }).then(function (res) {
+      setSideBusy(false);
+      var fails = res.filter(function (c) { return c.status === "error"; }).length;
+      chatNote(fails === 0 ? "Both answers are in." : fails === 1 ? "One column failed; the other answer is shown." : "Both columns failed: see each column for the reason.", fails ? "warn" : "");
+    });
+  }
+
+  // ----- "Ask this model" on the cards -----
+  function askFromCard(btn) {
+    var id = btn.getAttribute("data-ask"), name = btn.getAttribute("data-name") || id;
+    if (!id) return;
+    var listed = Array.prototype.some.call($("chat-model").options, function (o) { return o.value === id; });
+    if (!listed) { chat.extra.push({ openrouter_id: id, model: name }); fillChatPickers(); }
+    var note = "";
+    if (chatProvider() === "local") {
+      $("chat-provider-openrouter").checked = true;
+      applyProvider();
+      note = " Switched the provider to OpenRouter, because local mode only runs dolphin3.";
+    }
+    var t = askTarget(chatMode(), [$("side-model-a").value, $("side-model-b").value]), target;
+    if (t.target === "single") {
+      $("chat-model").value = id;
+      renderModelNote();
+      chatNote("Chat model set to " + name + "." + note + " Type your question below.", "ok");
+      target = $("chat-input");
+    } else {
+      (t.index ? $("side-model-b") : $("side-model-a")).value = id;
+      chat.side[t.index] = null;
+      renderSideIdle();
+      chatNote((t.index ? "Right" : "Left") + " column set to " + name + "." + note, "ok");
+      target = $("side-input");
+    }
+    // Bring the chat panel to the top, then let focus scroll the input into view if it is still below the fold (phones).
+    var panel = $("chat-main");
+    if (panel.scrollIntoView) panel.scrollIntoView({ block: "start" });
+    target.focus();
+  }
+
+  function initChat() {
+    $("chat-provider-openrouter").addEventListener("change", applyProvider);
+    $("chat-provider-local").addEventListener("change", applyProvider);
+    $("chat-mode-single").addEventListener("change", applyMode);
+    $("chat-mode-side").addEventListener("change", applyMode);
+    $("chat-key-form").addEventListener("submit", function (e) { e.preventDefault(); saveKeyFromForm(); });
+    $("chat-key-forget").addEventListener("click", forgetKeyClick);
+    $("chat-key").addEventListener("input", function () { keyError(""); });
+    $("chat-model").addEventListener("change", renderModelNote);
+    $("side-model-a").addEventListener("change", function () { chat.side[0] = null; renderSideIdle(); });
+    $("side-model-b").addEventListener("change", function () { chat.side[1] = null; renderSideIdle(); });
+    $("chat-form").addEventListener("submit", function (e) { e.preventDefault(); chatSend(); });
+    $("side-form").addEventListener("submit", function (e) { e.preventDefault(); sideSend(); });
+    // Enter sends, Shift+Enter adds a line (and never while an input method is composing text).
+    $("chat-input").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); chatSend(); }
+    });
+    $("side-input").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sideSend(); }
+    });
+    $("chat-clear").addEventListener("click", function () {
+      if (chat.busy) return;
+      chat.entries = [];
+      renderChatLog();
+      chatNote("Conversation cleared.");
+      $("chat-input").focus();
+    });
+    $("cards").addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest(".ask-btn") : null;
+      if (b && !b.disabled) askFromCard(b);
+      var c = e.target && e.target.closest ? e.target.closest(".compare-btn") : null;
+      if (c) toggleCompare(c.getAttribute("data-compare"));
+    });
+    fillChatPickers();
+    applyProvider();
+    applyMode();
+    renderKeyStatus();
+    renderChatLog();
+  }
+
+  /** Settings from the page address (a shared link). Unknown or invalid ones are skipped and reported. */
+  function settingsFromUrl() {
+    var d = decodeSettings(location.search);
+    if (Object.keys(d.settings).length) applySettings(d.settings);
+    if (d.ignored.length) $("share-status").textContent = "This link had settings Model Scout could not read, so they were skipped: " + d.ignored.join(", ") + ".";
+    else if (Object.keys(d.settings).length) $("share-status").textContent = "Settings loaded from the link.";
+  }
+
   function init() {
     var form = $("profile");
-    form.addEventListener("input", render);
-    form.addEventListener("change", render);
+    function edited(e) {
+      var id = e && e.target && e.target.id;
+      if (id && /^req-/.test(id)) { renderHelper(); return; } // the volume helper only fills the fields when asked
+      state.touched = true;
+      if (e && e.type === "input" && id !== "task-desc") markPreset("");
+      render();
+    }
+    form.addEventListener("input", edited);
+    form.addEventListener("change", edited);
     form.addEventListener("submit", function (e) { e.preventDefault(); render(); });
     $("suggest").addEventListener("click", applySuggestions);
     $("include-live").addEventListener("change", render);
     $("current-model").addEventListener("change", renderSwitch);
+    $("preset-list").addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest(".preset") : null;
+      if (b) usePreset(b.getAttribute("data-preset"));
+    });
+    $("req-apply").addEventListener("click", applyHelper);
+    $("share-link").addEventListener("click", copyShareLink);
+    $("cards-toggle").addEventListener("click", function () {
+      state.showAllCards = !state.showAllCards;
+      applyCardLimit();
+      if (!state.showAllCards) $("cards-toggle").scrollIntoView({ block: "nearest" });
+    });
+    // A link to a card that is folded away opens every card first, so the jump lands.
+    document.addEventListener("click", function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#card-"]') : null;
+      if (!a) return;
+      var card = document.getElementById(a.getAttribute("href").slice(1));
+      if (card && card.hidden) { state.showAllCards = true; applyCardLimit(); }
+    });
+    var map = $("value-map");
+    function dot(e) { return e.target && e.target.closest ? e.target.closest("circle[data-id]") : null; }
+    map.addEventListener("mouseover", function (e) { var d = dot(e); if (d) mapReadout(d.getAttribute("data-id")); });
+    map.addEventListener("mouseleave", function () { mapReadout(null); });
+    map.addEventListener("click", function (e) { var d = dot(e); if (d) openCard(d.getAttribute("data-id")); });
+    $("h2h-table").addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest(".h2h-remove") : null;
+      if (b) toggleCompare(b.getAttribute("data-compare"));
+    });
+    $("h2h-ask").addEventListener("click", askPairSideBySide);
+    function clearCompare() { state.compare = []; state.compareNote = ""; renderCompare(state.lastRes, state.lastProfile); }
+    $("h2h-clear").addEventListener("click", clearCompare);
+    $("compare-tray-clear").addEventListener("click", clearCompare);
+    var resizeTimer = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (state.lastRes && Math.abs($("value-map").clientWidth - (state.mapWidth || 0)) > 30) renderValueMap(state.lastRes, state.lastProfile);
+      }, 150);
+    });
+    $("memo-copy").addEventListener("click", copyMemo);
+    $("memo-download").addEventListener("click", downloadMemo);
+    renderPresets();
+    renderHelper();
+    settingsFromUrl();
+    initChat();
     loadCatalog().then(function (cat) {
       state.catalog = cat;
       state.base = cat.models.slice();
@@ -705,7 +2252,8 @@
       $("stale-days").textContent = String(cat.stale_after_days || STALE_AFTER_DAYS);
       renderStatus();
       render();
-      return loadLive().then(function () { renderStatus(); render(); });
+      fillChatPickers();
+      return loadLive().then(function () { renderStatus(); render(); fillChatPickers(); });
     }).catch(function (e) {
       $("data-status").setAttribute("data-state", "error");
       $("data-status").innerHTML = '<p class="verdict warn">Could not load the model catalog (' + esc(e.message) + "). Try serving the folder with python3 -m http.server.</p>";
