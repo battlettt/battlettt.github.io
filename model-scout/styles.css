@@ -689,6 +689,19 @@ footer.site p { margin: 0; }
 .kit-models .kit-price { font-family: var(--font-mono); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
 .kit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
 .kit-actions p { margin: 0; flex: 1 1 16rem; }
+
+/* use the pick in code */
+.snippet { margin-bottom: var(--s5); padding: var(--s3); }
+.snippet-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--s2) var(--s4); margin-bottom: var(--s3); }
+.snippet-controls .seg-group { margin: 0; }
+.snippet-code {
+  margin: 0 0 var(--s3); padding: var(--s3); max-height: 28rem; overflow: auto;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.55; white-space: pre; tab-size: 2;
+}
+.snippet-code:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.snippet-notes { margin: 0 0 var(--s3); padding-left: 1.25em; }
+.snippet-notes li { margin: 0 0 var(--s1); }
 .whatif { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--s3); }
 @media (min-width: 48em) { .whatif { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 72em) { .whatif { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -815,7 +828,8 @@ body.has-tray { padding-bottom: 7rem; }
 @media print {
   .sections, .toolbar, .skip, #suggest, .presets, .share-row, .pin-actions, .cards-more, .compare-tray, .h2h-actions, .h2h-remove { display: none; }
   .cards .card[hidden] { display: flex !important; }
-  .card-actions, .chat-settings, .chat-form, #side-form, .tip-try, #weights-edit, .weights-reset, .mw-more, .wi .btn, #whatif-undo { display: none; }
+  .card-actions, .chat-settings, .chat-form, #side-form, .tip-try, #weights-edit, .weights-reset, .mw-more, .wi .btn, #whatif-undo, .snippet-controls, #snippet-copy { display: none; }
+  .snippet-code { max-height: none; overflow: visible; white-space: pre-wrap; }
   .mw-row[hidden] { display: block !important; }
   .panel, .card, .top-pick, .table-wrap { box-shadow: none; }
 }

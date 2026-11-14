@@ -325,6 +325,36 @@
       </div>
 
       <div class="sub-head">
+        <h3 id="snippet-h">Use the pick in code</h3>
+        <p class="muted">A ready request for the top pick through OpenRouter's chat completions API, built from your profile. With fallbacks on, OpenRouter tries the next picks in order when a model errors. Copy it into your own code; nothing runs from this page.</p>
+      </div>
+      <div id="snippet" class="snippet panel" aria-labelledby="snippet-h">
+        <div class="snippet-controls">
+          <fieldset class="seg-group">
+            <legend>Language</legend>
+            <div class="seg">
+              <input type="radio" name="snippet-lang" id="snippet-lang-curl" value="curl" checked>
+              <label for="snippet-lang-curl">curl</label>
+              <input type="radio" name="snippet-lang" id="snippet-lang-python" value="python">
+              <label for="snippet-lang-python">Python</label>
+              <input type="radio" name="snippet-lang" id="snippet-lang-javascript" value="javascript">
+              <label for="snippet-lang-javascript">JavaScript</label>
+            </div>
+          </fieldset>
+          <div class="check chip">
+            <input id="snippet-fallback" type="checkbox" checked>
+            <label for="snippet-fallback">Fall back to the next picks</label>
+          </div>
+        </div>
+        <pre class="snippet-code" tabindex="0" role="region" aria-label="Request code"><code id="snippet-code">The request appears once the ranking loads.</code></pre>
+        <ul id="snippet-notes" class="snippet-notes"></ul>
+        <div class="kit-actions">
+          <button type="button" id="snippet-copy" class="btn" disabled>Copy code</button>
+          <p id="snippet-status" class="muted small-print" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <div class="sub-head">
         <h3>Value map</h3>
         <p class="muted">Every ranked model by score and monthly cost at your volume. The line joins the models that nothing else beats on both, so anything under it costs more for a lower score. Point at a dot to name it; select one to open its card. With a keyboard, focus the map, step with the arrow keys (left and right by cost, up and down by score), and press Enter to open the card.</p>
       </div>
@@ -596,6 +626,7 @@
         <li>Hosts come from OpenRouter's public endpoint list for each model, saved with the catalog and dated: how many providers serve it and which precision they state. Uptime and status change by the minute, so they are not kept. Providers are counted as OpenRouter lists them, so two can belong to one company (Google and Google AI Studio). A model with one host has nowhere to fail over; with a backup host required it is left out, and with zero data retention also required only zero-data-retention providers count. Some open-weight hosts serve reduced precision (fp8, fp4), which OpenRouter says can lower quality on some prompts; its <code>provider.quantizations</code> option skips them.</li>
         <li>Zero data retention comes from OpenRouter's public list of zero-data-retention endpoints, saved with the catalog and dated. With it required, a hosted model with no listed ZDR endpoint is left out, and a model whose cheapest ZDR endpoint costs more than its listed price is priced at that endpoint. It never lowers a price, since the cheapest endpoint may differ in other ways. Batch prices are set aside, because the list covers standard endpoints only.</li>
         <li>Pin this result keeps the current pick, score and monthly cost on screen while you change settings, lists every setting that changed since in plain words, and puts you back on the pinned settings in one click. The pin stays in this page; it is not part of the share link.</li>
+        <li>Use the pick in code builds one chat completions request from your profile: the top pick and, with fallbacks on, the next two ranked models OpenRouter lists, in its <code>models</code> list, so OpenRouter tries them in order when a model errors and bills the one that answered. Zero data retention adds <code>provider.zdr</code> and JSON output adds <code>response_format</code>. The key is read from an environment variable and never written into the code.</li>
         <li>The test kit is a Python script you download and run yourself. It sends your examples to the shortlisted models through OpenRouter with your own key, read from an environment variable, and records answers, seconds to answer, tokens, and an estimated cost from list prices. It is the way to check quality and speed on your task, which this page can only estimate.</li>
         <li>Split traffic prices sending a share of requests to a cheaper ranked model and the rest to the top pick, assuming requests of similar size. It gives no score for the mix, because that depends on how well easy requests are sorted from hard ones, which this page cannot know.</li>
         <li>The monthly spend limit is a hard limit: a model whose monthly cost at your volume (with the cache and batch options you chose) is over it is left out, and the excluded list says how much it would cost. Models with no listed price are kept and flagged. In local-only mode it is not applied, because self-hosted cost is hardware, not tokens.</li>

@@ -787,6 +787,108 @@
       sp.cheap.model + " scores " + sp.cheapTotal + " against " + sp.topTotal + " on your profile" + (sp.gap > 0 ? ", " + sp.gap + " points lower." : ", the same score.");
   }
 
+  // ---------- use it in code: one request for the pick, with model fallbacks ----------
+  var SNIPPET_FALLBACKS = 2;
+  var SNIPPET_LANGS = { curl: "curl", python: "Python", javascript: "JavaScript" };
+
+  /** The top pick and, with fallbacks on, up to SNIPPET_FALLBACKS more ranked models that OpenRouter lists, in rank order.
+   *  Every ranked model passed the hard constraints, so the fallbacks keep the profile's requirements.
+   *  Empty for local only, for embeddings, or when OpenRouter does not list the top pick. */
+  function snippetModels(res, p, fallbacks) {
+    var ranked = (res && res.ranked) || [];
+    if (!ranked.length || !p || p.localOnly || p.taskType === "embeddings" || !ranked[0].model.openrouter_id) return [];
+    var out = [ranked[0]];
+    for (var i = 1; fallbacks !== false && i < ranked.length && out.length <= SNIPPET_FALLBACKS; i++) {
+      if (ranked[i].model.openrouter_id && ranked[i].model.kind !== "embedding") out.push(ranked[i]);
+    }
+    return out.map(function (r) { return { id: r.model.id, openrouter_id: r.model.openrouter_id, name: r.model.model, rank: r.rank }; });
+  }
+
+  /** The chat completions body: the models in priority order (or one model), a placeholder prompt, and the profile's JSON and ZDR needs. */
+  function snippetBody(models, p) {
+    var b = {}, ids = models.map(function (m) { return m.openrouter_id; }), json = !!(p.needs && p.needs.json);
+    if (ids.length > 1) b.models = ids; else b.model = ids[0];
+    b.messages = [{ role: "user", content: json ? "Replace with your prompt, and ask for the answer as JSON." : "Replace with your prompt." }];
+    if (json) b.response_format = { type: "json_object" };
+    if (p.zdr && !p.localOnly) b.provider = { zdr: true };
+    return b;
+  }
+
+  /** A JSON-shaped value as a Python literal, four-space indented. */
+  function pyLit(v, pad) {
+    pad = pad || "";
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (typeof v === "number") return pyNum(v);
+    if (typeof v === "string") return pyStr(v);
+    var inner = pad + "    ", open = Array.isArray(v) ? "[" : "{", close = Array.isArray(v) ? "]" : "}";
+    var items = Array.isArray(v) ? v.map(function (x) { return inner + pyLit(x, inner); }) :
+      Object.keys(v).map(function (k) { return inner + pyStr(k) + ": " + pyLit(v[k], inner); });
+    return items.length ? open + "\n" + items.join(",\n") + ",\n" + pad + close : open + close;
+  }
+
+  /** A ready request in curl, Python (standard library) or JavaScript (fetch). The key comes from OPENROUTER_API_KEY; no key is ever written. */
+  function codeSnippet(lang, models, p) {
+    if (!models || !models.length) return "";
+    var body = snippetBody(models, p), json = JSON.stringify(body, null, 2);
+    if (lang === "python") return [
+      "import json, os, urllib.request",
+      "",
+      "body = " + pyLit(body),
+      "",
+      "req = urllib.request.Request(",
+      "    " + pyStr(OPENROUTER_CHAT_URL) + ",",
+      "    data=json.dumps(body).encode(),",
+      "    headers={\"Authorization\": \"Bearer \" + os.environ[\"OPENROUTER_API_KEY\"], \"Content-Type\": \"application/json\"},",
+      ")",
+      "with urllib.request.urlopen(req, timeout=120) as r:",
+      "    data = json.load(r)",
+      'print(data["model"])  # the model that answered',
+      'print(data["choices"][0]["message"]["content"])',
+      ""
+    ].join("\n");
+    if (lang === "javascript") return [
+      "// Node 18 or later, in an .mjs file or an async function",
+      "const res = await fetch(" + JSON.stringify(OPENROUTER_CHAT_URL) + ", {",
+      '  method: "POST",',
+      "  headers: {",
+      "    Authorization: \"Bearer \" + process.env.OPENROUTER_API_KEY,",
+      '    "Content-Type": "application/json",',
+      "  },",
+      "  body: JSON.stringify(" + json.split("\n").join("\n  ") + "),",
+      "});",
+      'if (!res.ok) throw new Error(res.status + " " + (await res.text()));',
+      "const data = await res.json();",
+      "console.log(data.model); // the model that answered",
+      "console.log(data.choices[0].message.content);",
+      ""
+    ].join("\n");
+    return [
+      "curl " + OPENROUTER_CHAT_URL + " \\",
+      '  -H "Authorization: Bearer $OPENROUTER_API_KEY" \\',
+      '  -H "Content-Type: application/json" \\',
+      "  -d '" + json.replace(/'/g, "'\\''") + "'",
+      ""
+    ].join("\n");
+  }
+
+  /** Plain sentences on what the request does and what it leaves to you. */
+  function snippetNotes(models, p) {
+    if (!models || !models.length) return [];
+    var n = [], names = models.map(function (m) { return m.name; });
+    n.push(models.length > 1 ? "Tries " + names[0] + " first, then " + names.slice(1).join(", then ") +
+      " if a model errors (downtime, rate limits, a moderation refusal). Each request is billed at the model that answered, which the response names." :
+      "Calls " + names[0] + " only, with no other model to fall back to.");
+    if (p.zdr && !p.localOnly) n.push("Routes only to zero-data-retention endpoints (provider.zdr).");
+    if (p.needs && p.needs.json) n.push("Asks for JSON with response_format. JSON mode also needs the prompt itself to ask for JSON.");
+    if (p.needs && p.needs.tools) n.push("Add your tool definitions as tools: every model listed passed your tool-calling requirement.");
+    if (p.useBatch) n.push("This is a standard request at standard prices. The cost estimate assumed batch prices where offered, which this request does not use.");
+    if (p.cacheShare > 0) n.push("For the prompt cache, keep the repeated part of the prompt first and unchanged. Most providers cache on their own; Anthropic and Alibaba need cache_control markers (see OpenRouter's prompt caching guide).");
+    n.push("Reads the key from the OPENROUTER_API_KEY environment variable. Nothing here holds a key.");
+    return n;
+  }
+
   // ---------- pinned scenario: what changed since ----------
   var SETTING_NAMES = { taskType: "Task", modality: "Input", quality: "Quality bar", latency: "Speed target", contextNeed: "Longest input",
     budget: "Budget", monthlyCap: "Monthly spend limit", localOnly: "Local only", inputM: "Input volume", outputM: "Output volume",
@@ -1874,7 +1976,7 @@
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
     frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, exclusionSummary: exclusionSummary, tableCsv: tableCsv,
-    settingText: settingText, settingsDiff: settingsDiff, pickSummary: pickSummary, pinText: pinText, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
+    settingText: settingText, settingsDiff: settingsDiff, pickSummary: pickSummary, pinText: pinText, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, snippetModels: snippetModels, snippetBody: snippetBody, codeSnippet: codeSnippet, snippetNotes: snippetNotes, SNIPPET_LANGS: SNIPPET_LANGS, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
     FACTORS: FACTORS, normalizeWeights: normalizeWeights, weightsAt: weightsAt, sharesToPercents: sharesToPercents,
     tippingPoints: tippingPoints, tipWeights: tipWeights, tipSentence: tipSentence, shareLabel: shareLabel,
     marketWatch: marketWatch, pctChange: pctChange, leverOptions: leverOptions, whatIfs: whatIfs,
@@ -2301,6 +2403,7 @@
     renderWhatIf();
     renderRoute(res, p);
     renderKit();
+    renderSnippet();
     renderPin(res, p);
     syncUrl();
   }
@@ -2795,6 +2898,37 @@
       out.textContent = "Saved model_scout_test.py with " + models.length + " models. Put one example per line in examples.jsonl, set OPENROUTER_API_KEY, and run python3 model_scout_test.py examples.jsonl." +
         ($("task-desc").value.trim() ? " It includes your task description as a comment, so check it before you share it." : "");
     } catch (e) { out.textContent = "This browser could not save the file."; }
+  }
+
+  // ----- use the pick in code -----
+  function snippetLang() {
+    var l = "curl";
+    Object.keys(SNIPPET_LANGS).forEach(function (k) { if ($("snippet-lang-" + k).checked) l = k; });
+    return l;
+  }
+
+  function renderSnippet() {
+    var res = state.lastRes, p = state.lastProfile;
+    if (!res || !p) return;
+    var models = snippetModels(res, p, $("snippet-fallback").checked), msg = "";
+    if (p.localOnly) msg = "Local only: this request would go to OpenRouter, so it is not offered. Call your model through Ollama on your own machine instead.";
+    else if (p.taskType === "embeddings") msg = "Embedding models take a different request, so no snippet is offered for this task.";
+    else if (!models.length) msg = res.ranked.length ? "OpenRouter does not list the top pick, so there is no request to show." : "No model passed the hard constraints.";
+    $("snippet-code").textContent = models.length ? codeSnippet(snippetLang(), models, p) : msg;
+    $("snippet-copy").disabled = !models.length;
+    $("snippet-fallback").disabled = !models.length;
+    $("snippet-notes").innerHTML = snippetNotes(models, p).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+    $("snippet-status").textContent = "";
+  }
+
+  function copySnippet() {
+    var out = $("snippet-status"), name = SNIPPET_LANGS[snippetLang()];
+    if ($("snippet-copy").disabled) return;
+    var text = $("snippet-code").textContent;
+    function blocked() { out.textContent = "This browser blocked the clipboard. Select the code and copy it by hand."; }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(text).then(function () { out.textContent = "Copied the " + name + " request. Set OPENROUTER_API_KEY before you run it."; }, blocked);
+    } else blocked();
   }
 
   function routeEdited() {
@@ -3436,6 +3570,9 @@
     $("route-model").addEventListener("change", routeEdited);
     $("route-share").addEventListener("input", routeEdited);
     $("kit-download").addEventListener("click", downloadKit);
+    ["curl", "python", "javascript"].forEach(function (l) { $("snippet-lang-" + l).addEventListener("change", renderSnippet); });
+    $("snippet-fallback").addEventListener("change", renderSnippet);
+    $("snippet-copy").addEventListener("click", copySnippet);
     $("share-link").addEventListener("click", copyShareLink);
     $("cards-toggle").addEventListener("click", function () {
       state.showAllCards = !state.showAllCards;
