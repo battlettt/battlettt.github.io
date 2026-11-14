@@ -633,6 +633,13 @@ footer.site p { margin: 0; }
 .sample-helper .helper-readout { margin: var(--s2) 0; }
 .sample-helper .btn { margin-bottom: var(--s1); }
 
+.pin-bar { margin-top: var(--s3); padding: var(--s3); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--surface); }
+.pin-bar[hidden] { display: none; }
+.pin-h { margin: 0 0 var(--s1); font-size: 0.875rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.pin-text { margin: 0 0 var(--s2); }
+.pin-diff { margin: 0 0 var(--s2); padding-left: 1.25em; font-size: 0.9375rem; }
+.pin-diff li { margin: 0 0 2px; }
+.pin-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .share-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); margin-top: var(--s3); }
 #share-status { flex: 1 1 16rem; font-size: 0.9375rem; overflow-wrap: anywhere; }
 .cards-more { display: flex; justify-content: center; margin-top: var(--s4); }
@@ -806,7 +813,7 @@ body.has-tray { padding-bottom: 7rem; }
 }
 
 @media print {
-  .sections, .toolbar, .skip, #suggest, .presets, .share-row, .cards-more, .compare-tray, .h2h-actions, .h2h-remove { display: none; }
+  .sections, .toolbar, .skip, #suggest, .presets, .share-row, .pin-actions, .cards-more, .compare-tray, .h2h-actions, .h2h-remove { display: none; }
   .cards .card[hidden] { display: flex !important; }
   .card-actions, .chat-settings, .chat-form, #side-form, .tip-try, #weights-edit, .weights-reset, .mw-more, .wi .btn, #whatif-undo { display: none; }
   .mw-row[hidden] { display: block !important; }

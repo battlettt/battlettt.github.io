@@ -753,6 +753,63 @@
       sp.cheap.model + " scores " + sp.cheapTotal + " against " + sp.topTotal + " on your profile" + (sp.gap > 0 ? ", " + sp.gap + " points lower." : ", the same score.");
   }
 
+  // ---------- pinned scenario: what changed since ----------
+  var SETTING_NAMES = { taskType: "Task", modality: "Input", quality: "Quality bar", latency: "Speed target", contextNeed: "Longest input",
+    budget: "Budget", monthlyCap: "Monthly spend limit", localOnly: "Local only", inputM: "Input volume", outputM: "Output volume",
+    cacheShare: "Prompt cache share", useBatch: "Batch prices", tools: "Requires tool calling", json: "Requires JSON output",
+    reasoning: "Requires reasoning mode", zdr: "Zero data retention", weights: "Weights" };
+
+  /** One setting value as a short phrase. */
+  function settingText(k, v) {
+    if (k === "taskType") return TASK_LABELS[v] || String(v);
+    if (k === "modality") return MODALITY_LABELS[v] || String(v);
+    if (k === "quality") return QUALITY_LABELS[v] || String(v);
+    if (k === "latency") return LATENCY_LABELS[v] || String(v);
+    if (k === "contextNeed") return fmtTokens(v) + " tokens";
+    if (k === "budget") return isNum(v) && v > 0 ? "$" + v + " per million tokens" : "none";
+    if (k === "monthlyCap") return isNum(v) && v > 0 ? fmtLimit(v) + " a month" : "none";
+    if (k === "inputM" || k === "outputM") return (isNum(v) ? v : 0) + " million tokens a month";
+    if (k === "cacheShare") return Math.round((isNum(v) ? v : 0) * 100) + "%";
+    if (k === "weights") {
+      var w = normalizeWeights(v);
+      if (!w) return "from the profile";
+      var pc = sharesToPercents(w);
+      return "set by hand (" + FACTORS.map(function (f) { return COMPONENT_LABELS[f] + " " + pc[f] + "%"; }).join(", ") + ")";
+    }
+    return v ? "on" : "off";
+  }
+
+  /** The settings that differ between a and b, as "Name: from to to" lines in form order. */
+  function settingsDiff(a, b) {
+    var fa = withDefaults(a), fb = withDefaults(b), out = [];
+    Object.keys(DEFAULT_SETTINGS).forEach(function (k) {
+      var x = settingText(k, fa[k]), y = settingText(k, fb[k]);
+      if (x !== y) out.push((SETTING_NAMES[k] || k) + ": " + x + " to " + y);
+    });
+    return out;
+  }
+
+  /** The top pick of a ranking as { id, name, total, cost }, or null when nothing ranked. */
+  function pickSummary(res, p) {
+    var top = res && res.ranked && res.ranked[0];
+    if (!top) return null;
+    return { id: top.model.id, name: top.model.model, total: top.total, cost: p.localOnly ? null : monthlyCost(top.model, p.inputTokens, p.outputTokens, p) };
+  }
+
+  /** Pinned pick against the current one, as one or two sentences. */
+  function pinText(pinned, now) {
+    function one(x) { return x ? x.name + ", score " + x.total + (isNum(x.cost) ? ", " + fmtMoney(x.cost) + " a month" : ", self-hosted") : "no model passes the hard constraints"; }
+    var t = "Pinned: " + one(pinned) + ". Now: " + one(now) + ".";
+    if (!pinned || !now) return t;
+    if (pinned.id === now.id) t += " Same pick";
+    else t += " A different pick";
+    if (isNum(pinned.cost) && isNum(now.cost)) {
+      var d = now.cost - pinned.cost;
+      t += Math.abs(d) < 0.005 ? ", same monthly cost." : ", " + fmtMoney(Math.abs(d)) + " a month " + (d < 0 ? "less." : "more.");
+    } else t += ".";
+    return t;
+  }
+
   // ---------- test kit: a script that runs your own examples through the shortlist ----------
   var KIT_MAX = 5;
 
@@ -1066,6 +1123,12 @@
         L.push("| " + r.rank + " | " + mdCell(r.model.model + " (" + r.model.provider + ")") + " | " + r.total + " | " +
           fmtMoney(monthlyCost(r.model, p.inputTokens, p.outputTokens, p)) + " | " + fmtPrice(r.model.input_price_per_mtok) + " / " + fmtPrice(r.model.output_price_per_mtok) + " | " + fmtTokens(r.model.context_window) + " |");
       });
+    }
+    if (ctx.pin && ctx.pin.diff.length) {
+      L.push("");
+      L.push("## Compared with the pinned scenario");
+      L.push(ctx.pin.text);
+      ctx.pin.diff.forEach(function (d) { L.push("- " + d); });
     }
     if (ctx.route && ctx.route.share > 0) {
       L.push("");
@@ -1771,7 +1834,8 @@
     effectivePrices: effectivePrices, zdrFacts: zdrFacts, zdrText: zdrText, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
-    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, exclusionSummary: exclusionSummary, tableCsv: tableCsv, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
+    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, exclusionSummary: exclusionSummary, tableCsv: tableCsv,
+    settingText: settingText, settingsDiff: settingsDiff, pickSummary: pickSummary, pinText: pinText, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
     FACTORS: FACTORS, normalizeWeights: normalizeWeights, weightsAt: weightsAt, sharesToPercents: sharesToPercents,
     tippingPoints: tippingPoints, tipWeights: tipWeights, tipSentence: tipSentence, shareLabel: shareLabel,
     marketWatch: marketWatch, pctChange: pctChange, leverOptions: leverOptions, whatIfs: whatIfs,
@@ -1791,7 +1855,7 @@
   var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, liveIds: null, now: new Date(), lastOrder: null,
     touched: false, showAllCards: false, linkNote: "", compare: [], lastRes: null, lastProfile: null,
     customWeights: null, editWeights: false, mwOpen: { fresh: false, retire: false },
-    routeId: "", routeShare: 0.5, routeTouched: false };
+    routeId: "", routeShare: 0.5, routeTouched: false, pin: null };
   var COMPARE_MAX = 3;
   var TIP_ROWS = 4;
 
@@ -2184,6 +2248,7 @@
     renderWhatIf();
     renderRoute(res, p);
     renderKit();
+    renderPin(res, p);
     syncUrl();
   }
 
@@ -2373,6 +2438,7 @@
       res: res, p: p, description: $("task-desc").value, rb: robustness(res), alt: cheaperAlternative(res.ranked, p), tips: tippingPoints(res),
       whatIf: whatIfs(candidates(), readSettings(), state.now),
       route: state.routeTouched ? routeSplit(res.ranked, p, state.routeId, state.routeShare) : null,
+      pin: state.pin ? { text: pinText(state.pin.pick, pickSummary(res, p)), diff: settingsDiff(state.pin.settings, readSettings()) } : null,
       now: new Date(), catalogDate: state.catalog && state.catalog.catalog_date,
       liveAt: state.live && state.live.ok ? state.live.fetchedAt.toLocaleString() : null, link: shareUrl()
     });
@@ -2586,6 +2652,45 @@
     var sp = routeSplit(res.ranked, p, state.routeId, state.routeShare);
     $("route-bars").innerHTML = routeBar("Top pick alone", sp.topCost, sp.topCost, false) + routeBar("With the split", sp.cost, sp.topCost, true);
     $("route-readout").textContent = routeText(sp);
+  }
+
+  // ----- pinned scenario -----
+  function renderPin(res, p) {
+    var bar = $("pin-bar");
+    $("pin-btn").textContent = state.pin ? "Pin this result instead" : "Pin this result";
+    if (!state.pin) { bar.hidden = true; return; }
+    bar.hidden = false;
+    var diff = settingsDiff(state.pin.settings, readSettings());
+    $("pin-text").textContent = pinText(state.pin.pick, pickSummary(res, p));
+    $("pin-diff").innerHTML = diff.length ? diff.map(function (d) { return "<li>" + esc(d) + "</li>"; }).join("") :
+      "<li>No settings changed since you pinned it.</li>";
+    $("pin-restore").disabled = !diff.length;
+  }
+
+  function pinNow() {
+    if (!state.lastRes || !state.lastProfile) return;
+    state.pin = { settings: readSettings(), pick: pickSummary(state.lastRes, state.lastProfile) };
+    renderPin(state.lastRes, state.lastProfile);
+    $("share-status").textContent = "Pinned. Change any setting to compare against it.";
+  }
+
+  function restorePin() {
+    if (!state.pin) return;
+    dropLeverUndo();
+    var s = state.pin.settings;
+    applySettings(s);
+    if (!normalizeWeights(s.weights)) { state.customWeights = null; state.editWeights = false; }
+    markPreset("");
+    state.touched = true;
+    render();
+    $("share-status").textContent = "Back to the pinned settings.";
+  }
+
+  function clearPin() {
+    state.pin = null;
+    if (state.lastRes) renderPin(state.lastRes, state.lastProfile);
+    $("share-status").textContent = "Unpinned.";
+    $("pin-btn").focus();
   }
 
   // ----- test kit -----
@@ -3355,6 +3460,9 @@
     $("memo-copy").addEventListener("click", copyMemo);
     $("memo-download").addEventListener("click", downloadMemo);
     $("table-csv").addEventListener("click", downloadCsv);
+    $("pin-btn").addEventListener("click", pinNow);
+    $("pin-restore").addEventListener("click", restorePin);
+    $("pin-clear").addEventListener("click", clearPin);
     renderPresets();
     renderHelper();
     settingsFromUrl();

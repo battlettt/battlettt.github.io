@@ -235,11 +235,21 @@
         <h2 id="results-h"><span class="sec-num">2.</span> Ranked models</h2>
         <p id="result-count" class="block-lede readout" aria-live="polite">Ranking will appear once the catalog loads.</p>
         <div class="share-row">
+          <button type="button" id="pin-btn" class="btn">Pin this result</button>
           <button type="button" id="share-link" class="btn">Copy link to this ranking</button>
           <button type="button" id="memo-copy" class="btn">Copy decision memo</button>
           <button type="button" id="memo-download" class="btn">Download memo (.md)</button>
           <button type="button" id="table-csv" class="btn">Download table (.csv)</button>
           <span id="share-status" class="muted" aria-live="polite"></span>
+        </div>
+        <div id="pin-bar" class="pin-bar" role="region" aria-labelledby="pin-h" hidden>
+          <h3 id="pin-h" class="pin-h">Pinned scenario</h3>
+          <p id="pin-text" class="pin-text" aria-live="polite"></p>
+          <ul id="pin-diff" class="pin-diff"></ul>
+          <div class="pin-actions">
+            <button type="button" id="pin-restore" class="btn btn-small">Back to the pinned settings</button>
+            <button type="button" id="pin-clear" class="btn btn-small">Unpin</button>
+          </div>
         </div>
       </div>
 
@@ -579,6 +589,7 @@
         <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
         <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
         <li>Zero data retention comes from OpenRouter's public list of zero-data-retention endpoints, saved with the catalog and dated. With it required, a hosted model with no listed ZDR endpoint is left out, and a model whose cheapest ZDR endpoint costs more than its listed price is priced at that endpoint. It never lowers a price, since the cheapest endpoint may differ in other ways. Batch prices are set aside, because the list covers standard endpoints only.</li>
+        <li>Pin this result keeps the current pick, score and monthly cost on screen while you change settings, lists every setting that changed since in plain words, and puts you back on the pinned settings in one click. The pin stays in this page; it is not part of the share link.</li>
         <li>The test kit is a Python script you download and run yourself. It sends your examples to the shortlisted models through OpenRouter with your own key, read from an environment variable, and records answers, seconds to answer, tokens, and an estimated cost from list prices. It is the way to check quality and speed on your task, which this page can only estimate.</li>
         <li>Split traffic prices sending a share of requests to a cheaper ranked model and the rest to the top pick, assuming requests of similar size. It gives no score for the mix, because that depends on how well easy requests are sorted from hard ones, which this page cannot know.</li>
         <li>The monthly spend limit is a hard limit: a model whose monthly cost at your volume (with the cache and batch options you chose) is over it is left out, and the excluded list says how much it would cost. Models with no listed price are kept and flagged. In local-only mode it is not applied, because self-hosted cost is hardware, not tokens.</li>
