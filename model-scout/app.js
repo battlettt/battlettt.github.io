@@ -1888,6 +1888,46 @@
     state.mapFront = vm.frontier;
     state.mapNote = vm.frontier.length + " of " + vm.plotted + " models sit on the frontier" + (vm.skipped ? ". " + vm.skipped + " with unknown prices are not shown" : "") + ".";
     out.textContent = state.mapNote;
+    // Keep the keyboard cursor on the same model across re-renders, or drop it if that model left the map.
+    if (state.mapCursorId && mapOrder("cost").indexOf(state.mapCursorId) < 0) state.mapCursorId = null;
+    if (state.mapCursorId && document.activeElement === box) mapCursor(state.mapCursorId);
+  }
+
+  /** Plotted model ids in cost order (cheapest first) or score order (highest first). */
+  function mapOrder(by) {
+    var res = state.lastRes, p = state.lastProfile;
+    if (!res || !p) return [];
+    var pts = mapPoints(res, p).filter(function (q) { return isNum(q.cost) && q.cost > 0; });
+    pts.sort(by === "score" ? function (a, b) { return b.score - a.score || a.cost - b.cost; } : function (a, b) { return a.cost - b.cost || b.score - a.score; });
+    return pts.map(function (q) { return q.id; });
+  }
+
+  /** Mark one dot as the keyboard cursor (or none) and announce it. */
+  function mapCursor(id) {
+    state.mapCursorId = id || null;
+    Array.prototype.forEach.call($("value-map").querySelectorAll("circle[data-id]"), function (c) {
+      c.classList.toggle("is-cursor", !!id && c.getAttribute("data-id") === id);
+    });
+    mapReadout(id || null);
+  }
+
+  function mapKey(e) {
+    var key = e.key, cost = mapOrder("cost");
+    if (!cost.length) return;
+    var cur = state.mapCursorId, next = null;
+    if (key === "Enter" || key === " ") { if (cur) { e.preventDefault(); openCard(cur); } return; }
+    if (key === "Escape") { if (cur) { e.preventDefault(); mapCursor(null); } return; }
+    if (key === "ArrowLeft" || key === "ArrowRight") {
+      var i = cost.indexOf(cur);
+      next = cost[i < 0 ? 0 : clamp(i + (key === "ArrowRight" ? 1 : -1), 0, cost.length - 1)];
+    } else if (key === "ArrowUp" || key === "ArrowDown") {
+      var score = mapOrder("score"), j = score.indexOf(cur);
+      next = score[j < 0 ? 0 : clamp(j + (key === "ArrowUp" ? -1 : 1), 0, score.length - 1)];
+    } else if (key === "Home") next = cost[0];
+    else if (key === "End") next = cost[cost.length - 1];
+    else return;
+    e.preventDefault();
+    mapCursor(next);
   }
 
   function mapReadout(id) {
@@ -2773,6 +2813,16 @@
     map.addEventListener("mouseover", function (e) { var d = dot(e); if (d) mapReadout(d.getAttribute("data-id")); });
     map.addEventListener("mouseleave", function () { mapReadout(null); });
     map.addEventListener("click", function (e) { var d = dot(e); if (d) openCard(d.getAttribute("data-id")); });
+    map.addEventListener("keydown", mapKey);
+    map.addEventListener("focus", function () {
+      var order = mapOrder("score");
+      if (!state.mapCursorId && order.length) state.mapCursorId = order[0];
+      if (state.mapCursorId) mapCursor(state.mapCursorId);
+    });
+    map.addEventListener("blur", function () {
+      Array.prototype.forEach.call(map.querySelectorAll("circle.is-cursor"), function (c) { c.classList.remove("is-cursor"); });
+      mapReadout(null);
+    });
     $("h2h-table").addEventListener("click", function (e) {
       var b = e.target && e.target.closest ? e.target.closest(".h2h-remove") : null;
       if (b) toggleCompare(b.getAttribute("data-compare"));

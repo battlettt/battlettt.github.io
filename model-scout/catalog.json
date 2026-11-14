@@ -1,5 +1,5 @@
 {
-  "catalog_date": "2026-11-13",
+  "catalog_date": "2026-11-14",
   "stale_after_days": 90,
   "notes": [
     "Prices are USD per million tokens. For models with an openrouter_id, prices and context windows are OpenRouter's listed figures on the snapshot date; buying direct from the provider may differ.",
@@ -44,10 +44,10 @@
         "Flagship models tend to respond slower than smaller tiers"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/openai/gpt-6-astra"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -96,10 +96,10 @@
         "Not the top OpenAI tier"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/openai/gpt-6.1-sol"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -148,10 +148,10 @@
         "Below Sol and Astra on OpenAI's own positioning"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/openai/gpt-6.1-terra"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -200,10 +200,10 @@
         "Small tier: expect weaker results on hard reasoning"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/openai/gpt-6-luna"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -250,10 +250,10 @@
         "Older (2025) release"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/openai/gpt-oss-120b"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -300,10 +300,10 @@
         "Older (2025) release"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/openai/gpt-oss-20b"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -352,10 +352,10 @@
         "Hosted only"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/anthropic/claude-fable-5.1"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -404,10 +404,10 @@
         "Hosted only"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/anthropic/claude-opus-5.5"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -456,10 +456,10 @@
         "Below Opus on Anthropic's own positioning"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/anthropic/claude-sonnet-5.5"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -508,10 +508,10 @@
         "Small tier: weaker on the hardest tasks"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/anthropic/claude-haiku-5.5"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -562,10 +562,10 @@
         "Flagship price and latency"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/google/gemini-4-argon"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -616,10 +616,10 @@
         "Flash tier, not the flagship"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/google/gemini-3.8-flash"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -669,10 +669,10 @@
         "Lite tier: not for hard reasoning"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/google/gemini-3.5-flash-lite"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -721,10 +721,10 @@
         "Max output listed at 16K tokens on OpenRouter"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/google/gemma-4-31b-it"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -773,10 +773,10 @@
         "Smaller open model: weaker than frontier hosted models"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/google/gemma-4-26b-a4b-it"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -822,10 +822,10 @@
         "2025 release, older than most of this catalog"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/meta-llama/llama-4-maverick"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -871,10 +871,10 @@
         "2025 release"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/meta-llama/llama-4-scout"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -919,10 +919,10 @@
         "2024 release"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/meta-llama/llama-3.3-70b-instruct"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -966,10 +966,10 @@
         "Small, 2024-era model: basic tasks only"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/meta-llama/llama-3.1-8b-instruct"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1016,10 +1016,10 @@
         "About 1T total parameters per its Hugging Face id: impractical to self-host for most teams"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/mistralai/mistral-large-4-0"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1066,10 +1066,10 @@
         "119B total parameters: server-class hardware to self-host"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/mistralai/mistral-small-2603"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1114,10 +1114,10 @@
         "Small model: basic tasks only"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/mistralai/ministral-8b-2512"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1163,10 +1163,10 @@
         "No image input"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/mistralai/devstral-2512"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1213,10 +1213,10 @@
         "Total parameter count not listed in the source: self-hosting needs unknown"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/deepseek/deepseek-v4.1-flash"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1262,10 +1262,10 @@
         "1.6T parameters: cluster-class hardware to self-host"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/deepseek/deepseek-v4-pro"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1313,10 +1313,10 @@
         "Context listed at 500K, shorter than several peers"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/x-ai/grok-4.7"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1365,10 +1365,10 @@
         "Older than Grok 4.7"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/x-ai/grok-4.20"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1416,10 +1416,10 @@
         "Needs a capable GPU to self-host"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/qwen/qwen3.6-35b-a3b"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1464,10 +1464,10 @@
         "2025 release"
       ],
       "source": {
-        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-13",
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
         "url": "https://openrouter.ai/qwen/qwen3-coder-30b-a3b-instruct"
       },
-      "last_verified": "2026-11-13",
+      "last_verified": "2026-11-14",
       "capabilities": {
         "tools": true,
         "json": true,
@@ -1589,6 +1589,220 @@
         "url": "https://huggingface.co/nomic-ai/nomic-embed-text-v1.5"
       },
       "last_verified": "2026-11-02"
+    },
+    {
+      "kind": "generation",
+      "price_status": "verified",
+      "unverified_fields": [],
+      "input_price_per_mtok": 8,
+      "output_price_per_mtok": 40,
+      "context_window": 1000000,
+      "open_weights": false,
+      "local_hardware": null,
+      "task_fit": [
+        "chat",
+        "code",
+        "rag",
+        "vision",
+        "agentic"
+      ],
+      "last_verified": "2026-11-14",
+      "id": "claude-fable-5.2",
+      "model": "Claude Fable 5.2",
+      "provider": "Anthropic",
+      "openrouter_id": "anthropic/claude-fable-5.2",
+      "latency_class": "slow",
+      "quality_tier": 5,
+      "input_modalities": [
+        "file",
+        "image",
+        "text"
+      ],
+      "strengths": [
+        "Anthropic's most capable model for the most demanding technical work, per Anthropic",
+        "Gains over Fable 5.1 in coding, reasoning, and vision, per Anthropic"
+      ],
+      "limits": [
+        "Hosted only",
+        "Flagship price and latency"
+      ],
+      "source": {
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
+        "url": "https://openrouter.ai/anthropic/claude-fable-5.2"
+      },
+      "capabilities": {
+        "tools": true,
+        "json": true,
+        "reasoning": true
+      },
+      "cache_read_price_per_mtok": 0.2,
+      "batch_input_price_per_mtok": 4,
+      "batch_output_price_per_mtok": 20,
+      "max_output_tokens": 128000,
+      "retires_on": null,
+      "listed_on": "2026-11-09"
+    },
+    {
+      "kind": "generation",
+      "price_status": "verified",
+      "unverified_fields": [],
+      "input_price_per_mtok": 2,
+      "output_price_per_mtok": 10,
+      "context_window": 1048576,
+      "open_weights": false,
+      "local_hardware": null,
+      "task_fit": [
+        "chat",
+        "code",
+        "rag",
+        "vision",
+        "agentic"
+      ],
+      "last_verified": "2026-11-14",
+      "id": "gemini-4-carbon",
+      "model": "Gemini 4 Carbon",
+      "provider": "Google",
+      "openrouter_id": "google/gemini-4-carbon",
+      "latency_class": "slow",
+      "quality_tier": 5,
+      "input_modalities": [
+        "audio",
+        "file",
+        "image",
+        "text",
+        "video"
+      ],
+      "strengths": [
+        "A frontier Gemini 4 model for coding, agentic, and complex reasoning work, per Google",
+        "Accepts text, image, file, audio, and video input"
+      ],
+      "limits": [
+        "Hosted only",
+        "Flagship price and latency"
+      ],
+      "source": {
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
+        "url": "https://openrouter.ai/google/gemini-4-carbon"
+      },
+      "capabilities": {
+        "tools": true,
+        "json": true,
+        "reasoning": true
+      },
+      "cache_read_price_per_mtok": 0.1,
+      "batch_input_price_per_mtok": 1,
+      "batch_output_price_per_mtok": 5,
+      "max_output_tokens": 943718,
+      "retires_on": null,
+      "listed_on": "2026-11-10"
+    },
+    {
+      "kind": "generation",
+      "price_status": "verified",
+      "unverified_fields": [],
+      "input_price_per_mtok": 1.5,
+      "output_price_per_mtok": 7.5,
+      "context_window": 1048576,
+      "open_weights": false,
+      "local_hardware": null,
+      "task_fit": [
+        "chat",
+        "code",
+        "rag",
+        "vision",
+        "agentic"
+      ],
+      "last_verified": "2026-11-14",
+      "id": "gemini-4-hydrogen",
+      "model": "Gemini 4 Hydrogen",
+      "provider": "Google",
+      "openrouter_id": "google/gemini-4-hydrogen",
+      "latency_class": "fast",
+      "quality_tier": 4,
+      "input_modalities": [
+        "audio",
+        "file",
+        "image",
+        "text",
+        "video"
+      ],
+      "strengths": [
+        "High-efficiency workhorse of the Gemini 4 family, per Google",
+        "Built for high-throughput agentic work and coding at lower cost and latency"
+      ],
+      "limits": [
+        "Hosted only",
+        "Workhorse tier, not the Gemini 4 flagship"
+      ],
+      "source": {
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
+        "url": "https://openrouter.ai/google/gemini-4-hydrogen"
+      },
+      "capabilities": {
+        "tools": true,
+        "json": true,
+        "reasoning": true
+      },
+      "cache_read_price_per_mtok": 0.075,
+      "batch_input_price_per_mtok": 0.75,
+      "batch_output_price_per_mtok": 3.75,
+      "max_output_tokens": 943718,
+      "retires_on": null,
+      "listed_on": "2026-11-12"
+    },
+    {
+      "kind": "generation",
+      "price_status": "verified",
+      "unverified_fields": [],
+      "input_price_per_mtok": 0.1,
+      "output_price_per_mtok": 0.5,
+      "context_window": 1048576,
+      "open_weights": false,
+      "local_hardware": null,
+      "task_fit": [
+        "chat",
+        "code",
+        "rag",
+        "vision",
+        "agentic"
+      ],
+      "last_verified": "2026-11-14",
+      "id": "muse-ember",
+      "model": "Muse Ember",
+      "provider": "Meta",
+      "openrouter_id": "meta/muse-ember",
+      "latency_class": "fast",
+      "quality_tier": 3,
+      "input_modalities": [
+        "audio",
+        "file",
+        "image",
+        "text",
+        "video"
+      ],
+      "strengths": [
+        "Meta's smallest and most efficient model, per Meta",
+        "Built for repeated agent work: tool calls, coding subtasks, routing"
+      ],
+      "limits": [
+        "Hosted only: no downloadable weights listed",
+        "Small tier: weaker on the hardest tasks"
+      ],
+      "source": {
+        "name": "OpenRouter public models API (https://openrouter.ai/api/v1/models), snapshot 2026-11-14",
+        "url": "https://openrouter.ai/meta/muse-ember"
+      },
+      "capabilities": {
+        "tools": true,
+        "json": true,
+        "reasoning": true
+      },
+      "cache_read_price_per_mtok": 0.004,
+      "batch_input_price_per_mtok": null,
+      "batch_output_price_per_mtok": null,
+      "max_output_tokens": 943718,
+      "retires_on": null,
+      "listed_on": "2026-11-09"
     }
   ]
 }
