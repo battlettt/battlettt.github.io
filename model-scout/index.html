@@ -20,8 +20,9 @@
         <a href="#results"><span class="nav-num">2</span> Results</a>
         <a href="#chat"><span class="nav-num">3</span> Ask a model</a>
         <a href="#playbook"><span class="nav-num">4</span> What to use when</a>
-        <a href="#switch"><span class="nav-num">5</span> Switch triggers</a>
-        <a href="#about"><span class="nav-num">6</span> About the data</a>
+        <a href="#market"><span class="nav-num">5</span> Market watch</a>
+        <a href="#switch"><span class="nav-num">6</span> Switch triggers</a>
+        <a href="#about"><span class="nav-num">7</span> About the data</a>
       </nav>
     </div>
   </header>
@@ -214,11 +215,23 @@
           <p class="loading-line"><span class="spinner" aria-hidden="true"></span>Loading the model catalog...</p>
           <div class="skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
         </div>
-        <aside class="weights-box panel" aria-labelledby="weights-h">
-          <h3 id="weights-h">How your profile weights each factor</h3>
-          <ul id="weights" class="weights"></ul>
-          <p class="muted small-print">Weights shift with your constraints: a tight budget raises cost, a long input raises context fit, local-only raises privacy.</p>
-        </aside>
+        <div class="results-side">
+          <aside class="weights-box panel" aria-labelledby="weights-h">
+            <div class="weights-head">
+              <h3 id="weights-h">How your profile weights each factor</h3>
+              <button type="button" id="weights-edit" class="btn btn-small" aria-pressed="false">Set by hand</button>
+            </div>
+            <ul id="weights" class="weights"></ul>
+            <p id="weights-note" class="muted small-print">Weights shift with your constraints: a tight budget raises cost, a long input raises context fit, local-only raises privacy.</p>
+            <button type="button" id="weights-reset" class="btn btn-small weights-reset" hidden>Back to profile weights</button>
+          </aside>
+          <aside class="tips-box panel" aria-labelledby="tips-h">
+            <h3 id="tips-h">What would change the pick</h3>
+            <p id="tips-lede" class="muted small-print">Move one weight, keep the others in proportion: the share at which another model comes first. Solved exactly, not sampled.</p>
+            <ul id="tips" class="tips"></ul>
+            <p id="tips-status" class="muted small-print" aria-live="polite"></p>
+          </aside>
+        </div>
       </div>
 
       <div class="sub-head">
@@ -424,9 +437,37 @@
       </ol>
     </section>
 
+    <section id="market" class="block" aria-labelledby="market-h">
+      <div class="block-head">
+        <h2 id="market-h"><span class="sec-num">5.</span> Market watch</h2>
+        <p class="block-lede">New models, price moves since the catalog snapshot, and announced retirements, each checked against the profile above.</p>
+        <p id="market-source" class="muted small-print">Loading the model list...</p>
+      </div>
+      <div class="market-grid">
+        <article class="market-col panel" aria-labelledby="mw-fresh-h">
+          <h3 id="mw-fresh-h">New in the last <span id="mw-days">30</span> days <span id="mw-fresh-count" class="mw-count"></span></h3>
+          <ol id="mw-fresh" class="mw-list"></ol>
+          <button type="button" id="mw-fresh-more" class="btn btn-small mw-more" aria-expanded="false" hidden>Show all</button>
+          <div id="mw-fresh-note" class="mw-note" hidden>
+            <p id="mw-fresh-note-text" class="muted small-print"></p>
+            <button type="button" id="mw-include" class="btn btn-small">Include live models in the ranking</button>
+          </div>
+        </article>
+        <article class="market-col panel" aria-labelledby="mw-moves-h">
+          <h3 id="mw-moves-h">Price changes since the snapshot <span id="mw-moves-count" class="mw-count"></span></h3>
+          <ol id="mw-moves" class="mw-list"></ol>
+        </article>
+        <article class="market-col panel" aria-labelledby="mw-retire-h">
+          <h3 id="mw-retire-h">Retiring <span id="mw-retire-count" class="mw-count"></span></h3>
+          <ol id="mw-retire" class="mw-list"></ol>
+          <button type="button" id="mw-retire-more" class="btn btn-small mw-more" aria-expanded="false" hidden>Show all</button>
+        </article>
+      </div>
+    </section>
+
     <section id="switch" class="block" aria-labelledby="switch-h">
       <div class="block-head">
-        <h2 id="switch-h"><span class="sec-num">5.</span> Switch triggers: when to reconsider your pick</h2>
+        <h2 id="switch-h"><span class="sec-num">6.</span> Switch triggers: when to reconsider your pick</h2>
       </div>
       <div class="switch-layout">
         <ul class="rules ticks">
@@ -449,7 +490,7 @@
 
     <section id="about" class="block" aria-labelledby="about-h">
       <div class="block-head">
-        <h2 id="about-h"><span class="sec-num">6.</span> About the data, and what this app does not do</h2>
+        <h2 id="about-h"><span class="sec-num">7.</span> About the data, and what this app does not do</h2>
       </div>
       <ul class="rules ticks about">
         <li>The bundled catalog is dated <strong id="catalog-date">(loading)</strong>. Prices and context windows for most models come from OpenRouter's public model list on that date. Buying direct from a provider can cost a different amount.</li>
@@ -459,6 +500,8 @@
         <li>For open-weight models the listed price is what a hosting provider charges. Running the model yourself has no per-token fee, but you pay for hardware and power, which this app does not estimate.</li>
         <li>Tool calling, JSON output, reasoning mode, cache read prices, batch prices, output limits, and retirement dates come from the same OpenRouter list: its supported parameters, its pricing fields, its ":batch" model variants, and its expiration dates. Models that are not listed there have no capability data, and the app says so.</li>
         <li>The confidence check on the top pick reruns the ranking 300 times with every factor's weight scaled at random between half and double. It shows how much the pick depends on the exact weights, not how good the model is.</li>
+        <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
+        <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
         <li>The ranking runs entirely in your browser. It does not call any model, and Model Scout has no accounts, no server, and no tracking. Your task description never leaves the page. Copy link puts your settings in the page address, never your description.</li>
         <li>The Ask a model panel is the only part that calls a model, and only when you press Send. With OpenRouter it sends your messages and your own key straight from your browser to openrouter.ai, and OpenRouter and the model provider handle them under their own policies. With Local Ollama it sends them to Ollama on your computer. Your key stays in this browser's local storage; conversations are not saved anywhere and are gone when you reload.</li>
       </ul>
