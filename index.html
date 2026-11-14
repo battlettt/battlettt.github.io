@@ -102,6 +102,85 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .go a:hover::after{transform:translate(2px,-2px)}
 
 /* ════════════════════════════════════════════════════════════════════
+   FEATURED  ·  gallery wall: three framed exhibits hung on one centreline,
+   each lit by its own spotlight, with a wall label underneath.
+   These are copies of cards that also live in their chapters (Security,
+   Applied AI, Product). When those cards change, update the label here too.
+   ════════════════════════════════════════════════════════════════════ */
+#featured{
+  --fx-wall:#cdc9c0; --fx-ink:#141413; --fx-ink-2:#3f3d38; --fx-acc:#9e2f17;
+  --fx-light:rgba(255,253,246,.9); --fx-wood:#1b1a17; --fx-mat:#fbfaf6; --fx-shadow:52,44,32;
+  position:relative;overflow:clip;box-shadow:inset 0 1px 0 var(--ink);color:var(--fx-ink);
+  padding-block:clamp(3.5rem,7vw,6rem) clamp(4rem,8vw,6.5rem);
+  background:linear-gradient(to bottom,rgba(255,255,255,.18),transparent 40%),var(--fx-wall);
+}
+@media (prefers-color-scheme:dark){
+  #featured{--fx-wall:#1b1a18; --fx-ink:#ecebe6; --fx-ink-2:#bdbab1; --fx-acc:#ee7a5c; --fx-light:rgba(255,232,190,.2); --fx-wood:#0c0b0a; --fx-mat:#e7e4dc; --fx-shadow:0,0,0;
+    background:linear-gradient(to bottom,rgba(255,255,255,.03),transparent 40%),var(--fx-wall)}
+}
+#featured ::selection{background:var(--fx-acc);color:#fff}
+.fx-head{max-width:40rem;margin-bottom:clamp(2.75rem,6vw,4.5rem)}
+.fx-head h2{margin:0 0 1rem;font-family:var(--serif);font-weight:500;font-size:clamp(2.25rem,5.5vw,3.75rem);line-height:1.05;letter-spacing:-.03em}
+.fx-head p{margin:0 0 1.25rem;font-size:clamp(1.0625rem,1.8vw,1.1875rem);line-height:1.55;color:var(--fx-ink-2);text-wrap:pretty}
+.fx-head a{display:inline-flex;align-items:center;min-height:2.75rem;font-weight:500;border-bottom:1px solid currentColor;line-height:1.2}
+.fx-head a:hover{color:var(--fx-acc)}
+
+.fx-wall{display:grid;gap:clamp(3.5rem,8vw,4.5rem) clamp(2rem,4vw,3.5rem)}
+.fx-ex{position:relative;isolation:isolate;display:grid;align-content:start}
+/* the spotlight: a pool of light on the wall, centred on the frame */
+.fx-hang{position:relative}
+.fx-hang::before{content:"";position:absolute;z-index:-1;left:-22%;right:-22%;top:-38%;bottom:-30%;pointer-events:none;
+  background:radial-gradient(ellipse 50% 50% at 50% 42%,var(--fx-light),transparent 72%);transition:opacity .5s var(--ease)}
+.fx-frame{display:block;position:relative;padding:clamp(.75rem,2.2vw,1.4rem);background:var(--fx-mat);border:clamp(6px,.75vw,9px) solid var(--fx-wood);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.07),0 2px 3px rgba(var(--fx-shadow),.28),0 24px 36px -22px rgba(var(--fx-shadow),.6);
+  transition:transform .45s var(--ease),box-shadow .45s var(--ease)}
+.fx-frame img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;object-position:top center;box-shadow:0 0 0 1px rgba(20,18,15,.16)}
+.fx-frame:hover{transform:translateY(-5px)}
+.fx-frame:hover{box-shadow:inset 0 0 0 1px rgba(0,0,0,.07),0 2px 3px rgba(var(--fx-shadow),.2),0 38px 46px -24px rgba(var(--fx-shadow),.62)}
+.fx-frame:active{transform:translateY(-2px) scale(.995)}
+.fx-frame:focus-visible{outline:2px solid var(--fx-ink);outline-offset:5px;border-radius:0}
+@media (prefers-color-scheme:dark){
+  .fx-frame{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.05),0 24px 40px -18px rgba(0,0,0,.85)}
+  .fx-frame img{filter:brightness(.92)}
+}
+
+/* the wall label */
+.fx-label{margin-top:clamp(1.5rem,3vw,2rem);max-width:30rem}
+.fx-no{display:flex;align-items:baseline;gap:.45rem;margin:0 0 .35rem;font-size:.8125rem;font-weight:500;color:var(--fx-ink-2)}
+.fx-no b{font-family:var(--serif);font-style:italic;font-weight:500;font-size:2.25rem;line-height:1;color:var(--fx-acc)}
+.fx-label h3{margin:0 0 .2rem;font-family:var(--serif);font-style:italic;font-weight:500;font-size:clamp(1.5rem,2.4vw,1.875rem);line-height:1.15;letter-spacing:-.015em}
+.fx-label h3 a:hover{color:var(--fx-acc)}
+.fx-med{margin:0 0 .9rem;font-size:.875rem;color:var(--fx-ink-2)}
+.fx-note{margin:0 0 1.15rem;font-size:1rem;line-height:1.6;text-wrap:pretty}
+.fx-note code{font-family:var(--mono);font-size:.95em;padding:.05em .3em;border-radius:3px;background:rgba(var(--fx-shadow),.1)}
+@media (prefers-color-scheme:dark){.fx-note code{background:rgba(255,255,255,.08)}}
+.fx-figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:0 0 .75rem;padding-top:.9rem;border-top:1px solid var(--fx-ink)}
+.fx-figs dt{font-family:var(--serif);font-size:clamp(1.75rem,3vw,2.125rem);line-height:1;letter-spacing:-.02em;font-variant-numeric:lining-nums tabular-nums}
+.fx-figs dd{margin:.3rem 0 0;font-size:.8125rem;line-height:1.35;color:var(--fx-ink-2)}
+.fx-go{display:flex;flex-wrap:wrap;gap:0 1.25rem;font-size:.9375rem}
+.fx-go a{display:inline-flex;align-items:center;min-height:2.75rem;font-weight:500;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);transition:color .2s}
+.fx-go a::after{content:"\2197";content:"\2197" / "";margin-left:.3em;font-size:.85em}
+.fx-go a[href^="#"]{color:var(--fx-ink-2);font-weight:400}
+.fx-go a[href^="#"]::after{content:"\2193";content:"\2193" / ""}
+.fx-go a:hover{color:var(--fx-acc);text-decoration-color:currentColor}
+
+/* tablet: A spans the wall, B and C hang side by side */
+@media (min-width:40rem) and (max-width:61.99rem){
+  .fx-wall{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fx-ex:first-child{grid-column:1 / -1}
+  .fx-ex:first-child .fx-hang{max-width:44rem}
+}
+/* desktop: three widths hung on one centreline; every line of the three
+   labels (title, medium, note, figures, links) shares a row via subgrid */
+@media (min-width:62rem){
+  .fx-wall{grid-template-columns:minmax(0,1.32fr) minmax(0,1fr) minmax(0,1.14fr);grid-template-rows:repeat(7,auto);row-gap:0}
+  .fx-ex{grid-row:span 7;grid-template-rows:subgrid;align-content:normal}
+  .fx-hang{align-self:center}
+  .fx-label{display:grid;grid-row:span 6;grid-template-rows:subgrid}
+  .fx-figs{align-self:start}
+}
+
+/* ════════════════════════════════════════════════════════════════════
    01  SECURITY  ·  terminal / scan report
    ════════════════════════════════════════════════════════════════════ */
 #security{
@@ -733,11 +812,22 @@ footer a:hover{color:var(--accent)}
 /* research: the margin note is written in after the red-pen circle */
 .js-anim #research .np.in .note{animation:anim-note .7s var(--ease) 1.9s backwards}
 @keyframes anim-note{from{opacity:0;transform:rotate(-2deg) translateY(.3em)}to{opacity:1;transform:rotate(-2deg)}}
+
+/* featured: each exhibit's spotlight comes on just after the frame is hung;
+   on desktop the three are hung left to right */
+.js-anim #featured .fx-ex:not(.anim-in) .fx-hang::before{opacity:.12}
+.js-anim #featured .fx-ex.anim-in .fx-hang::before{transition:opacity 1.3s var(--ease) .5s}
+@media (min-width:62rem){
+  .js-anim #featured .fx-ex.anim-in:nth-child(2){transition-delay:.14s}
+  .js-anim #featured .fx-ex.anim-in:nth-child(3){transition-delay:.28s}
+  .js-anim #featured .fx-ex.anim-in:nth-child(2) .fx-hang::before{transition-delay:.64s}
+  .js-anim #featured .fx-ex.anim-in:nth-child(3) .fx-hang::before{transition-delay:.78s}
+}
 /* ═══════════════════════ end ANIMATION SYSTEM ═══════════════════════ */
 </style>
 </head>
 <body>
-<a class="skip" href="#work">Skip to projects</a>
+<a class="skip" href="#featured">Skip to projects</a>
 
 <header class="mast">
   <div class="wrap">
@@ -755,7 +845,7 @@ footer a:hover{color:var(--accent)}
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
       <p class="lede"><em>Build it, then break it.</em> Twenty-eight projects where every claim was executed and verified, not written and assumed to work.</p>
-      <a class="btn" href="#work">See the work
+      <a class="btn" href="#featured">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
@@ -766,6 +856,91 @@ footer a:hover{color:var(--accent)}
         <div><dt>2249</dt><dd>passing tests across twenty-three of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
+    </div>
+  </section>
+
+  <!-- ═════════ FEATURED ═════════
+       Three exhibits copied from their chapter cards (Plugin Warden from Security,
+       Course Compass from Applied AI, Fake Company in a Box from Product). The
+       originals stay in their chapters; keep the numbers here in step with them. -->
+  <section id="featured" aria-labelledby="fx-h">
+    <div class="wrap">
+      <header class="fx-head">
+        <h2 id="fx-h">Start with these three.</h2>
+        <p>Short on time? These show the range: a plugin security auditor, a study tool that cites its sources, and a live SaaS product.</p>
+        <a href="#work">Or browse all 28 by chapter</a>
+      </header>
+
+      <div class="fx-wall">
+        <article class="fx-ex anim-rv" data-ex="a">
+          <div class="fx-hang">
+            <a class="fx-frame" href="https://github.com/battlettt/plugin-warden#results-on-real-plugins">
+              <img src="featured/plugin-warden.webp" width="1088" height="680" decoding="async" alt="Plugin Warden report for the wshobson/agents marketplace: risk score 14 out of 100, verdict Install with precautions, one medium and nine low findings.">
+            </a>
+          </div>
+          <div class="fx-label">
+            <p class="fx-no">Exhibit <b>A</b></p>
+            <h3><a href="https://github.com/battlettt/plugin-warden">Plugin Warden</a></h3>
+            <p class="fx-med">Python, Claude Agent SDK, static analysis</p>
+            <p class="fx-note">Audits a Claude Code plugin or MCP server before you install it. On a 92-plugin marketplace it found a governance hook that a single <code>./.review-approved</code> file skips.</p>
+            <dl class="fx-figs">
+              <div><dt>131</dt><dd>findings triaged by the agent</dd></div>
+              <div><dt>$2.11</dt><dd>agent cost across 4 real repos</dd></div>
+            </dl>
+            <ul class="fx-go">
+              <li><a href="https://github.com/battlettt/plugin-warden">Source</a></li>
+              <li><a href="https://github.com/battlettt/plugin-warden#results-on-real-plugins">Real runs</a></li>
+              <li><a href="#security">Filed in Security</a></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="fx-ex anim-rv" data-ex="b">
+          <div class="fx-hang">
+            <a class="fx-frame" href="https://battlettt.github.io/course-compass/demo/">
+              <img src="featured/course-compass.webp" width="980" height="612" decoding="async" alt="Course Compass demo answering What is a p-value? with two passages quoted from the sample notes, each cited by chunk id and retrieval score.">
+            </a>
+          </div>
+          <div class="fx-label">
+            <p class="fx-no">Exhibit <b>B</b></p>
+            <h3><a href="https://github.com/battlettt/course-compass">Course Compass</a></h3>
+            <p class="fx-med">Python, retrieval-augmented LLM</p>
+            <p class="fx-note">Turns your own course notes into cited answers, quizzes and a spaced-review plan, and says plainly when the notes do not cover a question.</p>
+            <dl class="fx-figs">
+              <div><dt>226</dt><dd>tests passing</dd></div>
+              <div><dt>89%</dt><dd>top-1 retrieval on sample notes</dd></div>
+            </dl>
+            <ul class="fx-go">
+              <li><a href="https://battlettt.github.io/course-compass/demo/">Live demo</a></li>
+              <li><a href="https://github.com/battlettt/course-compass">Source</a></li>
+              <li><a href="#applied-ai">Filed in Applied AI</a></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="fx-ex anim-rv" data-ex="c">
+          <div class="fx-hang">
+            <a class="fx-frame" href="https://fake-company-in-a-box.vercel.app">
+              <img src="featured/fake-company-in-a-box.webp" width="1280" height="800" decoding="async" alt="Fake Company in a Box home page: a shipping label for a made-up company, Nakamura Systems, listing the customers, deals, payments and invoices it loads into Stripe, QuickBooks and HubSpot test accounts.">
+            </a>
+          </div>
+          <div class="fx-label">
+            <p class="fx-no">Exhibit <b>C</b></p>
+            <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
+            <p class="fx-med">Next.js, PostgreSQL, Stripe</p>
+            <p class="fx-note">Realistic, deliberately messy test data for teams building Stripe, QuickBooks and HubSpot integrations. Live keys are refused before a single request is sent.</p>
+            <dl class="fx-figs">
+              <div><dt>347</dt><dd>records into real Stripe, 0 failed</dd></div>
+              <div><dt>97</dt><dd>tests, including API emulators</dd></div>
+            </dl>
+            <ul class="fx-go">
+              <li><a href="https://fake-company-in-a-box.vercel.app">Open the app</a></li>
+              <li><a href="https://fake-company-in-a-box.vercel.app/docs">Docs</a></li>
+              <li><a href="#product">Filed in Product</a></li>
+            </ul>
+          </div>
+        </article>
+      </div>
     </div>
   </section>
 
