@@ -48,24 +48,29 @@
   // ---------- cost math ----------
   /**
    * Prices per million tokens after the profile's batch and cache options. Null when a list price is unknown.
-   * opts: { useBatch, cacheShare }. A batch price is used only when it is listed and not higher than the
-   * standard price. Cached input is billed at the cache read price for cacheShare of the input tokens.
-   * The cache discount is not combined with a batch price, and cache write fees are not modelled.
+   * opts: { useBatch, cacheShare, inputTokens, outputTokens }. A batch price is used only when it is listed and
+   * not higher than the standard price. Cached input is billed at the cache read price for cacheShare of the
+   * input tokens. The two are not combined: when both apply, the one that costs less for the token mix wins
+   * (3:1 input to output when no volume is given), and batchSkipped says the cache won. Cache write fees are
+   * not modelled.
    */
   function effectivePrices(model, opts) {
     var pin = model.input_price_per_mtok, pout = model.output_price_per_mtok;
     if (!isNum(pin) || !isNum(pout)) return null;
     var o = opts || {}, r = { input: pin, output: pout, batch: false, cache: false };
     var bi = model.batch_input_price_per_mtok, bo = model.batch_output_price_per_mtok;
-    if (o.useBatch && isNum(bi) && isNum(bo) && bi <= pin && bo <= pout) {
-      r.input = bi; r.output = bo; r.batch = true;
-    }
+    var batchOk = !!o.useBatch && isNum(bi) && isNum(bo) && bi <= pin && bo <= pout;
     var share = isNum(o.cacheShare) ? clamp(o.cacheShare, 0, MAX_CACHE_SHARE) : 0;
     var cr = model.cache_read_price_per_mtok;
-    if (!r.batch && share > 0 && isNum(cr) && cr < r.input) {
-      r.input = (1 - share) * r.input + share * cr;
-      r.cache = true;
+    var cacheOk = share > 0 && isNum(cr) && cr < pin, cacheIn = cacheOk ? (1 - share) * pin + share * cr : pin;
+    if (batchOk && cacheOk) {
+      var tin = isNum(o.inputTokens) && o.inputTokens > 0 ? o.inputTokens : 3, tout = isNum(o.outputTokens) && o.outputTokens >= 0 ? o.outputTokens : 1;
+      if (isNum(o.inputTokens) && o.inputTokens > 0 && !isNum(o.outputTokens)) tout = 0;
+      if (cacheIn * tin + pout * tout < bi * tin + bo * tout) { batchOk = false; r.batchSkipped = true; }
+      else cacheOk = false;
     }
+    if (batchOk) { r.input = bi; r.output = bo; r.batch = true; }
+    else if (cacheOk) { r.input = cacheIn; r.cache = true; }
     return r;
   }
 
@@ -312,6 +317,7 @@
     if (!e) return;
     if (p.useBatch) {
       r.notes.push(e.batch ? "Batch price used: " + fmtPrice(e.input) + " in / " + fmtPrice(e.output) + " out per 1M tokens, for work that can wait for a batch run." :
+        e.batchSkipped ? "A lower batch price is listed, but the prompt cache costs less for your mix, so cached pricing is used instead." :
         "No lower batch price is listed for this model, so the standard price is used.");
     }
     if (isNum(p.cacheShare) && p.cacheShare > 0 && !e.batch) {
@@ -737,7 +743,7 @@
 
   /**
    * A Markdown memo for the decision: requirements, the pick and why, confidence, a cheaper option, runners-up,
-   * exclusions, caveats, and when to revisit. ctx: { res, p, description, rb, alt, tips, now, catalogDate, liveAt, link }.
+   * exclusions, caveats, and when to revisit. ctx: { res, p, description, rb, alt, tips, whatIf, now, catalogDate, liveAt, link }.
    */
   function decisionMemo(ctx) {
     var res = ctx.res, p = ctx.p, top = res.ranked[0], L = [];
@@ -775,6 +781,18 @@
       res.ranked.slice(0, 5).forEach(function (r) {
         L.push("| " + r.rank + " | " + mdCell(r.model.model + " (" + r.model.provider + ")") + " | " + r.total + " | " +
           fmtMoney(monthlyCost(r.model, p.inputTokens, p.outputTokens, p)) + " | " + fmtPrice(r.model.input_price_per_mtok) + " / " + fmtPrice(r.model.output_price_per_mtok) + " | " + fmtTokens(r.model.context_window) + " |");
+      });
+    }
+    if (ctx.whatIf && ctx.whatIf.levers.length) {
+      L.push("");
+      L.push("## If one constraint changed");
+      ctx.whatIf.levers.slice(0, 5).forEach(function (lv) {
+        var out = !lv.top ? "nothing passes every hard constraint" :
+          (lv.pickChanged ? mdCell(lv.top.model) + " comes first" : "same pick") +
+          (lv.selfHosted ? ", self-hosted (the cost is hardware)" : lv.delta === null ? (isNum(lv.cost) ? ", about " + fmtMoney(lv.cost) + " a month" : "") :
+            lv.delta < 0 ? ", " + fmtMoney(-lv.delta) + " a month less (" + fmtMoney(lv.cost) + ")" :
+            lv.delta > 0 ? ", " + fmtMoney(lv.delta) + " a month more (" + fmtMoney(lv.cost) + ")" : ", same monthly cost");
+        L.push("- " + lv.label + ": " + out + ".");
       });
     }
     L.push("");
@@ -1076,6 +1094,70 @@
       if (v === undefined) ignored.push(key); else settings[k] = v;
     });
     return { settings: settings, ignored: ignored };
+  }
+
+  // ---------- what if: one constraint changed at a time ----------
+  var CONTEXT_STEPS = [8000, 32000, 128000, 200000, 400000, 1000000, 2000000];
+
+  /** The single-constraint changes worth trying from these settings, as { id, label, settings }. */
+  function leverOptions(s) {
+    var f = withDefaults(s), out = [];
+    function lever(id, label, change) {
+      var n = {}; Object.keys(f).forEach(function (k) { n[k] = f[k]; });
+      Object.keys(change).forEach(function (k) { n[k] = change[k]; });
+      out.push({ id: id, label: label, settings: n });
+    }
+    if (!f.localOnly) {
+      if (!f.useBatch && f.cacheShare < 0.5) lever("cache", "Half your input comes from the prompt cache", { cacheShare: 0.5 });
+      if (!f.useBatch) lever("batch", "The work can wait for a batch run", { useBatch: true, latency: f.latency === "fast" ? "balanced" : f.latency });
+    }
+    if (f.quality === "frontier") lever("quality-down", "Accept a good quality bar instead of frontier", { quality: "good" });
+    if (f.quality === "good") lever("quality-down", "Accept a basic quality bar", { quality: "basic" });
+    if (f.quality === "basic") lever("quality-up", "Raise the quality bar to good", { quality: "good" });
+    if (f.quality === "good") lever("quality-up", "Raise the quality bar to frontier", { quality: "frontier" });
+    if (f.latency === "fast") lever("speed", "Relax the speed target to balanced", { latency: "balanced" });
+    if (f.latency === "balanced" && !f.useBatch) lever("speed", "Speed does not matter", { latency: "any" });
+    CAPABILITIES.forEach(function (k) {
+      if (f[k]) { var c = {}; c[k] = false; lever("drop-" + k, "Drop the " + CAPABILITY_LABELS[k] + " requirement", c); }
+    });
+    if (isNum(f.budget) && f.budget > 0) lever("budget", "Remove the budget limit", { budget: null });
+    if (f.localOnly) lever("hosted", "Allow hosted providers", { localOnly: false });
+    else lever("local", "Keep the data on your own machines", { localOnly: true, useBatch: false, cacheShare: 0 });
+    var ci = CONTEXT_STEPS.indexOf(f.contextNeed);
+    if (ci > 1) lever("context", "Inputs up to " + fmtTokens(CONTEXT_STEPS[ci - 1]) + " tokens instead of " + fmtTokens(f.contextNeed), { contextNeed: CONTEXT_STEPS[ci - 1] });
+    return out;
+  }
+
+  /**
+   * What if one constraint changed? Re-rank for each lever and keep the ones that change the pick, or keep the
+   * pick and cut its monthly cost by at least 5% (and a cent). Pick changes come first, then the biggest saving.
+   * delta is null when either side is self-hosted (its cost is hardware, not tokens).
+   * Returns { base: { top, cost }, levers: [{ id, label, settings, top, cost, pickChanged, delta, selfHosted, ranked }] }
+   * or null when nothing is ranked under the current settings.
+   */
+  function whatIfs(models, settings, now) {
+    var p0 = profileFromSettings(settings), r0 = rankModels(models, p0, now), top0 = r0.ranked[0];
+    if (!top0) return null;
+    var cost0 = monthlyCost(top0.model, p0.inputTokens, p0.outputTokens, p0);
+    var levers = [];
+    leverOptions(settings).forEach(function (lv) {
+      var p = profileFromSettings(lv.settings), r = rankModels(models, p, now), top = r.ranked[0];
+      if (!top) { levers.push({ id: lv.id, label: lv.label, settings: lv.settings, top: null, cost: null, pickChanged: true, delta: null, ranked: 0 }); return; }
+      // Self-hosted costs are hardware, not tokens, so no saving is quoted when either side runs locally.
+      var selfHosted = p.localOnly || p0.localOnly;
+      var cost = p.localOnly ? null : monthlyCost(top.model, p.inputTokens, p.outputTokens, p);
+      var delta = !selfHosted && isNum(cost) && isNum(cost0) ? cost - cost0 : null;
+      var changed = top.model.id !== top0.model.id;
+      var saves = delta !== null && -delta >= 0.01 && (cost0 > 0 ? -delta / cost0 >= 0.05 : true);
+      if (!changed && !saves) return;
+      levers.push({ id: lv.id, label: lv.label, settings: lv.settings, top: top.model, cost: cost, pickChanged: changed, delta: delta,
+        selfHosted: !!p.localOnly, ranked: r.ranked.length });
+    });
+    levers.sort(function (a, b) {
+      if (a.pickChanged !== b.pickChanged) return a.pickChanged ? -1 : 1;
+      return (a.delta === null ? Infinity : a.delta) - (b.delta === null ? Infinity : b.delta);
+    });
+    return { base: { top: top0.model, cost: cost0 }, levers: levers };
   }
 
   // ---------- formatting ----------
@@ -1381,7 +1463,7 @@
     frontier: frontier, cheaperAlternative: cheaperAlternative, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
     FACTORS: FACTORS, normalizeWeights: normalizeWeights, weightsAt: weightsAt, sharesToPercents: sharesToPercents,
     tippingPoints: tippingPoints, tipWeights: tipWeights, tipSentence: tipSentence, shareLabel: shareLabel,
-    marketWatch: marketWatch, pctChange: pctChange,
+    marketWatch: marketWatch, pctChange: pctChange, leverOptions: leverOptions, whatIfs: whatIfs,
     OPENROUTER_CHAT_URL: OPENROUTER_CHAT_URL, OLLAMA_CHAT_URL: OLLAMA_CHAT_URL, LOCAL_MODEL: LOCAL_MODEL,
     DEFAULT_CHAT_MODEL: DEFAULT_CHAT_MODEL, FEATURED_CHAT_MODELS: FEATURED_CHAT_MODELS, KEY_STORAGE: KEY_STORAGE,
     buildChatRequest: buildChatRequest, chatText: chatText, httpErrorText: httpErrorText, localModeCheck: localModeCheck,
@@ -1772,6 +1854,7 @@
     renderSwitchOptions();
     renderSwitch();
     renderMarket(res, p);
+    renderWhatIf();
     syncUrl();
   }
 
@@ -1919,6 +2002,7 @@
     var p = readProfile(), res = rankModels(candidates(), p, state.now);
     return decisionMemo({
       res: res, p: p, description: $("task-desc").value, rb: robustness(res), alt: cheaperAlternative(res.ranked, p), tips: tippingPoints(res),
+      whatIf: whatIfs(candidates(), readSettings(), state.now),
       now: new Date(), catalogDate: state.catalog && state.catalog.catalog_date,
       liveAt: state.live && state.live.ok ? state.live.fetchedAt.toLocaleString() : null, link: shareUrl()
     });
@@ -1999,6 +2083,7 @@
   function usePreset(id) {
     var s = presetSettings(id), pr = PRESETS.filter(function (x) { return x.id === id; })[0];
     if (!s || !pr) return;
+    dropLeverUndo();
     applySettings(s);
     $("task-desc").value = pr.description;
     markPreset(id);
@@ -2042,6 +2127,63 @@
     }).join("");
     sel.dataset.n = String(list.length);
     sel.value = prev;
+  }
+
+  // ----- what if -----
+  function renderWhatIf() {
+    var list = $("whatif"), w = whatIfs(candidates(), readSettings(), state.now);
+    state.lastWhatIf = w;
+    if (!w) { list.innerHTML = '<li class="wi-none">Nothing is ranked under the current settings, so there is nothing to compare.</li>'; return; }
+    if (!w.levers.length) {
+      list.innerHTML = '<li class="wi-none">No single change moves the pick or saves 5% or more. ' + esc(w.base.top.model) + " holds up.</li>";
+      return;
+    }
+    list.innerHTML = w.levers.map(function (lv, i) {
+      var out;
+      if (!lv.top) out = "Nothing passes every hard constraint.";
+      else {
+        out = (lv.pickChanged ? "<strong>" + esc(lv.top.model) + "</strong> comes first" : "Same pick");
+        if (lv.selfHosted) out += ", self-hosted: the cost is your hardware.";
+        else if (lv.delta === null) out += ", about " + esc(fmtMoney(lv.cost)) + " a month.";
+        else if (lv.delta < 0) out += ', <span class="wi-save">' + esc(fmtMoney(-lv.delta)) + "</span> a month less (" + esc(fmtMoney(lv.cost)) + ").";
+        else if (lv.delta > 0) out += ', <span class="wi-cost">' + esc(fmtMoney(lv.delta)) + "</span> a month more (" + esc(fmtMoney(lv.cost)) + ").";
+        else out += ", same monthly cost.";
+      }
+      return '<li class="wi' + (lv.pickChanged ? " is-new" : "") + '"><p class="wi-label">' + esc(lv.label) + '</p><p class="wi-out">' + out + "</p>" +
+        '<button type="button" class="btn btn-small" data-lever="' + i + '" aria-label="Apply: ' + esc(lv.label) + '">Apply</button></li>';
+    }).join("");
+  }
+
+  function applyLever(i) {
+    var lv = state.lastWhatIf && state.lastWhatIf.levers[i];
+    if (!lv) return;
+    state.leverUndo = readSettings();
+    applySettings(lv.settings);
+    state.touched = true;
+    markPreset("");
+    render();
+    $("whatif-status").textContent = "Applied: " + lv.label + ". The form above now shows it.";
+    $("whatif-undo").hidden = false;
+    $("whatif-undo").focus();
+  }
+
+  /** Any other edit makes the saved settings out of date, so Undo goes away. */
+  function dropLeverUndo() {
+    if (!state.leverUndo) return;
+    state.leverUndo = null;
+    $("whatif-undo").hidden = true;
+    $("whatif-status").textContent = "";
+  }
+
+  function undoLever() {
+    if (!state.leverUndo) return;
+    applySettings(state.leverUndo);
+    state.leverUndo = null;
+    render();
+    $("whatif-status").textContent = "Undone: the settings are back to what they were.";
+    $("whatif-undo").hidden = true;
+    var first = $("whatif").querySelector("[data-lever]");
+    if (first) first.focus();
   }
 
   // ----- market watch -----
@@ -2595,6 +2737,7 @@
       var id = e && e.target && e.target.id;
       if (id && /^req-/.test(id)) { renderHelper(); return; } // the volume helper only fills the fields when asked
       state.touched = true;
+      if (id !== "task-desc") dropLeverUndo();
       if (e && e.type === "input" && id !== "task-desc") markPreset("");
       render();
     }
@@ -2656,6 +2799,11 @@
       markPreset("");
       render();
     });
+    $("whatif").addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest("[data-lever]") : null;
+      if (b) applyLever(Number(b.getAttribute("data-lever")));
+    });
+    $("whatif-undo").addEventListener("click", undoLever);
     $("mw-include").addEventListener("click", function () {
       $("include-live").checked = !$("include-live").checked;
       render();

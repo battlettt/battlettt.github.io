@@ -6,6 +6,7 @@
   <title>Model Scout: pick the right LLM for your task</title>
   <meta name="description" content="Describe your task and constraints. Model Scout ranks LLMs on cost, quality, speed, context, and privacy, and explains every pick.">
   <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='10.5' fill='none' stroke='%230b5d57' stroke-width='5'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -232,6 +233,16 @@
             <p id="tips-status" class="muted small-print" aria-live="polite"></p>
           </aside>
         </div>
+      </div>
+
+      <div class="sub-head">
+        <h3 id="whatif-h">What if one constraint changed</h3>
+        <p class="muted">Each line reruns the ranking with one setting changed and everything else kept. Only changes that move the pick, or keep it and cut its monthly cost by 5% or more, are shown.</p>
+      </div>
+      <ul id="whatif" class="whatif" aria-labelledby="whatif-h"></ul>
+      <div class="whatif-status">
+        <p id="whatif-status" class="muted small-print" aria-live="polite"></p>
+        <button type="button" id="whatif-undo" class="btn btn-small" hidden>Undo</button>
       </div>
 
       <div class="sub-head">
@@ -502,6 +513,7 @@
         <li>The confidence check on the top pick reruns the ranking 300 times with every factor's weight scaled at random between half and double. It shows how much the pick depends on the exact weights, not how good the model is.</li>
         <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
         <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
+        <li>What if one constraint changed reruns the ranking once per lever (cache share, batch prices, quality bar, speed target, each required capability, budget, local only, input length) and shows only the changes that move the pick or save 5% or more. It quotes no saving when either side is self-hosted, because that cost is hardware, not tokens. With batch prices and the prompt cache both on, the cost uses whichever is cheaper for your token mix, never both.</li>
         <li>The ranking runs entirely in your browser. It does not call any model, and Model Scout has no accounts, no server, and no tracking. Your task description never leaves the page. Copy link puts your settings in the page address, never your description.</li>
         <li>The Ask a model panel is the only part that calls a model, and only when you press Send. With OpenRouter it sends your messages and your own key straight from your browser to openrouter.ai, and OpenRouter and the model provider handle them under their own policies. With Local Ollama it sends them to Ollama on your computer. Your key stays in this browser's local storage; conversations are not saved anywhere and are gone when you reload.</li>
       </ul>

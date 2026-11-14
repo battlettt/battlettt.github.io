@@ -652,6 +652,25 @@ footer.site p { margin: 0; }
 .conf-legend li span:last-child { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
 .conf-text { margin: var(--s2) 0 0; font-size: 0.9375rem; }
 
+/* ---------- what if ---------- */
+.whatif { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--s3); }
+@media (min-width: 48em) { .whatif { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 72em) { .whatif { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.wi {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label go" "out go"; column-gap: var(--s3); row-gap: var(--s1);
+  align-items: center; padding: var(--s3) var(--s4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.wi.is-new { border-left: 3px solid var(--accent); }
+.wi-label { grid-area: label; margin: 0; font-weight: 650; }
+.wi-out { grid-area: out; margin: 0; font-size: 0.9375rem; color: var(--muted); }
+.wi-out strong { color: var(--text); }
+.wi-save { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ok); font-weight: 650; }
+.wi-cost { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--warn); font-weight: 650; }
+.wi .btn { grid-area: go; }
+.wi-none { padding: var(--s3) var(--s4); border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--muted); font-size: 0.9375rem; }
+.whatif-status { margin-top: var(--s2); display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
+.whatif-status p { margin: 0; }
+
 /* ---------- market watch ---------- */
 #market-source { margin-top: var(--s2); max-width: 70ch; }
 .market-grid { display: grid; grid-template-columns: 1fr; gap: var(--s4); align-items: start; }
@@ -758,7 +777,7 @@ body.has-tray { padding-bottom: 7rem; }
 @media print {
   .sections, .toolbar, .skip, #suggest, .presets, .share-row, .cards-more, .compare-tray, .h2h-actions, .h2h-remove { display: none; }
   .cards .card[hidden] { display: flex !important; }
-  .card-actions, .chat-settings, .chat-form, #side-form, .tip-try, #weights-edit, .weights-reset, .mw-more { display: none; }
+  .card-actions, .chat-settings, .chat-form, #side-form, .tip-try, #weights-edit, .weights-reset, .mw-more, .wi .btn, #whatif-undo { display: none; }
   .mw-row[hidden] { display: block !important; }
   .panel, .card, .top-pick, .table-wrap { box-shadow: none; }
 }
