@@ -134,6 +134,166 @@
     return m && m.hosts ? m.hosts.providers.length : null;
   }
 
+  // ---------- hosts right now (live, on demand) ----------
+  var HOSTS_API = "https://openrouter.ai/api/v1/models/";
+  var HOSTS_TIMEOUT_MS = 10000;
+  var STEADY_UPTIME = 99;
+
+  /** OpenRouter's public endpoint list for one model id (no key). Each path segment is encoded. */
+  function endpointsUrl(id) {
+    return HOSTS_API + String(id).split("/").map(encodeURIComponent).join("/") + "/endpoints";
+  }
+
+  function uptimeOrNull(v) { return isNum(v) && v >= 0 && v <= 100 ? v : null; }
+
+  /** One row per endpoint from /api/v1/models/{id}/endpoints: best 30-minute uptime first, then the cheapest input
+   *  price, then A to Z. Null when the answer has no endpoint list. Status codes are left out: OpenRouter's spec
+   *  lists their values but not what they mean. */
+  function liveHostRows(json) {
+    var eps = json && json.data && json.data.endpoints;
+    if (!Array.isArray(eps)) return null;
+    var rows = [];
+    eps.forEach(function (e) {
+      if (!e || typeof e !== "object" || typeof e.provider_name !== "string" || !e.provider_name) return;
+      var pr = e.pricing && typeof e.pricing === "object" ? e.pricing : {};
+      var tag = typeof e.tag === "string" ? e.tag : "", slash = tag.indexOf("/");
+      var q = typeof e.quantization === "string" ? e.quantization.toLowerCase() : "";
+      var pin = perMillion(pr.prompt), pout = perMillion(pr.completion);
+      rows.push({
+        provider: e.provider_name,
+        variant: slash >= 0 ? tag.slice(slash + 1) : "",
+        quantization: q && q !== "unknown" ? q : null,
+        up5: uptimeOrNull(e.uptime_last_5m), up30: uptimeOrNull(e.uptime_last_30m), up1d: uptimeOrNull(e.uptime_last_1d),
+        input: pin !== null && pin >= 0 ? pin : null,
+        output: pout !== null && pout >= 0 ? pout : null,
+        maxOutput: isNum(e.max_completion_tokens) && e.max_completion_tokens > 0 ? e.max_completion_tokens : null
+      });
+    });
+    function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+    rows.sort(function (a, b) {
+      var ua = a.up30 === null ? -1 : a.up30, ub = b.up30 === null ? -1 : b.up30;
+      if (ua !== ub) return ub - ua;
+      var pa = a.input === null ? Infinity : a.input, pb = b.input === null ? Infinity : b.input;
+      if (pa !== pb) return pa - pb;
+      return cmp(a.provider, b.provider) || cmp(a.variant, b.variant);
+    });
+    return rows;
+  }
+
+  function spread(xs) {
+    var v = xs.filter(isNum);
+    return v.length ? { min: Math.min.apply(null, v), max: Math.max.apply(null, v), all: v.length === xs.length } : null;
+  }
+
+  /** What a live check means for this model and profile: providers now, change since the snapshot, uptime, the
+   *  price spread across hosts, and (when the profile needs one) whether a backup host exists right now. */
+  function hostCheck(rows, m, p) {
+    var providers = [];
+    rows.forEach(function (r) { if (providers.indexOf(r.provider) < 0) providers.push(r.provider); });
+    providers.sort();
+    var zdrOn = !!(p && p.zdr && !p.localOnly);
+    var zdrList = m && m.zdr ? m.zdr.providers : null;
+    var counted = !zdrOn ? providers : zdrList ? providers.filter(function (x) { return zdrList.indexOf(x) >= 0; }) : null;
+    var snap = m && m.hosts ? m.hosts.providers : null;
+    return {
+      endpoints: rows.length,
+      providers: providers,
+      steady: rows.filter(function (r) { return r.up30 !== null && r.up30 >= STEADY_UPTIME; }).length,
+      quiet: rows.filter(function (r) { return r.up30 === null; }).length,
+      input: spread(rows.map(function (r) { return r.input; })),
+      output: spread(rows.map(function (r) { return r.output; })),
+      added: snap ? providers.filter(function (x) { return snap.indexOf(x) < 0; }) : [],
+      removed: snap ? snap.filter(function (x) { return providers.indexOf(x) < 0; }) : [],
+      cheapestSteady: cheapestSteady(zdrOn && zdrList ? rows.filter(function (r) { return zdrList.indexOf(r.provider) >= 0; }) : rows),
+      zdr: zdrOn,
+      zdrProviders: zdrOn && zdrList ? zdrList.slice() : null,
+      backup: p && p.backupHost && !p.localOnly ? { count: counted ? counted.length : null, met: counted ? counted.length >= 2 : null } : null
+    };
+  }
+
+  /** The cheapest endpoint (3:1 input to output blend) that was up at least STEADY_UPTIME% of the last 30 minutes. */
+  function cheapestSteady(rows) {
+    var best = null;
+    rows.forEach(function (r) {
+      if (r.up30 === null || r.up30 < STEADY_UPTIME || r.input === null || r.output === null) return;
+      var b = 3 * r.input + r.output;
+      if (!best || b < best.blend) best = { blend: b, row: r };
+    });
+    return best ? best.row : null;
+  }
+
+  /** "Google (europe)": the provider, plus the endpoint's tag suffix when it says more than the precision. */
+  function endpointLabel(r) {
+    return r.provider + (r.variant && r.variant !== r.quantization ? " (" + r.variant + ")" : "");
+  }
+
+  function nameList(xs) {
+    if (xs.length <= 2) return xs.join(" and ");
+    return xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+  }
+
+  /** The live check as plain sentences. snapshotDate is the catalog's hosts_snapshot (may be empty). */
+  function hostCheckText(c, m, snapshotDate) {
+    var out = [], eps = c.endpoints + (c.endpoints === 1 ? " endpoint" : " endpoints");
+    var n = c.providers.length;
+    if (!c.endpoints) out.push("OpenRouter lists no endpoints for this model right now, so requests to it would fail.");
+    else if (n === 1) out.push("One provider serves it on OpenRouter right now (" + c.providers[0] + ", " + eps + ").");
+    else out.push(n + " providers serve it on OpenRouter right now, " + eps + ".");
+    var since = snapshotDate ? " since the " + snapshotDate + " snapshot" : " since the snapshot";
+    if (c.added.length) out.push("New" + since + ": " + nameList(c.added) + ".");
+    if (c.removed.length) out.push("Gone" + since + ": " + nameList(c.removed) + ".");
+    if (c.endpoints) {
+      var measured = c.endpoints - c.quiet;
+      var up = measured ? c.steady + " of " + measured + (measured === 1 ? " measured endpoint was" : " measured endpoints were") +
+        " up at least " + STEADY_UPTIME + "% of the last 30 minutes" : "No endpoint had enough traffic in the last 30 minutes to measure uptime";
+      if (measured && c.quiet) up += "; " + c.quiet + " had too little traffic to measure";
+      out.push(up + ".");
+    }
+    var i = c.input, o = c.output, same = !!(i && o && i.min === i.max && o.min === o.max);
+    if (i && o && i.all && o.all) {
+      if (same) out.push("Every endpoint charges the same: " + fmtPrice(i.min) + " / " + fmtPrice(o.min) + " per 1M in / out.");
+      else out.push("Prices per 1M range from " + fmtPrice(i.min) + " to " + fmtPrice(i.max) + " in and " + fmtPrice(o.min) + " to " + fmtPrice(o.max) +
+        " out across endpoints; the ranking uses " + fmtPrice(m.input_price_per_mtok) + " / " + fmtPrice(m.output_price_per_mtok) + ".");
+    }
+    var cs = c.cheapestSteady;
+    if (cs && !same) out.push("Cheapest " + (c.zdrProviders ? "zero-data-retention " : "") + "endpoint up at least " + STEADY_UPTIME + "% of the last 30 minutes: " + endpointLabel(cs) + " at " +
+      fmtPrice(cs.input) + " / " + fmtPrice(cs.output) + (cs.quantization && ["bf16", "fp16", "fp32"].indexOf(cs.quantization) < 0 ? ", serving " + cs.quantization : "") + ".");
+    if (c.backup) {
+      var kind = c.zdr ? " zero-data-retention" : "";
+      if (c.backup.count === null) out.push("Your profile needs a backup host: this cannot be checked, because the snapshot has no zero-data-retention data for this model.");
+      else if (c.backup.met) out.push("Your profile needs a backup host: met right now, " + c.backup.count + kind + " providers.");
+      else out.push("Your profile needs a backup host: not met right now, " + (c.backup.count === 1 ? "only one" + kind + " provider is listed." : "no" + kind + " provider is listed."));
+    }
+    return out;
+  }
+
+  /** Fetch one model's endpoint list. Never rejects: resolves { ok, rows, error, status }. */
+  function fetchHosts(fetchFn, id, opts) {
+    opts = opts || {};
+    if (typeof fetchFn !== "function") return Promise.resolve({ ok: false, rows: null, error: "This browser cannot send requests (no fetch)." });
+    if (!id) return Promise.resolve({ ok: false, rows: null, error: "This model is not listed on OpenRouter." });
+    var ms = opts.timeoutMs || HOSTS_TIMEOUT_MS;
+    var ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, ms);
+    var p;
+    try { p = Promise.resolve(fetchFn(endpointsUrl(id), ctrl ? { signal: ctrl.signal } : {})); } catch (e) { p = Promise.reject(e); }
+    return p.then(function (res) {
+      if (!res.ok) {
+        return { ok: false, rows: null, status: res.status, error: res.status === 404 ?
+          "OpenRouter has no endpoint list for this model right now. It may have been renamed or retired." :
+          "OpenRouter answered with HTTP " + res.status + "." };
+      }
+      return res.json().then(function (j) {
+        var rows = liveHostRows(j);
+        return rows ? { ok: true, rows: rows, status: res.status, error: "" } :
+          { ok: false, rows: null, status: res.status, error: "OpenRouter's answer did not contain an endpoint list." };
+      }, function () { return { ok: false, rows: null, status: res.status, error: "OpenRouter's answer was not valid JSON." }; });
+    }, function (e) {
+      return { ok: false, rows: null, error: e && e.name === "AbortError" ? "OpenRouter did not answer within " + Math.max(1, Math.round(ms / 1000)) + (ms < 1500 ? " second." : " seconds.") :
+        "Could not reach OpenRouter (offline, or blocked by the browser or network)." };
+    }).then(function (r) { clearTimeout(timer); return r; });
+  }
+
   /** Monthly cost in USD. Prices are per million tokens. Returns null if a price is unknown. opts as in effectivePrices. */
   function monthlyCost(model, inputTokens, outputTokens, opts) {
     var e = effectivePrices(model, opts);
@@ -1972,7 +2132,7 @@
     switchCheck: switchCheck, mergeLive: mergeLive, suggestFromText: suggestFromText, costScoreFromPrice: costScoreFromPrice,
     fmtMoney: fmtMoney, fmtTokens: fmtTokens,
     CAPABILITIES: CAPABILITIES, DEFAULT_SETTINGS: DEFAULT_SETTINGS, PRESETS: PRESETS,
-    effectivePrices: effectivePrices, zdrFacts: zdrFacts, zdrText: zdrText, hostsFacts: hostsFacts, hostCount: hostCount, hostsText: hostsText, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
+    effectivePrices: effectivePrices, zdrFacts: zdrFacts, zdrText: zdrText, hostsFacts: hostsFacts, hostCount: hostCount, hostsText: hostsText, endpointsUrl: endpointsUrl, liveHostRows: liveHostRows, hostCheck: hostCheck, hostCheckText: hostCheckText, fetchHosts: fetchHosts, endpointLabel: endpointLabel, STEADY_UPTIME: STEADY_UPTIME, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
     frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, exclusionSummary: exclusionSummary, tableCsv: tableCsv,
@@ -1996,7 +2156,7 @@
   var state = { catalog: null, catalogOrigin: "", base: [], liveOnly: [], live: null, liveIds: null, now: new Date(), lastOrder: null,
     touched: false, showAllCards: false, linkNote: "", compare: [], lastRes: null, lastProfile: null,
     customWeights: null, editWeights: false, mwOpen: { fresh: false, retire: false },
-    routeId: "", routeShare: 0.5, routeTouched: false, pin: null };
+    routeId: "", routeShare: 0.5, routeTouched: false, pin: null, hostChecks: {} };
   var COMPARE_MAX = 3;
   var TIP_ROWS = 4;
 
@@ -3208,12 +3368,86 @@
       (on ? "In comparison" : "Compare") + '<span class="visually-hidden">: ' + esc(m.model) + "</span></button>";
     if (m.kind === "embedding" || !m.openrouter_id) {
       var nid = "ask-note-" + m.id;
-      return '<div class="card-actions"><div class="row">' + cmp + '<button type="button" class="btn ask-btn" disabled aria-describedby="' + esc(nid) + '">Ask this model</button></div>' +
+      return '<div class="card-actions"><div class="row">' + cmp + '<button type="button" class="btn ask-btn" disabled aria-describedby="' + esc(nid) + '">Ask this model</button>' +
+        hostsButton(m) + "</div>" +
         '<small id="' + esc(nid) + '">' + (m.kind === "embedding" ? "Embedding models make search vectors and cannot chat." :
-          "Not listed on OpenRouter, so it cannot be asked from here.") + "</small></div>";
+          "Not listed on OpenRouter, so it cannot be asked from here.") + "</small>" + liveHostsBlock(m) + "</div>";
     }
     return '<div class="card-actions"><div class="row">' + cmp + '<button type="button" class="btn ask-btn" data-ask="' + esc(m.openrouter_id) + '" data-name="' + esc(m.model) + '">' +
-      'Ask this model<span class="visually-hidden">: ' + esc(m.model) + "</span></button></div></div>";
+      'Ask this model<span class="visually-hidden">: ' + esc(m.model) + "</span></button>" + hostsButton(m) + "</div>" + liveHostsBlock(m) + "</div>";
+  }
+
+  // ----- Hosts right now: an on-demand check of one model's OpenRouter endpoints (public, no key) -----
+  function hostsButton(m) {
+    if (!m.openrouter_id) return "";
+    var c = state.hostChecks[m.openrouter_id], busy = !!(c && c.status === "loading");
+    return '<button type="button" class="btn hosts-btn" data-hosts="' + esc(m.openrouter_id) + '" aria-controls="live-hosts-' + esc(m.id) + '"' +
+      (busy ? ' aria-disabled="true"' : "") + ">" + (busy ? "Checking hosts" : c ? "Check hosts again" : "Check hosts now") +
+      '<span class="visually-hidden">: ' + esc(m.model) + "</span></button>";
+  }
+
+  function liveHostsBlock(m) {
+    if (!m.openrouter_id) return "";
+    return '<div class="live-hosts" id="live-hosts-' + esc(m.id) + '" aria-live="polite">' + liveHostsInner(m) + "</div>";
+  }
+
+  /** Uptime to one decimal, rounded down so 99.97 never reads as 100.0. */
+  function fmtUptime(v) { return v === null ? "not measured" : v === 100 ? "100%" : (Math.floor(v * 10) / 10).toFixed(1) + "%"; }
+
+  function liveHostsInner(m) {
+    var c = state.hostChecks[m.openrouter_id];
+    if (!c) return "";
+    var snap = state.catalog && state.catalog.hosts_snapshot ? "The " + state.catalog.hosts_snapshot + " snapshot" : "The snapshot";
+    if (c.status === "loading") return '<p class="live-hosts-note">Checking OpenRouter for the hosts serving ' + esc(m.model) + " right now.</p>";
+    if (!c.ok) return '<p class="live-hosts-note is-warn">' + esc(c.error) + " " + snap + " on this card still applies.</p>";
+    var chk = hostCheck(c.rows, m, state.lastProfile || {});
+    var at = c.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    var html = '<h4 class="live-hosts-title">Hosts right now <small>checked at ' + esc(at) + "</small></h4>" +
+      '<ul class="live-hosts-text">' + hostCheckText(chk, m, state.catalog ? state.catalog.hosts_snapshot : "").map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul>";
+    if (!c.rows.length) return html;
+    var zdr = chk.zdrProviders;
+    var rows = c.rows.map(function (r) {
+      var low = r.up30 !== null && r.up30 < STEADY_UPTIME;
+      return '<tr><th scope="row">' + esc(endpointLabel(r)) + (zdr && zdr.indexOf(r.provider) >= 0 ? ' <span class="tag-zdr">ZDR</span>' : "") + "</th>" +
+        "<td>" + fmtUptime(r.up5) + '</td><td class="' + (low ? "is-low" : "") + '">' + fmtUptime(r.up30) + "</td><td>" + fmtUptime(r.up1d) + "</td>" +
+        "<td>" + fmtPrice(r.input) + " / " + fmtPrice(r.output) + "</td><td>" + (r.maxOutput ? esc(fmtTokens(r.maxOutput)) : "not listed") + "</td>" +
+        "<td>" + esc(r.quantization || "not stated") + "</td></tr>";
+    }).join("");
+    return html + '<details class="live-hosts-more"><summary>All ' + c.rows.length + (c.rows.length === 1 ? " endpoint" : " endpoints") + "</summary>" +
+      '<div class="live-hosts-wrap" tabindex="0" role="region" aria-label="Endpoints serving ' + esc(m.model) + '">' +
+      '<table class="live-hosts-table"><thead><tr><th scope="col">Host</th><th scope="col">Up, 5 min</th><th scope="col">Up, 30 min</th><th scope="col">Up, 1 day</th>' +
+      '<th scope="col">In / out per 1M</th><th scope="col">Max output</th><th scope="col">Precision</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+      '<p class="live-hosts-foot">Uptime is OpenRouter\'s measure: the share of minutes in which at least 80% of requests to that endpoint succeeded, counting only minutes with 10 or more requests; rate limits and caller errors are left out.' +
+      (zdr ? " ZDR marks providers in OpenRouter's zero-data-retention list as of " + esc(state.catalog.zdr_snapshot || "the snapshot") + "." : "") + "</p></details>";
+  }
+
+  function hostsFetchFn(url, init) { return fetch(url, init); }
+
+  /** Re-draw every card block and button for this OpenRouter id without re-ranking. */
+  function refreshHosts(id) {
+    var ranked = state.lastRes ? state.lastRes.ranked : [];
+    ranked.forEach(function (r) {
+      if (r.model.openrouter_id !== id) return;
+      var box = $("live-hosts-" + r.model.id);
+      if (box) box.innerHTML = liveHostsInner(r.model);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".hosts-btn"), function (b) {
+      if (b.getAttribute("data-hosts") !== id) return;
+      var c = state.hostChecks[id], busy = !!(c && c.status === "loading");
+      if (busy) b.setAttribute("aria-disabled", "true"); else b.removeAttribute("aria-disabled");
+      b.firstChild.nodeValue = busy ? "Checking hosts" : "Check hosts again";
+    });
+  }
+
+  function checkHosts(id) {
+    var cur = state.hostChecks[id];
+    if (!id || (cur && cur.status === "loading")) return;
+    state.hostChecks[id] = { status: "loading" };
+    refreshHosts(id);
+    fetchHosts(typeof fetch === "function" ? hostsFetchFn : null, id).then(function (r) {
+      state.hostChecks[id] = { status: "done", ok: r.ok, rows: r.rows, error: r.error, at: new Date() };
+      refreshHosts(id);
+    });
   }
 
   /** Every model the chat can name: featured, catalog (with live prices once loaded), live-only, and models added from cards. */
@@ -3525,6 +3759,8 @@
       if (b && !b.disabled) askFromCard(b);
       var c = e.target && e.target.closest ? e.target.closest(".compare-btn") : null;
       if (c) toggleCompare(c.getAttribute("data-compare"));
+      var h = e.target && e.target.closest ? e.target.closest(".hosts-btn") : null;
+      if (h && h.getAttribute("aria-disabled") !== "true") checkHosts(h.getAttribute("data-hosts"));
     });
     fillChatPickers();
     applyProvider();

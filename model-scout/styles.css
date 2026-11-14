@@ -799,6 +799,36 @@ footer.site p { margin: 0; }
 /* ---------- compare buttons and the tray ---------- */
 .card-actions .row { gap: var(--s2); }
 .compare-btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+
+/* ---------- hosts right now (live check on a card) ---------- */
+.hosts-btn[aria-disabled="true"] { cursor: progress; color: var(--muted); }
+.live-hosts:empty { display: none; }
+.live-hosts { margin-top: var(--s3); }
+.live-hosts-title { margin: 0; font-size: 1rem; }
+.live-hosts-title small { display: inline; margin: 0 0 0 var(--s2); font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 400; color: var(--muted); }
+.live-hosts-text { margin: var(--s2) 0 0; padding-left: 1.1rem; font-size: 0.9375rem; }
+.live-hosts-text li + li { margin-top: var(--s1); }
+.card .live-hosts p { margin: var(--s2) 0 0; font-size: 0.9375rem; }
+.card .live-hosts .is-warn { color: var(--warn); font-weight: 600; }
+.live-hosts-more { margin-top: var(--s2); }
+.live-hosts-more summary { cursor: pointer; font-weight: 600; font-size: 0.9375rem; }
+.live-hosts-wrap {
+  max-height: 22rem; overflow: auto; margin-top: var(--s2);
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+}
+.live-hosts-wrap:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.live-hosts-table { border-collapse: collapse; width: 100%; min-width: 38rem; font-size: 0.8125rem; }
+.live-hosts-table th, .live-hosts-table td { padding: var(--s1) var(--s2); border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.live-hosts-table thead th { position: sticky; top: 0; background: var(--surface-2); font-weight: 600; }
+.live-hosts-table tbody th { font-weight: 600; }
+.live-hosts-table thead th:first-child, .live-hosts-table tbody th { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+.live-hosts-table tbody th { background: var(--surface); }
+.live-hosts-table thead th:first-child { z-index: 2; }
+.live-hosts-table td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.live-hosts-table td.is-low { color: var(--warn); font-weight: 700; }
+.live-hosts-table tbody tr:last-child > * { border-bottom: 0; }
+.tag-zdr { padding: 0 var(--s1); border: 1px solid var(--line-strong); border-radius: 999px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; }
+.card .live-hosts .live-hosts-foot { font-size: 0.8125rem; color: var(--muted); }
 .compare-tray {
   position: fixed; left: 50%; bottom: var(--s3); z-index: 15; transform: translateX(-50%);
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3);
