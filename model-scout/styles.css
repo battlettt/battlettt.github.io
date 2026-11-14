@@ -674,6 +674,14 @@ footer.site p { margin: 0; }
 .route-bars .rb-fill.is-split { background: var(--accent); }
 .route-bars .rb-cost { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
 .route-readout { margin: 0; }
+.kit { margin-bottom: var(--s5); padding: var(--s3); }
+@media (min-width: 40em) { .kit { padding: var(--s4) var(--s5); } }
+.kit-models { margin: 0 0 var(--s3); padding-left: 1.5em; }
+.kit-models li { margin: 0 0 var(--s1); }
+.kit-models .kit-why { color: var(--muted); }
+.kit-models .kit-price { font-family: var(--font-mono); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.kit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
+.kit-actions p { margin: 0; flex: 1 1 16rem; }
 .whatif { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr; gap: var(--s3); }
 @media (min-width: 48em) { .whatif { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 72em) { .whatif { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

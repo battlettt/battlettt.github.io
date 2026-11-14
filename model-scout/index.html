@@ -297,6 +297,18 @@
       </div>
 
       <div class="sub-head">
+        <h3 id="kit-h">Test the shortlist on your own examples</h3>
+        <p class="muted">Download a short Python script (standard library only) that sends your own examples to these models through OpenRouter and writes each answer, the seconds it took, tokens, and an estimated cost to a CSV. That gives you measured speed and quality on your task, which no ranking can. The script reads your key from the OPENROUTER_API_KEY environment variable and never holds one. Nothing runs from this page, and each request is billed to your OpenRouter account.</p>
+      </div>
+      <div id="kit" class="kit panel" aria-labelledby="kit-h">
+        <ol id="kit-models" class="kit-models"><li>The models appear once the ranking loads.</li></ol>
+        <div class="kit-actions">
+          <button type="button" id="kit-download" class="btn" disabled>Download test script (.py)</button>
+          <p id="kit-status" class="muted small-print" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <div class="sub-head">
         <h3>Value map</h3>
         <p class="muted">Every ranked model by score and monthly cost at your volume. The line joins the models that nothing else beats on both, so anything under it costs more for a lower score. Point at a dot to name it; select one to open its card. With a keyboard, focus the map, step with the arrow keys (left and right by cost, up and down by score), and press Enter to open the card.</p>
       </div>
@@ -565,6 +577,7 @@
         <li>What would change the pick moves one weight at a time, with the others keeping their proportions, and solves for the exact share at which another model comes first. Every score is a straight line in that share, so the answer is computed, not sampled. Try it sets those weights by hand so you can see the new ranking; Back to profile weights undoes it.</li>
         <li>Market watch reads the same public OpenRouter list. New means first listed there in the last 30 days, from the listing date OpenRouter publishes. Price changes compare each reviewed model's live price with the bundled snapshot. Retirements are the expiration dates OpenRouter lists. Free, batch, and other variants are left out. Without the live list it shows only what the snapshot knows.</li>
         <li>Zero data retention comes from OpenRouter's public list of zero-data-retention endpoints, saved with the catalog and dated. With it required, a hosted model with no listed ZDR endpoint is left out, and a model whose cheapest ZDR endpoint costs more than its listed price is priced at that endpoint. It never lowers a price, since the cheapest endpoint may differ in other ways. Batch prices are set aside, because the list covers standard endpoints only.</li>
+        <li>The test kit is a Python script you download and run yourself. It sends your examples to the shortlisted models through OpenRouter with your own key, read from an environment variable, and records answers, seconds to answer, tokens, and an estimated cost from list prices. It is the way to check quality and speed on your task, which this page can only estimate.</li>
         <li>Split traffic prices sending a share of requests to a cheaper ranked model and the rest to the top pick, assuming requests of similar size. It gives no score for the mix, because that depends on how well easy requests are sorted from hard ones, which this page cannot know.</li>
         <li>The monthly spend limit is a hard limit: a model whose monthly cost at your volume (with the cache and batch options you chose) is over it is left out, and the excluded list says how much it would cost. Models with no listed price are kept and flagged. In local-only mode it is not applied, because self-hosted cost is hardware, not tokens.</li>
         <li>The sample counter in the volume helper estimates tokens from text you paste: about 4 characters per token for English and code, about 1 per Chinese, Japanese or Korean character, with runs of spaces counted once. It is a rough count, not a tokenizer. It suggests a cache share only when the repeated opening is at least 1,024 tokens, since providers do not cache short prefixes. The text never leaves the page.</li>

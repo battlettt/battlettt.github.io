@@ -721,6 +721,138 @@
       sp.cheap.model + " scores " + sp.cheapTotal + " against " + sp.topTotal + " on your profile" + (sp.gap > 0 ? ", " + sp.gap + " points lower." : ", the same score.");
   }
 
+  // ---------- test kit: a script that runs your own examples through the shortlist ----------
+  var KIT_MAX = 5;
+
+  /** Up to KIT_MAX ranked chat models with an OpenRouter id: the top three, then any extra ids (split traffic, compare tray). */
+  function testKitModels(res, p, extraIds) {
+    if (!res || !res.ranked.length || p.taskType === "embeddings") return [];
+    var out = [], seen = {};
+    function add(r) {
+      if (!r || out.length >= KIT_MAX || seen[r.model.id] || !r.model.openrouter_id || r.model.kind === "embedding") return;
+      seen[r.model.id] = true;
+      var e = effectivePrices(r.model, { zdr: p.zdr }); // list prices (raised for ZDR); cache and batch depend on how you call it
+      out.push({ id: r.model.id, openrouter_id: r.model.openrouter_id, name: r.model.model, rank: r.rank,
+        input: e ? e.input : null, output: e ? e.output : null });
+    }
+    res.ranked.slice(0, 3).forEach(add);
+    (extraIds || []).forEach(function (id) { add(res.ranked.filter(function (r) { return r.model.id === id; })[0]); });
+    return out;
+  }
+
+  function pyStr(s) { return JSON.stringify(String(s == null ? "" : s)); }
+  function pyNum(x) { return isNum(x) ? String(x) : "None"; }
+
+  /** A standard-library Python script for the shortlist. It reads the key from OPENROUTER_API_KEY and never holds one. */
+  function testKitScript(o) {
+    var models = o.models || [];
+    var task = String(o.description || "").replace(/[\r\n]+/g, " ").trim();
+    var L = [
+      "#!/usr/bin/env python3",
+      "# Model Scout test kit, made " + (o.generated || "") + " from the catalog snapshot of " + (o.catalogDate || "unknown date") + ".",
+      "# Task: " + (task || "not described"),
+      "#",
+      "# Sends every example in a JSONL file to each model below on OpenRouter, one request at a time, and writes",
+      "# results.csv with the answer, seconds to the full answer, tokens, and an estimated cost.",
+      "#",
+      "#   export OPENROUTER_API_KEY=your-own-key    (this file never holds a key)",
+      "#   python3 model_scout_test.py examples.jsonl",
+      "#",
+      "# examples.jsonl: one JSON object per line, like {\"prompt\": \"...\", \"expected\": \"...\"}.",
+      "# \"expected\" is optional and is copied to the CSV so you can grade the answers side by side.",
+      "# Each request is billed to your OpenRouter account. Costs here use list prices per million tokens from the",
+      "# catalog snapshot, so compare them with your OpenRouter activity page.",
+      "",
+      "import csv, json, os, statistics, sys, time, urllib.error, urllib.request",
+      "",
+      "URL = \"https://openrouter.ai/api/v1/chat/completions\"",
+      "ZDR_ONLY = " + (o.zdr ? "True" : "False") + "  # True asks OpenRouter to route only to zero-data-retention endpoints",
+      "MODELS = [",
+      "    # (OpenRouter id, name, input USD per 1M tokens, output USD per 1M tokens)"
+    ];
+    models.forEach(function (m) { L.push("    (" + pyStr(m.openrouter_id) + ", " + pyStr(m.name) + ", " + pyNum(m.input) + ", " + pyNum(m.output) + "),"); });
+    L.push("]", "",
+      "",
+      "def load(path):",
+      "    rows = []",
+      "    with open(path, encoding=\"utf-8\") as f:",
+      "        for n, line in enumerate(f, 1):",
+      "            line = line.strip()",
+      "            if not line:",
+      "                continue",
+      "            try:",
+      "                row = json.loads(line)",
+      "            except ValueError:",
+      "                sys.exit(\"Line %d of %s is not valid JSON.\" % (n, path))",
+      "            if not isinstance(row, dict) or not isinstance(row.get(\"prompt\"), str):",
+      "                sys.exit(\"Line %d needs a \\\"prompt\\\" string.\" % n)",
+      "            rows.append(row)",
+      "    if not rows:",
+      "        sys.exit(\"No examples in %s.\" % path)",
+      "    return rows",
+      "",
+      "",
+      "def ask(key, model, prompt):",
+      "    body = {\"model\": model, \"messages\": [{\"role\": \"user\", \"content\": prompt}]}",
+      "    if ZDR_ONLY:",
+      "        body[\"provider\"] = {\"zdr\": True}",
+      "    req = urllib.request.Request(URL, data=json.dumps(body).encode(\"utf-8\"), method=\"POST\",",
+      "                                 headers={\"Authorization\": \"Bearer \" + key, \"Content-Type\": \"application/json\"})",
+      "    start = time.monotonic()",
+      "    with urllib.request.urlopen(req, timeout=300) as resp:",
+      "        data = json.load(resp)",
+      "    seconds = time.monotonic() - start",
+      "    choice = (data.get(\"choices\") or [{}])[0]",
+      "    text = (choice.get(\"message\") or {}).get(\"content\") or \"\"",
+      "    usage = data.get(\"usage\") or {}",
+      "    return text, seconds, usage.get(\"prompt_tokens\"), usage.get(\"completion_tokens\")",
+      "",
+      "",
+      "def main():",
+      "    if len(sys.argv) != 2:",
+      "        sys.exit(\"Usage: python3 %s examples.jsonl\" % os.path.basename(sys.argv[0]))",
+      "    key = os.environ.get(\"OPENROUTER_API_KEY\", \"\").strip()",
+      "    if not key:",
+      "        sys.exit(\"Set OPENROUTER_API_KEY to your own OpenRouter key first.\")",
+      "    examples = load(sys.argv[1])",
+      "    stats = {name: {\"ok\": 0, \"failed\": 0, \"seconds\": [], \"cost\": 0.0} for _, name, _, _ in MODELS}",
+      "    with open(\"results.csv\", \"w\", newline=\"\", encoding=\"utf-8\") as f:",
+      "        w = csv.writer(f)",
+      "        w.writerow([\"example\", \"model\", \"prompt\", \"expected\", \"answer\", \"seconds\", \"input_tokens\", \"output_tokens\", \"estimated_cost_usd\", \"error\"])",
+      "        for i, ex in enumerate(examples, 1):",
+      "            for model, name, price_in, price_out in MODELS:",
+      "                answer, seconds, tin, tout, cost, error = \"\", None, None, None, None, \"\"",
+      "                try:",
+      "                    answer, seconds, tin, tout = ask(key, model, ex[\"prompt\"])",
+      "                    if tin is not None and tout is not None and price_in is not None and price_out is not None:",
+      "                        cost = (tin * price_in + tout * price_out) / 1e6",
+      "                except urllib.error.HTTPError as e:",
+      "                    error = \"HTTP %d: %s\" % (e.code, e.read().decode(\"utf-8\", \"replace\")[:300])",
+      "                except (OSError, ValueError) as e:",
+      "                    error = str(e)[:300]",
+      "                w.writerow([i, name, ex[\"prompt\"], ex.get(\"expected\", \"\"), answer,",
+      "                            \"\" if seconds is None else round(seconds, 2), tin, tout, \"\" if cost is None else round(cost, 6), error])",
+      "                s = stats[name]",
+      "                if error:",
+      "                    s[\"failed\"] += 1",
+      "                else:",
+      "                    s[\"ok\"] += 1",
+      "                    s[\"seconds\"].append(seconds)",
+      "                    s[\"cost\"] += cost or 0.0",
+      "                print(\"example %d, %s: %s\" % (i, name, \"error\" if error else \"%.1f s\" % seconds))",
+      "    print(\"\\nWrote results.csv. Per model: answered, failed, median seconds, estimated cost (USD)\")",
+      "    for _, name, _, _ in MODELS:",
+      "        s = stats[name]",
+      "        median = \"%.1f\" % statistics.median(s[\"seconds\"]) if s[\"seconds\"] else \"-\"",
+      "        print(\"  %-32s %3d %3d %6s %10.4f\" % (name, s[\"ok\"], s[\"failed\"], median, s[\"cost\"]))",
+      "",
+      "",
+      "if __name__ == \"__main__\":",
+      "    main()",
+      "");
+    return L.join("\n");
+  }
+
   /**
    * SVG for the value map. points: [{ id, name, cost, score, top }]. Cost uses a log scale; points with no cost
    * are left out and counted. Pure string output, so it can be tested without a browser.
@@ -1607,7 +1739,7 @@
     effectivePrices: effectivePrices, zdrFacts: zdrFacts, zdrText: zdrText, volumeFromRequests: volumeFromRequests, estimateTokens: estimateTokens, sampleEstimate: sampleEstimate, CACHE_MIN_TOKENS: CACHE_MIN_TOKENS, retirement: retirement, liveFacts: liveFacts, perMillion: perMillion,
     robustness: robustness, presetSettings: presetSettings, profileFromSettings: profileFromSettings,
     encodeSettings: encodeSettings, decodeSettings: decodeSettings,
-    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
+    frontier: frontier, cheaperAlternative: cheaperAlternative, routeOptions: routeOptions, routeSplit: routeSplit, routeText: routeText, testKitModels: testKitModels, testKitScript: testKitScript, KIT_MAX: KIT_MAX, valueMapSvg: valueMapSvg, headToHead: headToHead, decisionMemo: decisionMemo,
     FACTORS: FACTORS, normalizeWeights: normalizeWeights, weightsAt: weightsAt, sharesToPercents: sharesToPercents,
     tippingPoints: tippingPoints, tipWeights: tipWeights, tipSentence: tipSentence, shareLabel: shareLabel,
     marketWatch: marketWatch, pctChange: pctChange, leverOptions: leverOptions, whatIfs: whatIfs,
@@ -2018,6 +2150,7 @@
     renderMarket(res, p);
     renderWhatIf();
     renderRoute(res, p);
+    renderKit();
     syncUrl();
   }
 
@@ -2125,7 +2258,7 @@
       state.compare.push(id);
     }
     state.compareNote = note;
-    renderCompare(state.lastRes, state.lastProfile);
+    renderCompare(state.lastRes, state.lastProfile); renderKit();
   }
 
   function renderCompare(res, p) {
@@ -2407,11 +2540,63 @@
     $("route-readout").textContent = routeText(sp);
   }
 
+  // ----- test kit -----
+  function kitExtras() {
+    var ex = [];
+    if (state.lastRes && state.lastProfile && routeOptions(state.lastRes.ranked, state.lastProfile).length && state.routeId) ex.push(state.routeId);
+    return ex.concat(state.compare || []);
+  }
+
+  function kitModels() {
+    var res = state.lastRes, p = state.lastProfile;
+    if (!res || !p || p.localOnly) return [];
+    return testKitModels(res, p, kitExtras());
+  }
+
+  function renderKit() {
+    var res = state.lastRes, p = state.lastProfile, list = $("kit-models"), btn = $("kit-download");
+    if (!res || !p) return;
+    var why = {};
+    if (state.routeId) why[state.routeId] = "split traffic";
+    (state.compare || []).forEach(function (id) { if (!why[id]) why[id] = "in the compare tray"; });
+    var models = kitModels(), msg = "";
+    if (p.localOnly) msg = "Local only: this script sends your examples to OpenRouter, so it is not offered. Test open-weight models on your own hardware, for example with Ollama.";
+    else if (p.taskType === "embeddings") msg = "The script tests chat models. Embedding models are compared on search results instead, so it is not offered for this task.";
+    else if (!models.length) msg = res.ranked.length ? "None of the ranked models is listed on OpenRouter, so there is nothing to call." : "No model passed the hard constraints.";
+    btn.disabled = !models.length;
+    list.innerHTML = models.length ? models.map(function (m) {
+      var tag = m.rank === 1 ? "top pick" : m.rank <= 3 ? "rank " + m.rank : why[m.id] || "rank " + m.rank;
+      return "<li><strong>" + esc(m.name) + '</strong> <span class="kit-why">(' + esc(tag) + ')</span> <span class="kit-price">' +
+        esc(fmtPrice(m.input)) + " / " + esc(fmtPrice(m.output)) + " per 1M</span></li>";
+    }).join("") : "<li>" + esc(msg) + "</li>";
+    if (!models.length) $("kit-status").textContent = "";
+  }
+
+  function downloadKit() {
+    var models = kitModels(), out = $("kit-status");
+    if (!models.length) return;
+    var text = testKitScript({ models: models, zdr: !!state.lastProfile.zdr, description: $("task-desc").value,
+      generated: new Date().toISOString().slice(0, 10), catalogDate: state.catalog && state.catalog.catalog_date });
+    try {
+      var url = URL.createObjectURL(new Blob([text], { type: "text/x-python" }));
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "model_scout_test.py";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      out.textContent = "Saved model_scout_test.py with " + models.length + " models. Put one example per line in examples.jsonl, set OPENROUTER_API_KEY, and run python3 model_scout_test.py examples.jsonl." +
+        ($("task-desc").value.trim() ? " It includes your task description as a comment, so check it before you share it." : "");
+    } catch (e) { out.textContent = "This browser could not save the file."; }
+  }
+
   function routeEdited() {
     state.routeId = $("route-model").value;
     state.routeShare = (parseInt($("route-share").value, 10) || 0) / 100;
     state.routeTouched = true;
     if (state.lastRes && state.lastProfile) renderRoute(state.lastRes, state.lastProfile);
+    renderKit();
   }
 
   // ----- what if -----
@@ -3044,6 +3229,7 @@
     $("sample-apply").addEventListener("click", applySample);
     $("route-model").addEventListener("change", routeEdited);
     $("route-share").addEventListener("input", routeEdited);
+    $("kit-download").addEventListener("click", downloadKit);
     $("share-link").addEventListener("click", copyShareLink);
     $("cards-toggle").addEventListener("click", function () {
       state.showAllCards = !state.showAllCards;
@@ -3077,7 +3263,7 @@
       if (b) toggleCompare(b.getAttribute("data-compare"));
     });
     $("h2h-ask").addEventListener("click", askPairSideBySide);
-    function clearCompare() { state.compare = []; state.compareNote = ""; renderCompare(state.lastRes, state.lastProfile); }
+    function clearCompare() { state.compare = []; state.compareNote = ""; renderCompare(state.lastRes, state.lastProfile); renderKit(); }
     $("h2h-clear").addEventListener("click", clearCompare);
     $("compare-tray-clear").addEventListener("click", clearCompare);
     var resizeTimer = null;
