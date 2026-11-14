@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Marcel Slowly | Security engineering</title>
-<meta name="description" content="Marcel Slowly: twenty-five projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Build it, then break it.">
+<meta name="description" content="Marcel Slowly: twenty-eight projects across security engineering, AI/ML, data engineering, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Build it, then break it.">
 <meta property="og:title" content="Marcel Slowly | Security engineering">
-<meta property="og:description" content="Twenty-five projects across security engineering, AI/ML, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Every number benchmarked or unit-tested.">
+<meta property="og:description" content="Twenty-eight projects across security engineering, AI/ML, data engineering, applied AI, music, entrepreneurship, money tools, software engineering, product, and market research. Every number benchmarked or unit-tested.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://battlettt.github.io/">
 <meta property="og:image" content="https://battlettt.github.io/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="627">
-<meta property="og:image:alt" content="Marcel Slowly. Build it, then break it. Portfolio with Security, AI/ML, Applied AI, Music, Entrepreneurship, Money Tools, Engineering, Product and Research projects.">
+<meta property="og:image:alt" content="Marcel Slowly. Build it, then break it. Portfolio with Security, AI/ML, Data Engineering, Applied AI, Music, Entrepreneurship, Money Tools, Engineering, Product and Research projects.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='10' fill='%23111'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23f6f5f1'>M</text></svg>">
@@ -25,6 +25,7 @@
    Each chapter of work then gets its own world:
      security  -> terminal / scan report   (Space Mono, phosphor green)
      ai        -> lab plot, dithered chart (IBM Plex Mono, graph paper)
+     data      -> ledger, ruled table (IBM Plex Mono, ruled lines)
      product   -> bento app grid           (Bricolage Grotesque, tints)
      research  -> broadsheet + red pen     (Playfair Display, Caveat)
    z-index scale: 1 sticky chapter bar, 2 grain, 3 skip link.
@@ -42,6 +43,7 @@
   --c-sec:#3fbf77; --c-ai:#d9831f; --c-mus:#7c5cbf; --c-ent:#0f766e; --c-mon:#4d7c0f; --c-eng:#2f7fd6; --c-prod:#e98a64; --c-res:#c8102e;
   --c-foc: #5b8a6a;
   --c-aai:#c2187a;
+  --c-data:#0e7490;
 }
 @media (prefers-color-scheme:dark){
   :root{--paper:#131312; --paper-2:#1b1b19; --ink:#ecebe6; --ink-2:#b4b2aa; --ink-3:#8a887f; --rule:#2c2c29; --accent:#ee7a5c}
@@ -224,6 +226,19 @@ h1{margin:0 0 1.75rem;font-family:var(--serif);font-weight:500;font-size:clamp(3
 .plot__key .r{background:repeating-linear-gradient(45deg,#16213a 0 1px,transparent 1px 3px)}
 .plot__key .c{background:var(--amb-2)}
 .plot figcaption{margin-top:.75rem;font-size:.8125rem;color:var(--dim)}
+
+/* ════════════════════════════════════════════════════════════════════
+   02b  DATA  ·  ledger / ruled table (reuses the shared .ai-open / .ai-card
+   classes; only the chapter variables below are its own)
+   ════════════════════════════════════════════════════════════════════ */
+#data{
+  --bg:#e9eef2; --fg:#14243a; --dim:#46536b; --grid:#d7dee8; --amb:#0e7490; --amb-2:#0891b2;
+  background:
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/100% 2rem,
+    var(--bg);
+  color:var(--fg);
+}
+#data ::selection{background:var(--amb-2);color:#fff}
 
 /* ════════════════════════════════════════════════════════════════════
    03  PRODUCT  ·  bento app grid
@@ -739,16 +754,16 @@ footer a:hover{color:var(--accent)}
     <div>
       <p class="kicker">Management engineering <span>&rarr;</span> security</p>
       <h1 id="name">Marcel Slowly</h1>
-      <p class="lede"><em>Build it, then break it.</em> Twenty-five projects where every claim was executed and verified, not written and assumed to work.</p>
+      <p class="lede"><em>Build it, then break it.</em> Twenty-eight projects where every claim was executed and verified, not written and assumed to work.</p>
       <a class="btn" href="#work">See the work
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M8 2v12M3 9l5 5 5-5"/></svg>
       </a>
     </div>
     <div>
       <dl class="ledger">
-        <div><dt>25</dt><dd>projects across security, AI/ML, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
+        <div><dt>28</dt><dd>projects across security, AI/ML, data engineering, applied AI, music, entrepreneurship, money tools, engineering, product, research, and focus</dd></div>
         <div><dt>13</dt><dd>live deployments you can open today</dd></div>
-        <div><dt>1968</dt><dd>passing tests across twenty of the repositories</dd></div>
+        <div><dt>2249</dt><dd>passing tests across twenty-three of the repositories</dd></div>
       </dl>
       <p class="ledger__note">Where something is simulated rather than captured live, the repository says so.</p>
     </div>
@@ -759,12 +774,13 @@ footer a:hover{color:var(--accent)}
     <div class="wrap">
       <h2>Selected work</h2>
       <a href="#security" style="--sw:var(--c-sec)"><i></i>Security <small>6</small></a>
-      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>3</small></a>
+      <a href="#ai" style="--sw:var(--c-ai)"><i></i>AI/ML <small>4</small></a>
+      <a href="#data" style="--sw:var(--c-data)"><i></i>Data <small>1</small></a>
       <a href="#applied-ai" style="--sw:var(--c-aai)"><i></i>Applied AI <small>4</small></a>
       <a href="#music" style="--sw:var(--c-mus)"><i></i>Music <small>1</small></a>
       <a href="#entrepreneurship" style="--sw:var(--c-ent)"><i></i>Entrepreneurship <small>1</small></a>
       <a href="#money" style="--sw:var(--c-mon)"><i></i>Money Tools <small>1</small></a>
-      <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>3</small></a>
+      <a href="#engineering" style="--sw:var(--c-eng)"><i></i>Engineering <small>4</small></a>
       <a href="#product" style="--sw:var(--c-prod)"><i></i>Product <small>4</small></a>
       <a href="#research" style="--sw:var(--c-res)"><i></i>Research <small>1</small></a>
       <a href="#focus" style="--sw:var(--c-foc)"><i></i>Focus <small>1</small></a>
@@ -977,7 +993,7 @@ footer a:hover{color:var(--accent)}
       <div class="ai-open rv">
         <p class="fig">Fig. 1 <b>&bull;</b> distribution drift</p>
         <h2 id="ai-h">Models fail <span>quietly.</span></h2>
-        <p class="thesis">So the tooling has to be loud. Three projects: one that catches a model going stale before anyone notices, one that puts a trained detector in your browser, and one that researches LLMs and recommends the right model for a task.</p>
+        <p class="thesis">So the tooling has to be loud. Four projects: one that catches a model going stale before anyone notices, one that puts a trained detector in your browser, one that researches LLMs and recommends the right model for a task, and one that red-teams a system prompt against injection and jailbreak attacks and reports exactly where it breaks.</p>
 
         <article class="ai-card anim-rv" data-cat="ai">
           <span class="idx">07 / python mlops</span>
@@ -1044,6 +1060,30 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://battlettt.github.io/model-scout/">Live app</a></li>
           </ul>
         </article>
+        <article class="ai-card anim-rv" data-cat="ai">
+          <span class="idx">10 / python red teaming</span>
+          <h3><a href="https://github.com/battlettt/promptsentry">PromptSentry</a></h3>
+          <p class="meta">Prompt injection red teaming &middot; shipped v1</p>
+          <p class="desc">
+            PromptSentry red-teams a system prompt against injection and jailbreak attacks and
+            reports exactly where it breaks. It fires a library of 25 attacks across six
+            categories (direct override, indirect injection, role-play jailbreaks, data
+            exfiltration, encoding tricks, multi-turn erosion) at a real model over OpenRouter
+            or a deterministic offline mock, judges each reply HELD, BROKEN, or UNCLEAR with a
+            cited evidence snippet, scores overall robustness 0-100, and writes an HTML report
+            with a concrete hardening suggestion for every broken attack.
+          </p>
+          <ul class="ai-stats">
+            <li><b>70</b><span>tests passing</span></li>
+            <li><b>25</b><span>attacks in library</span></li>
+            <li><b>6</b><span>attack categories</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Prompt injection</li><li>Red teaming</li><li>CLI</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/promptsentry">Source</a></li>
+            <li><a href="https://github.com/battlettt/promptsentry/blob/main/README.md">README</a></li>
+          </ul>
+        </article>
       </div>
 
       <figure class="plot rv">
@@ -1057,6 +1097,44 @@ footer a:hover{color:var(--accent)}
         </div>
         <figcaption>Live illustration with simulated data. PSI is computed in your browser across 32 bins, using the usual 0.1 and 0.25 thresholds.</figcaption>
       </figure>
+    </div>
+  </section>
+
+
+  <!-- ═════════ DATA ═════════ -->
+  <section class="ch anim-ch" id="data" aria-labelledby="data-h">
+    <div class="wrap">
+      <div class="ai-open rv">
+        <p class="fig">Fig. 1 <b>&bull;</b> one table, checked</p>
+        <h2 id="data-h">Bad data <span>never crashes.</span></h2>
+        <p class="thesis">It just quietly moves the average. One tool that profiles a table, runs quality rules, and flags drift run over run, so the problem gets caught before it reaches a dashboard.</p>
+
+        <article class="ai-card anim-rv" data-cat="data">
+          <span class="idx">11 / python data quality</span>
+          <h3><a href="https://github.com/battlettt/datahound">DataHound</a></h3>
+          <p class="meta">Data quality &amp; drift &middot; shipped v1</p>
+          <p class="desc">
+            DataHound profiles every column of a CSV or SQLite table (types, null rates,
+            duplicates, ranges, top values), runs eight built-in quality rules plus custom rules
+            from a JSON config, saves each run to a local history store, and flags drift when a
+            metric moves past a stated threshold, always showing the old value, the new value,
+            and the threshold. Output is a terminal summary, worst problems first, plus a
+            self-contained HTML report with sparklines across runs. No network, nothing hosted,
+            your data stays on your machine.
+          </p>
+          <ul class="ai-stats">
+            <li><b>93</b><span>tests passing</span></li>
+            <li><b>8</b><span>built-in rules</span></li>
+            <li><b>9</b><span>drift metrics tracked</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Data quality</li><li>SQLite</li><li>CLI</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/datahound">Source</a></li>
+            <li><a href="https://github.com/battlettt/datahound/blob/main/README.md">README</a></li>
+            <li><a href="https://github.com/battlettt/datahound/blob/main/examples/rules.json">Example rules</a></li>
+          </ul>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -1103,7 +1181,7 @@ footer a:hover{color:var(--accent)}
         </svg>
 
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">10 / python applied ai</span>
+          <span class="idx">12 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/course-compass">Course Compass</a></h3>
           <p class="meta">Grounded study companion &middot; shipped v1</p>
           <p class="desc">
@@ -1128,7 +1206,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">11 / python applied ai</span>
+          <span class="idx">13 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/senior-scam-shield">Senior Scam Shield</a></h3>
           <p class="meta">Multi-channel scam detector &middot; shipped v1</p>
           <p class="desc">
@@ -1145,7 +1223,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">12 / python applied ai</span>
+          <span class="idx">14 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/codebase-atlas">Codebase Atlas</a></h3>
           <p class="meta">Codebase onboarding intelligence &middot; shipped v1</p>
           <p class="desc">
@@ -1162,7 +1240,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="ai">
-          <span class="idx">13 / python applied ai</span>
+          <span class="idx">15 / python applied ai</span>
           <h3><a href="https://github.com/battlettt/marketplace-trust">Marketplace Trust</a></h3>
           <p class="meta">Secondhand trust toolkit &middot; shipped v1</p>
           <p class="desc">
@@ -1267,7 +1345,7 @@ footer a:hover{color:var(--accent)}
         </div>
 
         <article class="ai-card anim-rv" data-cat="music">
-          <span class="idx">14 / python music</span>
+          <span class="idx">16 / python music</span>
           <h3><a href="https://github.com/battlettt/playlist-analyzer">Playlist Analyzer</a></h3>
           <p class="meta">Playlist analysis &amp; harmonic mixing &middot; shipped v1</p>
           <p class="desc">
@@ -1340,7 +1418,7 @@ footer a:hover{color:var(--accent)}
         </div>
 
         <article class="ai-card anim-rv" data-cat="entrepreneurship">
-          <span class="idx">15 / python entrepreneurship</span>
+          <span class="idx">17 / python entrepreneurship</span>
           <h3><a href="https://github.com/battlettt/startup-cost-calculator">Startup Cost Calculator</a></h3>
           <p class="meta">Startup cost estimation &middot; shipped v1</p>
           <p class="desc">
@@ -1414,7 +1492,7 @@ footer a:hover{color:var(--accent)}
         </div>
 
         <article class="ai-card anim-rv" data-cat="money">
-          <span class="idx">16 / python money tools</span>
+          <span class="idx">18 / python money tools</span>
           <h3><a href="https://github.com/battlettt/coop-offer-comparator">Co-op Offer Comparator</a></h3>
           <p class="meta">Co-op offer comparison by take-home pay &middot; shipped v1</p>
           <p class="desc">
@@ -1451,7 +1529,7 @@ footer a:hover{color:var(--accent)}
         <p class="thesis">One CLI that catches a breaking change before it becomes a release-note apology.</p>
 
         <article class="ai-card anim-rv" data-cat="engineering">
-          <span class="idx">17 / typescript devtools</span>
+          <span class="idx">19 / typescript devtools</span>
           <h3><a href="https://github.com/battlettt/semver-guard">Semver Guard</a></h3>
           <p class="meta">Breaking-change detection &middot; shipped v6</p>
           <p class="desc">
@@ -1481,7 +1559,7 @@ footer a:hover{color:var(--accent)}
         <p class="thesis">A small pipeline that turns public schedule and realtime feeds into an auditable reliability report.</p>
 
         <article class="ai-card anim-rv" data-cat="engineering">
-          <span class="idx">18 / python data pipeline</span>
+          <span class="idx">20 / python data pipeline</span>
           <h3><a href="https://github.com/battlettt/transit-pulse">Transit Pulse</a></h3>
           <p class="meta">GTFS reliability analytics &middot; shipped v3</p>
           <p class="desc">
@@ -1505,7 +1583,7 @@ footer a:hover{color:var(--accent)}
           </ul>
         </article>
         <article class="ai-card anim-rv" data-cat="engineering">
-          <span class="idx">19 / python automation</span>
+          <span class="idx">21 / python automation</span>
           <h3><a href="https://github.com/battlettt/pagepilot">PagePilot</a></h3>
           <p class="meta">Browser automation agent &middot; shipped v1</p>
           <p class="desc">
@@ -1522,6 +1600,30 @@ footer a:hover{color:var(--accent)}
             <li><a href="https://battlettt.github.io/pagepilot/demo/">Sample audit report</a></li>
           </ul>
         </article>
+        <article class="ai-card anim-rv" data-cat="engineering">
+          <span class="idx">22 / python git history</span>
+          <h3><a href="https://github.com/battlettt/gitwhy">GitWhy</a></h3>
+          <p class="meta">Code history reader &middot; shipped v1</p>
+          <p class="desc">
+            GitWhy answers one question: why does this code exist? Point it at a file and a
+            line (or a function name) in any git repo and it reads the repo's own history with
+            blame, log, and diff to tell the story: the commit that introduced the lines, every
+            later commit that touched them, the files that always changed alongside them, and a
+            HOT, STABLE, or STALE verdict with the exact rule that decided it. It follows
+            renames where git can and says plainly when history is cut off. Every claim cites
+            its commit sha and line range.
+          </p>
+          <ul class="ai-stats">
+            <li><b>118</b><span>tests passing</span></li>
+            <li><b>6</b><span>languages for function lookup</span></li>
+            <li><b>3</b><span>heat verdicts</span></li>
+          </ul>
+          <ul class="tags"><li>Python</li><li>Git history</li><li>CLI</li></ul>
+          <ul class="go">
+            <li><a href="https://github.com/battlettt/gitwhy">Source</a></li>
+            <li><a href="https://github.com/battlettt/gitwhy/blob/main/README.md">README</a></li>
+          </ul>
+        </article>
       </div>
     </div>
   </section>
@@ -1536,7 +1638,7 @@ footer a:hover{color:var(--accent)}
 
       <div class="bento">
         <article class="bx b-1 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">20</span><span class="badge live">Live beta</span></div>
+          <div class="bx__top"><span class="bx__idx">23</span><span class="badge live">Live beta</span></div>
           <h3><a href="https://fake-company-in-a-box.vercel.app">Fake Company in a Box</a></h3>
           <p class="meta">B2B SaaS on Next.js, Postgres, Stripe</p>
           <p class="desc">
@@ -1560,7 +1662,7 @@ footer a:hover{color:var(--accent)}
         </article>
 
         <article class="bx b-2 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">21</span><span class="badge live">Live</span></div>
+          <div class="bx__top"><span class="bx__idx">24</span><span class="badge live">Live</span></div>
           <h3><a href="https://memory-time.vercel.app">Memory Time</a></h3>
           <p class="meta">React Native, Expo, Supabase</p>
           <p class="desc">
@@ -1583,7 +1685,7 @@ footer a:hover{color:var(--accent)}
         </article>
 
         <article class="bx b-3 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">22</span><span class="badge">In delivery</span></div>
+          <div class="bx__top"><span class="bx__idx">25</span><span class="badge">In delivery</span></div>
           <h3><a href="https://github.com/battlettt/departure-handover">Departure Handover</a></h3>
           <p class="meta">Python knowledge extraction</p>
           <p class="desc">
@@ -1604,7 +1706,7 @@ footer a:hover{color:var(--accent)}
         </article>
 
         <article class="bx b-4 rv" data-cat="product">
-          <div class="bx__top"><span class="bx__idx">23</span><span class="badge">Prototype</span></div>
+          <div class="bx__top"><span class="bx__idx">26</span><span class="badge">Prototype</span></div>
           <h3><a href="https://battlettt.github.io/proximity-bar-hunter/">Proximity Bar Hunter</a></h3>
           <p class="meta">PostGIS, Expo geofencing</p>
           <p class="desc">
@@ -1634,7 +1736,7 @@ footer a:hover{color:var(--accent)}
 
       <article class="np rv" data-cat="research">
         <div>
-          <p class="kind">24 &middot; Escheatment &middot; Validating</p>
+          <p class="kind">27 &middot; Escheatment &middot; Validating</p>
           <h3><a href="https://github.com/battlettt/unclaimed-property-compliance">Unclaimed Property Compliance</a></h3>
           <p class="deck">Research toward an AI-native service for US state unclaimed property compliance, wedged on Delaware VDA response.</p>
           <div class="body">
@@ -1686,7 +1788,7 @@ footer a:hover{color:var(--accent)}
       </div>
 
       <article class="ai-card anim-rv" data-cat="focus">
-          <span class="idx">25 / python focus</span>
+          <span class="idx">28 / python focus</span>
           <h3><a href="https://github.com/battlettt/focus-session-tracker">Focus Session Tracker</a></h3>
           <p class="meta">Timed focus sessions and a weekly review &middot; shipped v1</p>
           <p class="desc">
